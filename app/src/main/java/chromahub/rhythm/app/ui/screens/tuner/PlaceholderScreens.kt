@@ -12,6 +12,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -1960,112 +1962,432 @@ fun LibraryTabOrderSettingsScreen(onBackClick: () -> Unit) {
     }
 }
 
-// ✅ SIMPLIFIED Theme Customization Screen
+// ✅ FULLY INTEGRATED Theme Customization Screen
 @Composable
 fun ThemeCustomizationSettingsScreen(onBackClick: () -> Unit) {
     val context = LocalContext.current
     val appSettings = AppSettings.getInstance(context)
+    val haptic = LocalHapticFeedback.current
+    
+    // Theme states
+    val useSystemTheme by appSettings.useSystemTheme.collectAsState()
+    val darkMode by appSettings.darkMode.collectAsState()
+    val useDynamicColors by appSettings.useDynamicColors.collectAsState()
+    val customColorScheme by appSettings.customColorScheme.collectAsState()
+    val colorSource by appSettings.colorSource.collectAsState()
+    
+    // Tab state
+    var selectedTab by remember { mutableStateOf(0) }
+    val tabs = listOf("Mode", "Colors", "Fonts")
+    
+    // Color schemes
+    val colorSchemes = remember {
+        listOf(
+            Triple("Default", Color(0xFF5C4AD5), "Vibrant purple"),
+            Triple("Warm", Color(0xFFFF6B35), "Orange sunset"),
+            Triple("Cool", Color(0xFF1E88E5), "Ocean blue"),
+            Triple("Forest", Color(0xFF2E7D32), "Natural green"),
+            Triple("Rose", Color(0xFFE91E63), "Elegant pink"),
+            Triple("Amber", Color(0xFFFF6F00), "Golden amber"),
+            Triple("Ocean", Color(0xFF006064), "Deep ocean"),
+            Triple("Lavender", Color(0xFF7C4DFF), "Calm lavender")
+        )
+    }
+    
+    // Font options
+    val fontOptions = remember {
+        listOf("System", "Slate", "Inter", "JetBrains", "Quicksand")
+    }
+    val currentFont by appSettings.customFont.collectAsState()
     
     CollapsibleHeaderScreen(
         title = "Theme Customization",
         showBackButton = true,
         onBackClick = onBackClick
     ) { modifier ->
-        LazyColumn(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item { Spacer(modifier = Modifier.height(8.dp)) }
-            
-            item {
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Palette,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(32.dp)
+        Column(modifier = modifier.fillMaxSize()) {
+            // Tabs
+            TabRow(
+                selectedTabIndex = selectedTab,
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                modifier = Modifier.padding(horizontal = 24.dp)
+            ) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTab == index,
+                        onClick = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                            selectedTab = index
+                        },
+                        text = {
+                            Text(
+                                text = title,
+                                fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal
                             )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column {
-                                Text(
-                                    text = "Appearance Customization",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                Text(
-                                    text = "Personalize your experience",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                        }
+                    )
+                }
+            }
+            
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item { Spacer(modifier = Modifier.height(8.dp)) }
+                
+                when (selectedTab) {
+                    0 -> {
+                        // Theme Mode Tab
+                        item {
+                            Text(
+                                text = "Theme Mode",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                            )
+                        }
+                        
+                        item {
+                            TunerSettingCard(
+                                title = "Use System Theme",
+                                description = "Follow system dark/light mode",
+                                icon = Icons.Default.PhoneAndroid,
+                                checked = useSystemTheme,
+                                onCheckedChange = { appSettings.setUseSystemTheme(it) }
+                            )
+                        }
+                        
+                        if (!useSystemTheme) {
+                            item {
+                                TunerSettingCard(
+                                    title = "Dark Mode",
+                                    description = "Enable dark theme",
+                                    icon = Icons.Default.DarkMode,
+                                    checked = darkMode,
+                                    onCheckedChange = { appSettings.setDarkMode(it) }
                                 )
                             }
                         }
                     }
-                }
-            }
-            
-            item {
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
+                    
+                    1 -> {
+                        // Colors Tab
+                        item {
                             Text(
-                                text = "Available Theme Options",
+                                text = "Color Source",
                                 style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
                             )
                         }
-                        Text(
-                            text = "• Choose from Material You dynamic colors\n• Select dark/light/auto theme modes\n• Customize accent colors\n• Adjust font styles and sizes",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
+                        
+                        item {
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                ),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    // Material You
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .clickable {
+                                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                                                appSettings.setUseDynamicColors(true)
+                                                appSettings.setColorSource("MONET")
+                                            }
+                                            .background(
+                                                if (colorSource == "MONET") MaterialTheme.colorScheme.primaryContainer
+                                                else Color.Transparent
+                                            )
+                                            .padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Wallpaper,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(24.dp),
+                                            tint = if (colorSource == "MONET") MaterialTheme.colorScheme.onPrimaryContainer
+                                            else MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Spacer(Modifier.width(12.dp))
+                                        Column(Modifier.weight(1f)) {
+                                            Text(
+                                                "Material You",
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = if (colorSource == "MONET") MaterialTheme.colorScheme.onPrimaryContainer
+                                                else MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                "Wallpaper colors",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = if (colorSource == "MONET") MaterialTheme.colorScheme.onPrimaryContainer.copy(0.7f)
+                                                else MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        if (colorSource == "MONET") {
+                                            Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.primary)
+                                        }
+                                    }
+                                    
+                                    Spacer(Modifier.height(8.dp))
+                                    
+                                    // Custom Scheme
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .clickable {
+                                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                                                appSettings.setUseDynamicColors(false)
+                                                appSettings.setColorSource("CUSTOM")
+                                            }
+                                            .background(
+                                                if (colorSource == "CUSTOM") MaterialTheme.colorScheme.primaryContainer
+                                                else Color.Transparent
+                                            )
+                                            .padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Palette,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(24.dp),
+                                            tint = if (colorSource == "CUSTOM") MaterialTheme.colorScheme.onPrimaryContainer
+                                            else MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Spacer(Modifier.width(12.dp))
+                                        Column(Modifier.weight(1f)) {
+                                            Text(
+                                                "Custom Scheme",
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = if (colorSource == "CUSTOM") MaterialTheme.colorScheme.onPrimaryContainer
+                                                else MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                "Choose preset colors",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = if (colorSource == "CUSTOM") MaterialTheme.colorScheme.onPrimaryContainer.copy(0.7f)
+                                                else MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        if (colorSource == "CUSTOM") {
+                                            Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.primary)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Color scheme grid (only show if CUSTOM selected)
+                        if (colorSource == "CUSTOM") {
+                            item {
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    text = "Color Schemes",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+                                )
+                            }
+                            
+                            items(colorSchemes.chunked(2)) { rowSchemes ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    rowSchemes.forEach { (name, color, desc) ->
+                                        Card(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(16.dp))
+                                                .clickable {
+                                                    HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+                                                    appSettings.setCustomColorScheme(name)
+                                                },
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = if (customColorScheme == name) 
+                                                    MaterialTheme.colorScheme.primaryContainer 
+                                                else 
+                                                    MaterialTheme.colorScheme.surfaceContainer
+                                            ),
+                                            border = if (customColorScheme == name) 
+                                                BorderStroke(2.dp, MaterialTheme.colorScheme.primary) 
+                                            else null
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(16.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(48.dp)
+                                                        .clip(CircleShape)
+                                                        .background(color)
+                                                )
+                                                Spacer(Modifier.height(8.dp))
+                                                Text(
+                                                    name,
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Text(
+                                                    desc,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    textAlign = TextAlign.Center
+                                                )
+                                            }
+                                        }
+                                    }
+                                    // Fill remaining space if odd number
+                                    if (rowSchemes.size == 1) {
+                                        Spacer(Modifier.weight(1f))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    2 -> {
+                        // Fonts Tab
+                        item {
+                            Text(
+                                text = "Font Family",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                            )
+                        }
+                        
+                        items(fontOptions) { fontName ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .clickable {
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+                                        appSettings.setCustomFont(fontName)
+                                    },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (currentFont == fontName)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else
+                                        MaterialTheme.colorScheme.surfaceContainer
+                                ),
+                                border = if (currentFont == fontName)
+                                    BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                                else null
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(Modifier.weight(1f)) {
+                                        Text(
+                                            fontName,
+                                            fontWeight = FontWeight.SemiBold,
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
+                                        Text(
+                                            "The quick brown fox jumps",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    if (currentFont == fontName) {
+                                        Icon(
+                                            Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
+                
+                item { Spacer(modifier = Modifier.height(8.dp)) }
             }
-            
-            item {
-                Text(
-                    text = "For advanced theme customization including custom colors and fonts, please use the Theme settings in the main Appearance section of settings.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
-            }
-            
-            item { Spacer(modifier = Modifier.height(8.dp)) }
         }
     }
 }
 
-// ✅ SIMPLIFIED Equalizer Screen
+// ✅ FULLY INTEGRATED Equalizer Screen
 @Composable
 fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
     val context = LocalContext.current
+    val musicViewModel: MusicViewModel = viewModel()
+    val haptic = LocalHapticFeedback.current
+    
+    // Collect states from settings
+    val equalizerEnabledState by musicViewModel.equalizerEnabled.collectAsState()
+    val equalizerPresetState by musicViewModel.equalizerPreset.collectAsState()
+    val equalizerBandLevelsState by musicViewModel.equalizerBandLevels.collectAsState()
+    val bassBoostEnabledState by musicViewModel.bassBoostEnabled.collectAsState()
+    val bassBoostStrengthState by musicViewModel.bassBoostStrength.collectAsState()
+    val virtualizerEnabledState by musicViewModel.virtualizerEnabled.collectAsState()
+    val virtualizerStrengthState by musicViewModel.virtualizerStrength.collectAsState()
+    
+    // Local mutable states for UI
+    var isEqualizerEnabled by remember(equalizerEnabledState) { mutableStateOf(equalizerEnabledState) }
+    var selectedPreset by remember(equalizerPresetState) { mutableStateOf(equalizerPresetState) }
+    var bandLevels by remember(equalizerBandLevelsState) { 
+        mutableStateOf(
+            equalizerBandLevelsState.split(",").mapNotNull { it.toFloatOrNull() }.let { levels ->
+                if (levels.size == 5) levels else List(5) { 0f }
+            }
+        )
+    }
+    var isBassBoostEnabled by remember(bassBoostEnabledState) { mutableStateOf(bassBoostEnabledState) }
+    var bassBoostStrength by remember(bassBoostStrengthState) { mutableFloatStateOf(bassBoostStrengthState.toFloat()) }
+    var isVirtualizerEnabled by remember(virtualizerEnabledState) { mutableStateOf(virtualizerEnabledState) }
+    var virtualizerStrength by remember(virtualizerStrengthState) { mutableFloatStateOf(virtualizerStrengthState.toFloat()) }
+    
+    // Preset definitions
+    val presets = listOf(
+        Triple("Flat", Icons.Rounded.LinearScale, listOf(0f, 0f, 0f, 0f, 0f)),
+        Triple("Rock", Icons.Rounded.MusicNote, listOf(5f, 3f, -2f, 2f, 8f)),
+        Triple("Pop", Icons.Rounded.Star, listOf(2f, 5f, 3f, -1f, 2f)),
+        Triple("Jazz", Icons.Rounded.Piano, listOf(4f, 2f, -2f, 2f, 6f)),
+        Triple("Classical", Icons.Rounded.LibraryMusic, listOf(3f, -2f, -3f, -1f, 4f)),
+        Triple("Electronic", Icons.Rounded.GraphicEq, listOf(6f, 4f, 1f, 3f, 7f)),
+        Triple("Hip Hop", Icons.Rounded.GraphicEq, listOf(7f, 4f, 0f, 2f, 6f)),
+        Triple("Vocal", Icons.Rounded.RecordVoiceOver, listOf(0f, 3f, 5f, 4f, 2f))
+    )
+    
+    val frequencyLabels = listOf("60Hz", "230Hz", "910Hz", "3.6kHz", "14kHz")
+    
+    // Functions
+    fun applyPreset(name: String, bands: List<Float>) {
+        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+        selectedPreset = name
+        bandLevels = bands
+        musicViewModel.appSettings.setEqualizerPreset(name)
+        musicViewModel.appSettings.setEqualizerBandLevels(bands.joinToString(","))
+        musicViewModel.applyEqualizerPreset(name, bands)
+    }
+    
+    fun updateBandLevel(band: Int, level: Float) {
+        val newLevels = bandLevels.toMutableList()
+        newLevels[band] = level
+        bandLevels = newLevels
+        selectedPreset = "Custom"
+        musicViewModel.appSettings.setEqualizerBandLevels(newLevels.joinToString(","))
+        musicViewModel.appSettings.setEqualizerPreset("Custom")
+        val levelShort = (level * 100).toInt().toShort()
+        musicViewModel.setEqualizerBandLevel(band.toShort(), levelShort)
+    }
     
     CollapsibleHeaderScreen(
         title = "Equalizer",
@@ -2080,82 +2402,273 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
         ) {
             item { Spacer(modifier = Modifier.height(8.dp)) }
             
+            // Enable/Disable Equalizer
             item {
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                TunerSettingCard(
+                    title = "Enable Equalizer",
+                    description = "Adjust audio frequencies",
+                    icon = Icons.Default.GraphicEq,
+                    checked = isEqualizerEnabled,
+                    onCheckedChange = { enabled ->
+                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+                        isEqualizerEnabled = enabled
+                        musicViewModel.setEqualizerEnabled(enabled)
+                    }
+                )
+            }
+            
+            if (isEqualizerEnabled) {
+                // Presets
+                item {
+                    Text(
+                        text = "Presets - $selectedPreset",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
                     )
-                ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.GraphicEq,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(32.dp)
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column {
+                }
+                
+                items(presets.chunked(4)) { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        row.forEach { (name, icon, bands) ->
+                            Card(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable { applyPreset(name, bands) },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (selectedPreset == name)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                ),
+                                border = if (selectedPreset == name)
+                                    BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                                else null
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(12.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Icon(
+                                        icon,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(24.dp),
+                                        tint = if (selectedPreset == name)
+                                            MaterialTheme.colorScheme.onPrimaryContainer
+                                        else
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        name,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = if (selectedPreset == name) FontWeight.Bold else FontWeight.Normal,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                        }
+                        // Fill remaining space if row not full
+                        repeat(4 - row.size) {
+                            Spacer(Modifier.weight(1f))
+                        }
+                    }
+                }
+                
+                // 5-Band Equalizer
+                item {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "Frequency Bands",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+                    )
+                }
+                
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            bandLevels.forEachIndexed { index, level ->
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(
+                                        "+10dB",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                    Slider(
+                                        value = level,
+                                        onValueChange = { updateBandLevel(index, it) },
+                                        valueRange = -10f..10f,
+                                        modifier = Modifier
+                                            .height(180.dp)
+                                            .graphicsLayer { rotationZ = 270f },
+                                        colors = SliderDefaults.colors(
+                                            thumbColor = MaterialTheme.colorScheme.primary,
+                                            activeTrackColor = MaterialTheme.colorScheme.primary
+                                        )
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(
+                                        "-10dB",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(
+                                        frequencyLabels[index],
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        "${level.toInt()}dB",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Bass Boost
+                item {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "Audio Effects",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                    )
+                }
+                
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Default.VolumeUp, null, Modifier.size(24.dp))
+                                Spacer(Modifier.width(12.dp))
                                 Text(
-                                    text = "Audio Equalizer",
+                                    "Bass Boost",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    modifier = Modifier.weight(1f)
                                 )
-                                Text(
-                                    text = "Adjust audio frequencies and effects",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                Switch(
+                                    checked = isBassBoostEnabled,
+                                    onCheckedChange = {
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                                        isBassBoostEnabled = it
+                                        musicViewModel.setBassBoost(it, bassBoostStrength.toInt().toShort())
+                                    }
+                                )
+                            }
+                            if (isBassBoostEnabled) {
+                                Spacer(Modifier.height(12.dp))
+                                Text("Strength: ${bassBoostStrength.toInt()}%", style = MaterialTheme.typography.bodySmall)
+                                Slider(
+                                    value = bassBoostStrength,
+                                    onValueChange = {
+                                        bassBoostStrength = it
+                                        musicViewModel.setBassBoost(true, it.toInt().toShort())
+                                    },
+                                    valueRange = 0f..100f
                                 )
                             }
                         }
                     }
                 }
-            }
-            
-            item {
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Equalizer Features",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer
-                            )
+                
+                // Virtualizer
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Rounded.Headphones, null, Modifier.size(24.dp))
+                                Spacer(Modifier.width(12.dp))
+                                Text(
+                                    "Virtualizer",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Switch(
+                                    checked = isVirtualizerEnabled,
+                                    onCheckedChange = {
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                                        isVirtualizerEnabled = it
+                                        musicViewModel.setVirtualizer(it, virtualizerStrength.toInt().toShort())
+                                    }
+                                )
+                            }
+                            if (isVirtualizerEnabled) {
+                                Spacer(Modifier.height(12.dp))
+                                Text("Strength: ${virtualizerStrength.toInt()}%", style = MaterialTheme.typography.bodySmall)
+                                Slider(
+                                    value = virtualizerStrength,
+                                    onValueChange = {
+                                        virtualizerStrength = it
+                                        musicViewModel.setVirtualizer(true, it.toInt().toShort())
+                                    },
+                                    valueRange = 0f..100f
+                                )
+                            }
                         }
-                        Text(
-                            text = "• 5-band frequency equalizer\n• Multiple preset options (Rock, Pop, Jazz, etc.)\n• Bass boost and virtualizer effects\n• Save custom presets",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
                     }
                 }
-            }
-            
-            item {
-                Text(
-                    text = "Access the full equalizer controls from the Now Playing screen by tapping the equalizer icon. Adjust frequency bands and apply presets for different music genres.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
+                
+                // System Equalizer
+                item {
+                    Button(
+                        onClick = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+                            musicViewModel.openSystemEqualizer()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors()
+                    ) {
+                        Icon(Icons.Default.Settings, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Open System Equalizer")
+                    }
+                }
             }
             
             item { Spacer(modifier = Modifier.height(8.dp)) }
@@ -2163,10 +2676,55 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
     }
 }
 
-// ✅ SIMPLIFIED Sleep Timer Screen
+// ✅ FULLY INTEGRATED Sleep Timer Screen
 @Composable
 fun SleepTimerSettingsScreen(onBackClick: () -> Unit) {
     val context = LocalContext.current
+    val musicViewModel: MusicViewModel = viewModel()
+    val haptic = LocalHapticFeedback.current
+    
+    // States from ViewModel
+    val isTimerActive by musicViewModel.sleepTimerActive.collectAsState()
+    val remainingSeconds by musicViewModel.sleepTimerRemainingSeconds.collectAsState()
+    val timerAction by musicViewModel.sleepTimerAction.collectAsState()
+    val serviceConnected by musicViewModel.serviceConnected.collectAsState()
+    
+    // Current playback states
+    val currentSong by musicViewModel.currentSong.collectAsState()
+    val isPlaying by musicViewModel.isPlaying.collectAsState()
+    
+    // Sleep actions
+    val actions = listOf("FADE_OUT" to "Fade Out", "PAUSE" to "Pause", "STOP" to "Stop")
+    var selectedAction by remember { mutableStateOf(timerAction.takeIf { it.isNotBlank() } ?: "FADE_OUT") }
+    
+    // Preset durations (in minutes)
+    val presets = listOf(5, 15, 30, 45, 60, 90)
+    
+    // Custom time
+    var customMinutes by remember { mutableIntStateOf(30) }
+    
+    fun formatTime(totalSeconds: Long): String {
+        val hours = totalSeconds / 3600
+        val minutes = (totalSeconds % 3600) / 60
+        val seconds = totalSeconds % 60
+        return if (hours > 0) {
+            "${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}"
+        } else {
+            "${minutes}:${seconds.toString().padStart(2, '0')}"
+        }
+    }
+    
+    fun startTimer(minutes: Int) {
+        if (isPlaying && serviceConnected && currentSong != null) {
+            HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+            musicViewModel.startSleepTimer(minutes, chromahub.rhythm.app.viewmodel.MusicViewModel.SleepAction.valueOf(selectedAction))
+        }
+    }
+    
+    fun stopTimer() {
+        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+        musicViewModel.stopSleepTimer()
+    }
     
     CollapsibleHeaderScreen(
         title = "Sleep Timer",
@@ -2181,82 +2739,206 @@ fun SleepTimerSettingsScreen(onBackClick: () -> Unit) {
         ) {
             item { Spacer(modifier = Modifier.height(8.dp)) }
             
+            // Status Card
             item {
                 Card(
-                    shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
+                        containerColor = if (isTimerActive) MaterialTheme.colorScheme.primaryContainer 
+                        else MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.AccessTime,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(32.dp)
+                    Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            if (isTimerActive) Icons.Default.Timer else Icons.Default.AccessTime,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = if (isTimerActive) MaterialTheme.colorScheme.onPrimaryContainer 
+                            else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            if (isTimerActive) formatTime(remainingSeconds) else "No Timer Active",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (isTimerActive) {
+                            Text(
+                                "Remaining time",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column {
-                                Text(
-                                    text = "Sleep Timer",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                        }
+                    }
+                }
+            }
+            
+            // Stop Timer Button (if active)
+            if (isTimerActive) {
+                item {
+                    Button(
+                        onClick = { stopTimer() },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    ) {
+                        Icon(Icons.Default.Stop, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Stop Timer")
+                    }
+                }
+            }
+            
+            // Preset Durations
+            if (!isTimerActive) {
+                item {
+                    Text(
+                        "Quick Presets",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                    )
+                }
+                
+                items(presets.chunked(3)) { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        row.forEach { minutes ->
+                            Button(
+                                onClick = { startTimer(minutes) },
+                                modifier = Modifier.weight(1f),
+                                enabled = isPlaying && serviceConnected && currentSong != null,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
-                                Text(
-                                    text = "Auto-stop playback",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                                )
+                            ) {
+                                Text("$minutes min")
+                            }
+                        }
+                        repeat(3 - row.size) {
+                            Spacer(Modifier.weight(1f))
+                        }
+                    }
+                }
+                
+                // Custom Duration
+                item {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Custom Duration",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                    )
+                }
+                
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("Minutes: $customMinutes", style = MaterialTheme.typography.bodyMedium)
+                            Slider(
+                                value = customMinutes.toFloat(),
+                                onValueChange = { customMinutes = it.toInt() },
+                                valueRange = 1f..120f,
+                                steps = 118
+                            )
+                            Button(
+                                onClick = { startTimer(customMinutes) },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = isPlaying && serviceConnected && currentSong != null
+                            ) {
+                                Icon(Icons.Default.PlayArrow, null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Start $customMinutes min Timer")
+                            }
+                        }
+                    }
+                }
+                
+                // Action Selection
+                item {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Timer Action",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                    )
+                }
+                
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            actions.forEach { (value, label) ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable {
+                                            HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                                            selectedAction = value
+                                        }
+                                        .background(
+                                            if (selectedAction == value) MaterialTheme.colorScheme.primaryContainer.copy(0.5f)
+                                            else Color.Transparent
+                                        )
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        label,
+                                        modifier = Modifier.weight(1f),
+                                        fontWeight = if (selectedAction == value) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                    if (selectedAction == value) {
+                                        Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.primary)
+                                    }
+                                }
+                                if (value != actions.last().first) {
+                                    Spacer(Modifier.height(4.dp))
+                                }
                             }
                         }
                     }
                 }
             }
             
+            // Info message
             item {
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
+                if (!isPlaying || !serviceConnected || currentSong == null) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(0.5f)
+                        )
+                    ) {
+                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.error)
+                            Spacer(Modifier.width(12.dp))
                             Text(
-                                text = "Timer Options",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                                "Play music to enable sleep timer",
+                                style = MaterialTheme.typography.bodyMedium
                             )
                         }
-                        Text(
-                            text = "• Set custom timer duration\n• Quick presets (15, 30, 60 minutes)\n• Fade out option before stopping\n• Timer extends on current track completion",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
                     }
                 }
-            }
-            
-            item {
-                Text(
-                    text = "Set a sleep timer from the Now Playing screen. The timer will automatically stop music playback after the specified duration, perfect for falling asleep to your favorite tracks.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
             }
             
             item { Spacer(modifier = Modifier.height(8.dp)) }
@@ -2266,11 +2948,18 @@ fun SleepTimerSettingsScreen(onBackClick: () -> Unit) {
 
 // ✅ SIMPLIFIED Crash Log History Screen
 @Composable
-fun CrashLogHistorySettingsScreen(onBackClick: () -> Unit) {
+fun CrashLogHistorySettingsScreen(
+    onBackClick: () -> Unit,
+    appSettings: AppSettings
+) {
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+    val crashLogHistory by appSettings.crashLogHistory.collectAsState()
+    var showLogDetailDialog by remember { mutableStateOf(false) }
+    var selectedLog: String? by remember { mutableStateOf(null) }
     
     CollapsibleHeaderScreen(
-        title = "Crash Logs",
+        title = "Crash Log History",
         showBackButton = true,
         onBackClick = onBackClick
     ) { modifier ->
@@ -2282,86 +2971,249 @@ fun CrashLogHistorySettingsScreen(onBackClick: () -> Unit) {
         ) {
             item { Spacer(modifier = Modifier.height(8.dp)) }
             
+            // Header Info Card
             item {
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
                     )
                 ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.BugReport,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onErrorContainer,
-                                modifier = Modifier.size(32.dp)
+                    Row(
+                        modifier = Modifier.padding(20.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.BugReport,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = "Application Crash Reports",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onErrorContainer
                             )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column {
-                                Text(
-                                    text = "Crash Log History",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onErrorContainer
-                                )
-                                Text(
-                                    text = "App error reports",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
-                                )
-                            }
+                            Text(
+                                text = if (crashLogHistory.isEmpty()) "No crashes recorded" 
+                                      else "${crashLogHistory.size} crash ${if (crashLogHistory.size == 1) "log" else "logs"} found",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f)
+                            )
                         }
                     }
                 }
             }
             
-            item {
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Diagnostic Information",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer
-                            )
-                        }
+            // Empty State
+            if (crashLogHistory.isEmpty()) {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 48.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "No crashes",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(80.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "• View detailed error logs\n• Export logs for debugging\n• Share with developers\n• Clear old crash reports",
+                            text = "No Crash Logs Found",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Your app is running smoothly!",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
+            } else {
+                // Crash Log List
+                item {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Recent Crashes",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                    )
+                }
+                
+                items(crashLogHistory.size) { index ->
+                    val entry = crashLogHistory[index]
+                    val dateFormat = remember { java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()) }
+                    
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                                selectedLog = entry.log
+                                showLogDetailDialog = true
+                            }
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.BugReport,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = dateFormat.format(java.util.Date(entry.timestamp)),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = entry.log.lines().firstOrNull() ?: "No details available.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
             }
             
+            // Action Buttons
             item {
-                Text(
-                    text = "Crash logs help developers identify and fix issues. If you experience problems, you can view crash logs in the advanced debugging section or share them with the development team.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.ContextClick)
+                            appSettings.clearCrashLogHistory()
+                        },
+                        enabled = crashLogHistory.isNotEmpty(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        ),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Clear All Logs", fontWeight = FontWeight.SemiBold)
+                    }
+                    
+                    Button(
+                        onClick = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.ContextClick)
+                            chromahub.rhythm.app.util.CrashReporter.testCrash()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                        ),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Test Crash", fontWeight = FontWeight.SemiBold)
+                    }
+                }
             }
             
-            item { Spacer(modifier = Modifier.height(8.dp)) }
+            item { Spacer(modifier = Modifier.height(16.dp)) }
         }
+    }
+    
+    // Log Detail Dialog
+    if (showLogDetailDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+                showLogDetailDialog = false 
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.BugReport,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = { 
+                Text(
+                    "Crash Log Details",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                ) 
+            },
+            text = {
+                OutlinedTextField(
+                    value = selectedLog ?: "No log details available.",
+                    onValueChange = { },
+                    readOnly = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp),
+                    textStyle = MaterialTheme.typography.bodySmall,
+                    shape = RoundedCornerShape(12.dp)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.ContextClick)
+                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        val clip = android.content.ClipData.newPlainText("Rhythm Crash Log", selectedLog)
+                        clipboard.setPrimaryClip(clip)
+                        showLogDetailDialog = false
+                        android.widget.Toast.makeText(context, "Log copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+                    },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Copy Log")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { 
+                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+                        showLogDetailDialog = false 
+                    },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Close")
+                }
+            },
+            shape = RoundedCornerShape(24.dp)
+        )
     }
 }
 

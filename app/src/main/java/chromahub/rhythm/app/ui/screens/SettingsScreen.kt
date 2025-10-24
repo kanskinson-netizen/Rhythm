@@ -191,14 +191,16 @@ fun SettingsScreen(
     val context = LocalContext.current
     var showTuner by remember { mutableStateOf(false) }
     
+    val appSettings = remember { AppSettings.getInstance(context) }
+    
     if (showTuner) {
         chromahub.rhythm.app.ui.screens.tuner.SettingsScreen(
-            onBack = { showTuner = false }
+            onBack = { showTuner = false },
+            appSettings = appSettings
         )
         return
     }
     
-    val appSettings = remember { AppSettings.getInstance(context) }
     val musicViewModel: MusicViewModel = viewModel()
 
     // Collect playlists for playlist management
