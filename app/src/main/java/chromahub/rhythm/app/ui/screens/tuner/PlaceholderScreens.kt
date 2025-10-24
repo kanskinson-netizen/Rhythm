@@ -856,9 +856,8 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
         ) 
     }
     
-    // Tab state
-    var selectedTabIndex by remember { mutableStateOf(0) }
-    val tabs = listOf("Songs", "Folders")
+    // View state
+    var currentView by remember { mutableStateOf("overview") } // "overview", "songs", "folders"
     
     // Computed values OUTSIDE LazyColumn
     val filteredSongDetails = remember(allSongs, blacklistedSongs, whitelistedSongs, currentMode) {
@@ -876,184 +875,238 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
             chromahub.rhythm.app.ui.screens.MediaScanMode.WHITELIST -> whitelistedFolders
         }
     }
-    
+
+    val settingGroups = listOf(
+        SettingGroup(
+            title = "Mode Selection",
+            items = listOf(
+                SettingItem(
+                    Icons.Default.Block,
+                    "Blacklist Mode",
+                    "Hide specific songs and folders from your library",
+                    toggleState = currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST,
+                    onToggleChange = { enabled ->
+                        if (enabled) {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                            currentMode = chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST
+                            appSettings.setMediaScanMode("blacklist")
+                        }
+                    }
+                ),
+                SettingItem(
+                    Icons.Default.CheckCircle,
+                    "Whitelist Mode",
+                    "Only show songs from selected folders",
+                    toggleState = currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.WHITELIST,
+                    onToggleChange = { enabled ->
+                        if (enabled) {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                            currentMode = chromahub.rhythm.app.ui.screens.MediaScanMode.WHITELIST
+                            appSettings.setMediaScanMode("whitelist")
+                        }
+                    }
+                )
+            )
+        ),
+        SettingGroup(
+            title = "Information",
+            items = listOf(
+                SettingItem(
+                    Icons.Default.Info,
+                    "How It Works",
+                    if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST)
+                        "Hide specific songs or folders from library. Perfect for excluding ringtones and notifications."
+                    else
+                        "Only show songs from selected folders. Create a curated library.",
+                    onClick = {} // Read-only info
+                )
+            )
+        ),
+        SettingGroup(
+            title = "Song Management",
+            items = listOf(
+                SettingItem(
+                    Icons.AutoMirrored.Filled.QueueMusic,
+                    "Manage Songs",
+                    "${filteredSongDetails.size} ${if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) "blocked" else "whitelisted"} songs",
+                    onClick = {
+                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                        currentView = "songs"
+                    }
+                ),
+                SettingItem(
+                    Icons.Default.Clear,
+                    "Clear All Songs",
+                    "Remove all ${if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) "blocked" else "whitelisted"} songs",
+                    onClick = {
+                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                        if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) {
+                            appSettings.clearBlacklist()
+                        } else {
+                            appSettings.clearWhitelist()
+                        }
+                    }
+                )
+            )
+        ),
+        SettingGroup(
+            title = "Folder Management",
+            items = listOf(
+                SettingItem(
+                    Icons.Default.Folder,
+                    "Manage Folders",
+                    "${filteredFoldersList.size} ${if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) "blocked" else "whitelisted"} folders",
+                    onClick = {
+                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                        currentView = "folders"
+                    }
+                ),
+                SettingItem(
+                    Icons.Default.Clear,
+                    "Clear All Folders",
+                    "Remove all ${if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) "blocked" else "whitelisted"} folders",
+                    onClick = {
+                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                        if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) {
+                            blacklistedFolders.forEach { folder ->
+                                appSettings.removeFolderFromBlacklist(folder)
+                            }
+                        } else {
+                            whitelistedFolders.forEach { folder ->
+                                appSettings.removeFolderFromWhitelist(folder)
+                            }
+                        }
+                    }
+                )
+            )
+        )
+    )
+
     CollapsibleHeaderScreen(
-        title = "Media Scan",
+        title = if (currentView == "overview") "Media Scan" else if (currentView == "songs") "Manage Songs" else "Manage Folders",
         showBackButton = true,
-        onBackClick = onBackClick
+        onBackClick = {
+            if (currentView != "overview") {
+                currentView = "overview"
+            } else {
+                onBackClick()
+            }
+        }
     ) { modifier ->
         LazyColumn(
             modifier = modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            item { Spacer(modifier = Modifier.height(8.dp)) }
-            
-            // Mode toggle
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(4.dp)
-                    ) {
-                        // Blacklist mode button
-                        FilterChip(
-                            onClick = { 
-                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
-                                currentMode = chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST
-                                appSettings.setMediaScanMode("blacklist")
-                            },
-                            label = { 
-                                Text(
-                                    "Blacklist",
-                                    fontWeight = if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) FontWeight.Bold else FontWeight.Normal
-                                ) 
-                            },
-                            selected = currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST,
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Filled.Block,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.errorContainer,
-                                selectedLabelColor = MaterialTheme.colorScheme.onErrorContainer,
-                                selectedLeadingIconColor = MaterialTheme.colorScheme.onErrorContainer
-                            ),
-                            modifier = Modifier.weight(1f)
-                        )
-                        
-                        Spacer(modifier = Modifier.width(8.dp))
-                        
-                        // Whitelist mode button
-                        FilterChip(
-                            onClick = { 
-                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
-                                currentMode = chromahub.rhythm.app.ui.screens.MediaScanMode.WHITELIST
-                                appSettings.setMediaScanMode("whitelist")
-                            },
-                            label = { 
-                                Text(
-                                    "Whitelist",
-                                    fontWeight = if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.WHITELIST) FontWeight.Bold else FontWeight.Normal
-                                ) 
-                            },
-                            selected = currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.WHITELIST,
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Filled.CheckCircle,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            ),
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-            }
-            
-            // How It Works Card
-            item {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
-                    ),
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+            when (currentView) {
+                "songs" -> {
+                    // Songs list
+                    item {
+                        Spacer(modifier = Modifier.height(8.dp))
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(bottom = 12.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.Info,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = "How It Works",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer
-                            )
-                        }
-                        
-                        if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) {
-                            Text(
-                                text = "• Hide specific songs or folders from library\n• Perfect for excluding ringtones and notifications\n• All other music remains visible",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer
-                            )
-                        } else {
-                            Text(
-                                text = "• Only show songs from selected folders\n• Create a curated library\n• All other music will be hidden",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer
-                            )
-                        }
-                    }
-                }
-            }
-            
-            // Tabs
-            item {
-                TabRow(
-                    selectedTabIndex = selectedTabIndex,
-                    modifier = Modifier.fillMaxWidth(),
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                    indicator = { tabPositions ->
-                        TabRowDefaults.Indicator(
-                            Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                            color = if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) 
-                                MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                        )
-                    }
-                ) {
-                    tabs.forEachIndexed { index, title ->
-                        Tab(
-                            selected = selectedTabIndex == index,
-                            onClick = {
-                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
-                                selectedTabIndex = index
-                            },
-                            text = {
-                                Text(
-                                    text = title,
-                                    fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
+                            Card(
+                                modifier = Modifier.weight(1f),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) 
+                                        MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer
                                 )
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(
+                                        text = "${filteredSongDetails.size}",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) "Blocked" else "Whitelisted",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
                             }
-                        )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Card(
+                                modifier = Modifier.weight(1f),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                                )
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(
+                                        text = "${allSongs.size}",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "Total",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            }
+                        }
                     }
-                }
-            }
-            
-            // Tab content - Songs tab
-            if (selectedTabIndex == 0) {
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
+                    
+                    items(filteredSongDetails, key = { it.id }) { song ->
                         Card(
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = song.title,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = song.artist,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                                IconButton(
+                                    onClick = {
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                                        if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) {
+                                            appSettings.removeFromBlacklist(song.id)
+                                        } else {
+                                            appSettings.removeFromWhitelist(song.id)
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.RemoveCircle,
+                                        contentDescription = "Remove",
+                                        tint = if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) 
+                                            MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
+                    item { Spacer(modifier = Modifier.height(8.dp)) }
+                }
+                "folders" -> {
+                    // Folders list
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
                                 containerColor = if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) 
                                     MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer
@@ -1061,191 +1114,93 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(
-                                    text = "${filteredSongDetails.size}",
+                                    text = "${filteredFoldersList.size}",
                                     style = MaterialTheme.typography.headlineMedium,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) "Blocked" else "Whitelisted",
+                                    text = if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) "Blocked Folders" else "Whitelisted Folders",
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
+                    }
+                    
+                    items(filteredFoldersList) { folder ->
                         Card(
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                                containerColor = MaterialTheme.colorScheme.surface
                             )
                         ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(
-                                    text = "${allSongs.size}",
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "Total",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = folder,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                                IconButton(
+                                    onClick = {
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                                        if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) {
+                                            appSettings.removeFolderFromBlacklist(folder)
+                                        } else {
+                                            appSettings.removeFolderFromWhitelist(folder)
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.RemoveCircle,
+                                        contentDescription = "Remove",
+                                        tint = if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) 
+                                            MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
                         }
                     }
+                    
+                    item { Spacer(modifier = Modifier.height(8.dp)) }
                 }
-                
-                item {
-                    Button(
-                        onClick = {
-                            HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
-                            if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) {
-                                appSettings.clearBlacklist()
-                            } else {
-                                appSettings.clearWhitelist()
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Clear All")
-                    }
-                }
-                
-                items(filteredSongDetails, key = { it.id }) { song ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
+                else -> {
+                    // Overview - show setting groups
+                    items(settingGroups) { group ->
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            text = group.title,
+                            style = MaterialTheme.typography.titleSmall.copy(fontFamily = FontFamily.Default, fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
                         )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = song.title,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    text = song.artist,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                            IconButton(
-                                onClick = {
-                                    HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
-                                    if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) {
-                                        appSettings.removeFromBlacklist(song.id)
-                                    } else {
-                                        appSettings.removeFromWhitelist(song.id)
+                            Column {
+                                group.items.forEachIndexed { index, item ->
+                                    SettingRow(item = item)
+                                    if (index < group.items.lastIndex) {
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(horizontal = 20.dp),
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+                                        )
                                     }
                                 }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.RemoveCircle,
-                                    contentDescription = "Remove",
-                                    tint = if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) 
-                                        MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                    }
-                }
-            } else {
-                // Folders tab
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) 
-                                MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer
-                        )
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "${filteredFoldersList.size}",
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) "Blocked Folders" else "Whitelisted Folders",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                }
-                
-                item {
-                    Button(
-                        onClick = {
-                            HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
-                            if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) {
-                                blacklistedFolders.forEach { folder ->
-                                    appSettings.removeFolderFromBlacklist(folder)
-                                }
-                            } else {
-                                whitelistedFolders.forEach { folder ->
-                                    appSettings.removeFolderFromWhitelist(folder)
-                                }
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Clear All Folders")
-                    }
-                }
-                
-                items(filteredFoldersList) { folder ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = folder,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                            IconButton(
-                                onClick = {
-                                    HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
-                                    if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) {
-                                        appSettings.removeFolderFromBlacklist(folder)
-                                    } else {
-                                        appSettings.removeFolderFromWhitelist(folder)
-                                    }
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.RemoveCircle,
-                                    contentDescription = "Remove",
-                                    tint = if (currentMode == chromahub.rhythm.app.ui.screens.MediaScanMode.BLACKLIST) 
-                                        MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                                )
                             }
                         }
                     }
                 }
             }
-            
-            item { Spacer(modifier = Modifier.height(8.dp)) }
         }
     }
 }
