@@ -397,6 +397,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val _isMediaScanning = MutableStateFlow(false)
     val isMediaScanning: StateFlow<Boolean> = _isMediaScanning.asStateFlow()
 
+    // Genre detection state
+    private val _isGenreDetectionComplete = MutableStateFlow(false)
+    val isGenreDetectionComplete: StateFlow<Boolean> = _isGenreDetectionComplete.asStateFlow()
+
     // Queue operation state
     private val _queueOperationError = MutableStateFlow<String?>(null)
     val queueOperationError: StateFlow<String?> = _queueOperationError.asStateFlow()
@@ -646,19 +650,26 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
      */
     private suspend fun detectGenresInBackground() {
         Log.d(TAG, "Starting background genre detection for ${songs.value.size} songs")
-
-        repository.detectGenresInBackground(
-            songs = songs.value,
-            onProgress = { current, total ->
-                // Optional: Could emit progress updates to UI if needed
-                Log.d(TAG, "Genre detection progress: $current/$total")
-            },
-            onComplete = { updatedSongs ->
-                // Update the songs state with the new genre information
-                _songs.value = updatedSongs
-                Log.d(TAG, "Background genre detection completed, updated ${updatedSongs.count { it.genre != null }} songs with genres")
-            }
-        )
+        
+        try {
+            repository.detectGenresInBackground(
+                songs = songs.value,
+                onProgress = { current, total ->
+                    // Optional: Could emit progress updates to UI if needed
+                    Log.d(TAG, "Genre detection progress: $current/$total")
+                },
+                onComplete = { updatedSongs ->
+                    // Update the songs state with the new genre information
+                    _songs.value = updatedSongs
+                    _isGenreDetectionComplete.value = true
+                    Log.d(TAG, "Background genre detection completed, updated ${updatedSongs.count { it.genre != null }} songs with genres")
+                }
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error during background genre detection", e)
+            // Mark as complete even on error to prevent infinite loading
+            _isGenreDetectionComplete.value = true
+        }
     }
     
     /**
@@ -728,6 +739,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             Log.d(TAG, "Starting library refresh...")
             _isMediaScanning.value = true // Show media scan loader
             _isInitialized.value = false // Indicate that data is being refreshed
+            _isGenreDetectionComplete.value = false // Reset genre detection state
 
             try {
                 // Trigger the refresh in the repository
@@ -751,6 +763,26 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                         fetchArtworkFromInternet()
                     } catch (e: Exception) {
                         Log.w(TAG, "Artwork fetching failed but continuing with library refresh", e)
+                    }
+                }
+                
+                // Restart background genre detection for new or updated songs
+                launch {
+                    try {
+                        delay(2000) // Wait 2 seconds before starting genre detection
+                        detectGenresInBackground()
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error restarting background genre detection", e)
+                    }
+                }
+                
+                // Restart background audio metadata extraction
+                launch {
+                    try {
+                        delay(3000) // Wait 3 seconds before starting metadata extraction
+                        extractAudioMetadataInBackground()
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error restarting background audio metadata extraction", e)
                     }
                 }
 

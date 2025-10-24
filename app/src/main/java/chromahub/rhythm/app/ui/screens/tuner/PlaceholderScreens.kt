@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -92,22 +93,38 @@ fun NotificationsSettingsScreen(onBackClick: () -> Unit) {
     }
 }
 
-//@Composable
-//fun ThemingSettingsScreen(onBackClick: () -> Unit) {
-//    PlaceholderScreen(
-//        title = "Theming",
-//        description = "Customize app theme, colors, and appearance.",
-//        onBackClick = onBackClick
-//    )
-//}
-
 @Composable
 fun StreamingSettingsScreen(onBackClick: () -> Unit) {
-    PlaceholderScreen(
+    val context = LocalContext.current
+    val appSettings = AppSettings.getInstance(context)
+    val highQualityAudio by appSettings.highQualityAudio.collectAsState()
+    
+    CollapsibleHeaderScreen(
         title = "Streaming",
-        description = "Configure streaming sources and quality settings.",
+        showBackButton = true,
         onBackClick = onBackClick
-    )
+    ) { modifier ->
+        LazyColumn(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+            
+            item {
+                TunerSettingCard(
+                    title = "High Quality Audio",
+                    description = "Enable higher bitrate audio streaming and playback",
+                    icon = Icons.Default.HighQuality,
+                    checked = highQualityAudio,
+                    onCheckedChange = { appSettings.setHighQualityAudio(it) }
+                )
+            }
+            
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+        }
+    }
 }
 
 @Composable
@@ -119,9 +136,14 @@ fun AudioSettingsScreen(onBackClick: () -> Unit) {
     val crossfade by appSettings.crossfade.collectAsState()
     val audioNormalization by appSettings.audioNormalization.collectAsState()
     val replayGain by appSettings.replayGain.collectAsState()
+    val shuffleUsesExoplayer by appSettings.shuffleUsesExoplayer.collectAsState()
+    val autoAddToQueue by appSettings.autoAddToQueue.collectAsState()
+    val clearQueueOnNewSong by appSettings.clearQueueOnNewSong.collectAsState()
+    val repeatModePersistence by appSettings.repeatModePersistence.collectAsState()
+    val shuffleModePersistence by appSettings.shuffleModePersistence.collectAsState()
     
     CollapsibleHeaderScreen(
-        title = "Audio",
+        title = "Audio & Playback",
         showBackButton = true,
         onBackClick = onBackClick
     ) { modifier ->
@@ -132,6 +154,17 @@ fun AudioSettingsScreen(onBackClick: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item { Spacer(modifier = Modifier.height(8.dp)) }
+            
+            // Audio Quality Section
+            item {
+                Text(
+                    text = "Audio Quality",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                )
+            }
             
             item {
                 TunerSettingCard(
@@ -167,7 +200,7 @@ fun AudioSettingsScreen(onBackClick: () -> Unit) {
                 TunerSettingCard(
                     title = "Audio Normalization",
                     description = "Adjust volume levels to consistent loudness",
-                    icon = Icons.Default.TuneRounded,
+                    icon = Icons.Rounded.Tune,
                     checked = audioNormalization,
                     onCheckedChange = { appSettings.setAudioNormalization(it) }
                 )
@@ -183,6 +216,69 @@ fun AudioSettingsScreen(onBackClick: () -> Unit) {
                 )
             }
             
+            // Queue & Playback Behavior Section
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+            
+            item {
+                Text(
+                    text = "Queue & Playback Behavior",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                )
+            }
+            
+            item {
+                TunerSettingCard(
+                    title = "Use ExoPlayer Shuffle",
+                    description = "Let the media player handle shuffle (recommended: OFF)",
+                    icon = RhythmIcons.Shuffle,
+                    checked = shuffleUsesExoplayer,
+                    onCheckedChange = { appSettings.setShuffleUsesExoplayer(it) }
+                )
+            }
+            
+            item {
+                TunerSettingCard(
+                    title = "Auto Queue",
+                    description = "Automatically add related songs to queue when playing",
+                    icon = RhythmIcons.Queue,
+                    checked = autoAddToQueue,
+                    onCheckedChange = { appSettings.setAutoAddToQueue(it) }
+                )
+            }
+            
+            item {
+                TunerSettingCard(
+                    title = "Clear Queue on New Song",
+                    description = "Clear the current queue when playing a new song directly",
+                    icon = RhythmIcons.Delete,
+                    checked = clearQueueOnNewSong,
+                    onCheckedChange = { appSettings.setClearQueueOnNewSong(it) }
+                )
+            }
+            
+            item {
+                TunerSettingCard(
+                    title = "Remember Repeat Mode",
+                    description = "Save repeat mode (Off/All/One) between app restarts",
+                    icon = RhythmIcons.Repeat,
+                    checked = repeatModePersistence,
+                    onCheckedChange = { appSettings.setRepeatModePersistence(it) }
+                )
+            }
+            
+            item {
+                TunerSettingCard(
+                    title = "Remember Shuffle Mode",
+                    description = "Save shuffle on/off state between app restarts",
+                    icon = RhythmIcons.Shuffle,
+                    checked = shuffleModePersistence,
+                    onCheckedChange = { appSettings.setShuffleModePersistence(it) }
+                )
+            }
+            
             item { Spacer(modifier = Modifier.height(8.dp)) }
         }
     }
@@ -190,11 +286,71 @@ fun AudioSettingsScreen(onBackClick: () -> Unit) {
 
 @Composable
 fun DownloadsSettingsScreen(onBackClick: () -> Unit) {
-    PlaceholderScreen(
-        title = "Downloads",
-        description = "Manage downloaded music and storage preferences.",
+    val context = LocalContext.current
+    val appSettings = AppSettings.getInstance(context)
+    val maxCacheSize by appSettings.maxCacheSize.collectAsState()
+    val clearCacheOnExit by appSettings.clearCacheOnExit.collectAsState()
+    
+    CollapsibleHeaderScreen(
+        title = "Storage & Cache",
+        showBackButton = true,
         onBackClick = onBackClick
-    )
+    ) { modifier ->
+        LazyColumn(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+            
+            item {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Storage,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(
+                                    text = "Cache Size",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "${String.format("%.1f", maxCacheSize / (1024f * 1024f))} MB maximum",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            
+            item {
+                TunerSettingCard(
+                    title = "Auto Clear Cache",
+                    description = "Automatically clear cache when exiting the app",
+                    icon = Icons.Default.DeleteSweep,
+                    checked = clearCacheOnExit,
+                    onCheckedChange = { appSettings.setClearCacheOnExit(it) }
+                )
+            }
+            
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+        }
+    }
 }
 
 @Composable
@@ -210,27 +366,128 @@ fun OfflineModeSettingsScreen(onBackClick: () -> Unit) {
 fun PlaylistsSettingsScreen(onBackClick: () -> Unit) {
     PlaceholderScreen(
         title = "Playlists",
-        description = "Manage playlist preferences and behavior.",
+        description = "Manage playlist preferences and behavior.\n\nThis would integrate with the main Settings screen's Playlist Management feature.",
         onBackClick = onBackClick
     )
 }
 
 @Composable
 fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
-    PlaceholderScreen(
+    val context = LocalContext.current
+    val appSettings = AppSettings.getInstance(context)
+    val blacklistedSongs by appSettings.blacklistedSongs.collectAsState()
+    val blacklistedFolders by appSettings.blacklistedFolders.collectAsState()
+    
+    CollapsibleHeaderScreen(
         title = "Media Scan",
-        description = "Configure how media files are scanned and indexed.",
+        showBackButton = true,
         onBackClick = onBackClick
-    )
+    ) { modifier ->
+        LazyColumn(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+            
+            item {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Block,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(
+                                    text = "Blacklisted Items",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "${blacklistedSongs.size} songs, ${blacklistedFolders.size} folders",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Use the main Settings screen to manage blacklisted media and folders.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+        }
+    }
 }
 
 @Composable
 fun AboutScreen(onBackClick: () -> Unit) {
-    PlaceholderScreen(
-        title = "About Rhythm",
-        description = "Rhythm Music Player - Tuner Beta\n\nVersion information and app details.",
+    CollapsibleHeaderScreen(
+        title = "About",
+        showBackButton = true,
         onBackClick = onBackClick
-    )
+    ) { modifier ->
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MusicNote,
+                    contentDescription = "Rhythm",
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Rhythm Music Player",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "Tuner Beta",
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "New modern settings interface\nwith improved organization and design",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -282,11 +539,64 @@ fun UpdatesSettingsScreen(onBackClick: () -> Unit) {
 
 @Composable
 fun ExperimentalFeaturesScreen(onBackClick: () -> Unit) {
-    PlaceholderScreen(
+    val context = LocalContext.current
+    val appSettings = AppSettings.getInstance(context)
+    val hapticFeedbackEnabled by appSettings.hapticFeedbackEnabled.collectAsState()
+    
+    CollapsibleHeaderScreen(
         title = "Experimental Features",
-        description = "Enable or disable experimental features and beta functionality.",
+        showBackButton = true,
         onBackClick = onBackClick
-    )
+    ) { modifier ->
+        LazyColumn(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+            
+            item {
+                TunerSettingCard(
+                    title = "Haptic Feedback",
+                    description = "Vibrate when tapping buttons and interacting with the interface",
+                    icon = Icons.Default.Vibration,
+                    checked = hapticFeedbackEnabled,
+                    onCheckedChange = { appSettings.setHapticFeedbackEnabled(it) }
+                )
+            }
+            
+            item {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Science,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "More experimental features coming soon in future updates",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+        }
+    }
 }
 
 // Reusable setting card component

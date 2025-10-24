@@ -105,22 +105,32 @@ fun TunerSettingsScreen(
     ) { modifier ->
         val settingGroups = listOf(
             SettingGroup(
-                title = "General",
+                title = "Appearance",
                 items = listOf(
-                    SettingItem(Icons.Default.Notifications, "Notifications", "Manage your notification preferences", onClick = { onNavigateTo(SettingsRoutes.NOTIFICATIONS) }),
-                    SettingItem(Icons.Default.Palette, "Theming", "Customize app theme and appearance", onClick = { onNavigateTo(SettingsRoutes.THEMING) })
+                    SettingItem(Icons.Default.Palette, "Theme", "Customize app theme and appearance", onClick = { /* TODO: Add theme settings */ })
                 )
             ),
             SettingGroup(
-                title = "Media",
+                title = "Notifications & Alerts",
+                items = listOf(
+                    SettingItem(Icons.Default.Notifications, "Notifications", "Manage notification preferences", onClick = { onNavigateTo(SettingsRoutes.NOTIFICATIONS) })
+                )
+            ),
+            SettingGroup(
+                title = "Audio & Playback",
                 items = buildList {
                     if (!isOfflineModeEnabled) {
-                        add(SettingItem(Icons.Default.GraphicEq, "Streaming", "Streaming sources and quality settings", onClick = { onNavigateTo(SettingsRoutes.STREAMING) }))
+                        add(SettingItem(Icons.Default.GraphicEq, "Streaming", "Audio quality and streaming settings", onClick = { onNavigateTo(SettingsRoutes.STREAMING) }))
                     }
-                    add(SettingItem(Icons.Default.Equalizer, "Audio", "Audio effects and sound settings", onClick = { onNavigateTo(SettingsRoutes.AUDIO) }))
-                    if (!isOfflineModeEnabled) {
-                        add(SettingItem(Icons.Default.Download, "Downloads", "Manage downloaded music and storage", onClick = { onNavigateTo(SettingsRoutes.DOWNLOADS) }))
-                    }
+                    add(SettingItem(Icons.Default.Equalizer, "Audio", "Audio effects, queue, and playback settings", onClick = { onNavigateTo(SettingsRoutes.AUDIO) }))
+                }
+            ),
+            SettingGroup(
+                title = "Library & Storage",
+                items = buildList {
+                    add(SettingItem(Icons.Default.Folder, "Media Scan", "Manage blacklist and media scanning", onClick = { onNavigateTo(SettingsRoutes.MEDIA_SCAN) }))
+                    add(SettingItem(Icons.AutoMirrored.Filled.QueueMusic, "Playlists", "Manage your playlists", onClick = { onNavigateTo(SettingsRoutes.PLAYLISTS) }))
+                    add(SettingItem(Icons.Default.Download, "Storage & Cache", "Manage cache and storage", onClick = { onNavigateTo(SettingsRoutes.DOWNLOADS) }))
                     add(
                         SettingItem(
                             Icons.Default.CloudOff,
@@ -134,33 +144,26 @@ fun TunerSettingsScreen(
                             }
                         )
                     )
-                    add(SettingItem(Icons.AutoMirrored.Filled.QueueMusic, "Playlists", "Manage your playlists", onClick = { onNavigateTo(SettingsRoutes.PLAYLISTS) }))
                 }
             ),
             SettingGroup(
-                title = "Library",
+                title = "Updates & Info",
                 items = listOf(
-                    SettingItem(Icons.Default.Folder, "Media Scan", "Manage how media files are scanned", onClick = { onNavigateTo(SettingsRoutes.MEDIA_SCAN) })
-                )
-            ),
-            SettingGroup(
-                title = "About",
-                items = listOf(
-                    SettingItem(Icons.Default.Info, "About Rhythm", "Tuner Beta", onClick = { onNavigateTo(SettingsRoutes.ABOUT) }),
                     SettingItem(
                         Icons.Default.Update,
                         "Updates",
-                        "Automatically check for app updates",
+                        "Manage app updates and auto-check",
                         onClick = { onNavigateTo(SettingsRoutes.UPDATES) },
                         toggleState = isUpdatesEnabled,
                         onToggleChange = { newValue -> isUpdatesEnabled = newValue }
-                    )
+                    ),
+                    SettingItem(Icons.Default.Info, "About", "Tuner Beta version info", onClick = { onNavigateTo(SettingsRoutes.ABOUT) })
                 )
             ),
             SettingGroup(
                 title = "Advanced",
                 items = listOf(
-                    SettingItem(Icons.Default.Science, "Experimental Features", "Enable or disable experimental features", onClick = { onNavigateTo(SettingsRoutes.EXPERIMENTAL_FEATURES) })
+                    SettingItem(Icons.Default.Science, "Experimental Features", "Beta functionality and haptic feedback", onClick = { onNavigateTo(SettingsRoutes.EXPERIMENTAL_FEATURES) })
                 )
             )
         )

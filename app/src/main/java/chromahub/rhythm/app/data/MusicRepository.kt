@@ -2562,66 +2562,87 @@ class MusicRepository(context: Context) {
         onProgress: ((Int, Int) -> Unit)? = null,
         onComplete: ((List<Song>) -> Unit)? = null
     ) = withContext(Dispatchers.IO) {
-        val songsWithoutGenres = songs.filter { it.genre == null }
-        if (songsWithoutGenres.isEmpty()) {
-            Log.d(TAG, "All songs already have genres, skipping background detection")
-            onComplete?.invoke(songs)
-            return@withContext
-        }
+        try {
+            val songsWithoutGenres = songs.filter { 
+                it.genre == null || it.genre.isBlank() || it.genre.equals("unknown", ignoreCase = true) 
+            }
+            
+            if (songsWithoutGenres.isEmpty()) {
+                Log.d(TAG, "All songs already have genres, skipping background detection")
+                onComplete?.invoke(songs)
+                return@withContext
+            }
 
-        Log.d(TAG, "Starting background genre detection for ${songsWithoutGenres.size} songs")
-        val updatedSongs = mutableListOf<Song>()
-        val batchSize = 50 // Process in smaller batches for better responsiveness
-        var processedCount = 0
+            Log.d(TAG, "Starting background genre detection for ${songsWithoutGenres.size} songs out of ${songs.size} total")
+            val updatedSongs = mutableListOf<Song>()
+            val batchSize = 50 // Process in smaller batches for better responsiveness
+            var processedCount = 0
 
-        songsWithoutGenres.chunked(batchSize).forEach { batch ->
-            val batchStartTime = System.currentTimeMillis()
+            songsWithoutGenres.chunked(batchSize).forEach { batch ->
+                val batchStartTime = System.currentTimeMillis()
 
-            batch.forEach { song ->
-                try {
-                    val songId = song.id.toLongOrNull() ?: return@forEach
-                    val contentUri = song.uri
-                    val genre = getGenreForSong(context, contentUri, songId.toInt())
+                batch.forEach { song ->
+                    try {
+                        val songId = song.id.toLongOrNull()
+                        if (songId == null) {
+                            Log.w(TAG, "Invalid song ID for ${song.title}, skipping")
+                            updatedSongs.add(song)
+                            processedCount++
+                            onProgress?.invoke(processedCount, songsWithoutGenres.size)
+                            return@forEach
+                        }
+                        
+                        val contentUri = song.uri
+                        val genre = getGenreForSong(context, contentUri, songId.toInt())
 
-                    if (genre != null) {
-                        val updatedSong = song.copy(genre = genre)
-                        updatedSongs.add(updatedSong)
-                        Log.d(TAG, "Detected genre '$genre' for song: ${song.title}")
-                    } else {
-                        // Keep the original song if no genre was found
-                        updatedSongs.add(song)
+                        if (genre != null && genre.isNotBlank() && !genre.equals("unknown", ignoreCase = true)) {
+                            val updatedSong = song.copy(genre = genre)
+                            updatedSongs.add(updatedSong)
+                            Log.d(TAG, "Detected genre '$genre' for song: ${song.title}")
+                        } else {
+                            // Keep the original song if no valid genre was found
+                            updatedSongs.add(song)
+                        }
+
+                        processedCount++
+                        onProgress?.invoke(processedCount, songsWithoutGenres.size)
+
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Error detecting genre for song ${song.title}", e)
+                        updatedSongs.add(song) // Keep original song on error
+                        processedCount++
+                        onProgress?.invoke(processedCount, songsWithoutGenres.size)
                     }
+                }
 
-                    processedCount++
-                    onProgress?.invoke(processedCount, songsWithoutGenres.size)
+                val batchEndTime = System.currentTimeMillis()
+                val batchDuration = batchEndTime - batchStartTime
+                Log.d(TAG, "Processed batch of ${batch.size} songs in ${batchDuration}ms")
 
-                } catch (e: Exception) {
-                    Log.w(TAG, "Error detecting genre for song ${song.title}", e)
-                    updatedSongs.add(song) // Keep original song on error
-                    processedCount++
-                    onProgress?.invoke(processedCount, songsWithoutGenres.size)
+                // Yield control to allow other coroutines to run
+                yield()
+
+                // Small delay between batches to prevent overwhelming the system
+                if (batchDuration < 100) { // If batch processed quickly, add a small delay
+                    delay(50)
                 }
             }
 
-            val batchEndTime = System.currentTimeMillis()
-            val batchDuration = batchEndTime - batchStartTime
-            Log.d(TAG, "Processed batch of ${batch.size} songs in ${batchDuration}ms")
-
-            // Yield control to allow other coroutines to run
-            yield()
-
-            // Small delay between batches to prevent overwhelming the system
-            if (batchDuration < 100) { // If batch processed quickly, add a small delay
-                delay(50)
+            val finalSongs = songs.map { originalSong ->
+                updatedSongs.find { it.id == originalSong.id } ?: originalSong
             }
-        }
 
-        val finalSongs = songs.map { originalSong ->
-            updatedSongs.find { it.id == originalSong.id } ?: originalSong
+            val genreCount = finalSongs.count { song -> 
+                song.genre != null && song.genre.isNotBlank() && !song.genre.equals("unknown", ignoreCase = true)
+            }
+            Log.d(TAG, "Background genre detection complete. $genreCount out of ${finalSongs.size} songs now have genres")
+            onComplete?.invoke(finalSongs)
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Critical error during genre detection", e)
+            // Always invoke onComplete to prevent hanging UI
+            onComplete?.invoke(songs)
         }
-
-        Log.d(TAG, "Background genre detection complete. Updated ${updatedSongs.size} songs with genres")
-        onComplete?.invoke(finalSongs)
     }
     
     /**

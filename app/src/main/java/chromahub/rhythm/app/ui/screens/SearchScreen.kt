@@ -42,6 +42,7 @@ import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DockedSearchBar
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -161,8 +162,8 @@ fun SearchScreen(
             else {
                 val query = searchQuery.lowercase()
                 songs.filter { song ->
-                    listOf(song.title, song.artist, song.album)
-                        .any { it.contains(query, ignoreCase = true) }
+                    listOf(song.title, song.artist, song.album, song.genre)
+                        .any { it?.contains(query, ignoreCase = true) == true }
                 }.sortedWith(compareBy<Song> { song ->
                     // Prioritize exact matches in title
                     when {
@@ -172,7 +173,9 @@ fun SearchScreen(
                         song.artist.lowercase().startsWith(query) -> 3
                         song.album.lowercase() == query -> 4
                         song.album.lowercase().startsWith(query) -> 5
-                        else -> 6
+                        song.genre?.lowercase() == query -> 6
+                        song.genre?.lowercase()?.startsWith(query) == true -> 7
+                        else -> 8
                     }
                 }.thenBy { it.title })
             }
@@ -677,11 +680,12 @@ fun SearchScreen(
                 }
             )
 
-            if (!isSearchActive) {
+            if (searchQuery.isEmpty()) {
                 val recommendedSongs = remember(viewModel) {
                     viewModel.getRecommendedSongs().take(4)
                 }
                 DefaultSearchContent(
+                    songs = songs,
                     searchHistory = searchHistory,
                     recentlyPlayed = recentlyPlayed,
                     recommendedSongs = recommendedSongs,
@@ -2089,6 +2093,7 @@ private fun EnhancedRecentChip(
 
 @Composable
 private fun DefaultSearchContent(
+    songs: List<Song>,
     searchHistory: List<String>,
     recentlyPlayed: List<Song>,
     recommendedSongs: List<Song>,
@@ -2306,6 +2311,18 @@ private fun DefaultSearchContent(
                 }
             }
         }
+        
+        // Genre-based Search/Browse section
+        item {
+            GenreBrowseSection(
+                songs = songs,
+                musicViewModel = viewModel(),
+                onGenreClick = { genre ->
+                    onSearchQuerySelect(genre)
+                }
+            )
+        }
+        
         if (recommendedSongs.isNotEmpty()) {
             item {
                 RecommendedForYouSection(
@@ -2749,6 +2766,156 @@ fun AllSongsPage(
                         onAddToPlaylist = { onAddSongToPlaylist(song) },
                         haptics = haptics // Pass haptics to SearchSongItem
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GenreBrowseSection(
+    songs: List<Song>,
+    musicViewModel: MusicViewModel,
+    onGenreClick: (String) -> Unit
+) {
+    val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+    
+    // Get genre detection state from ViewModel
+    val isGenreDetectionComplete by musicViewModel.isGenreDetectionComplete.collectAsState()
+    
+    // Extract unique genres from songs - recompute when songs change OR detection completes
+    val genres = remember(songs, isGenreDetectionComplete) {
+        songs.mapNotNull { song ->
+            song.genre?.takeIf { it.isNotBlank() && it.lowercase() != "unknown" }
+        }.distinct().sorted()
+    }
+    
+    // Always show the card, but vary the content based on state
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        ),
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = RhythmIcons.Actions.Tune,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = "Browse by Genre",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(start = 12.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Show appropriate content based on state
+            when {
+                !isGenreDetectionComplete -> {
+                    // Loading state
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(48.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                        )
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        Text(
+                            text = "Detecting genres...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                        
+                        Text(
+                            text = "Genre suggestions will appear here once detected",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
+                
+                genres.isEmpty() -> {
+                    // No genres found
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "No genres detected in your library",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+                
+                else -> {
+                    // Show genres in a 2x2 grid layout
+                    val rowCount = (genres.size + 1) / 2 // Calculate number of rows needed
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.height((rowCount * 90).dp) // Calculate height based on rows
+                    ) {
+                        items(genres) { genre ->
+                            val songCount = songs.count { it.genre?.equals(genre, ignoreCase = true) == true }
+                            
+                            Card(
+                                onClick = {
+                                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                                    onGenreClick(genre)
+                                },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                                ),
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = genre,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = "$songCount songs",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
