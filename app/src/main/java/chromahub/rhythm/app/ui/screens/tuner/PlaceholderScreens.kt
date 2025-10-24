@@ -3252,45 +3252,40 @@ private fun ColorSourceDialog(
             ) {
                 // Header
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 20.dp)
+                        .padding(horizontal = 0.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Palette,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
                     Column {
                         Text(
                             text = "Color Source",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.displayMedium,
+                            fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Text(
-                            text = "Choose how colors are extracted",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 6.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    shape = CircleShape
+                                )
+                        ) {
+                            Text(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.labelLarge,
+                                text = "Choose how colors are extracted",
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 1,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
                 
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     ColorSource.entries.forEach { source ->
@@ -3450,45 +3445,40 @@ private fun FontSourceDialog(
             ) {
                 // Header
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 20.dp)
+                        .padding(horizontal = 0.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.TextFields,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
                     Column {
                         Text(
                             text = "Font Source",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.displayMedium,
+                            fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Text(
-                            text = "Choose where to load fonts from",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 6.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    shape = CircleShape
+                                )
+                        ) {
+                            Text(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.labelLarge,
+                                text = "Choose where to load fonts from",
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 1,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
                 
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     FontSource.entries.forEach { source ->
@@ -3704,45 +3694,40 @@ private fun ColorSchemesDialog(
             ) {
                 // Header
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 20.dp)
+                        .padding(horizontal = 0.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.ColorLens,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
                     Column {
                         Text(
                             text = "Color Schemes",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.displayMedium,
+                            fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Text(
-                            text = "Choose from preset color schemes",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 6.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    shape = CircleShape
+                                )
+                        ) {
+                            Text(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.labelLarge,
+                                text = "Choose from preset color schemes",
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 1,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
                 
                 if (selectedColorSource != ColorSource.CUSTOM) {
                     Column(
@@ -4005,45 +3990,40 @@ private fun CustomColorsDialog(
             ) {
                 // Header
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 20.dp)
+                        .padding(horizontal = 0.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Brush,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
                     Column {
                         Text(
                             text = "Custom Color Picker",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.displayMedium,
+                            fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Text(
-                            text = "Create your own color scheme",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 6.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    shape = CircleShape
+                                )
+                        ) {
+                            Text(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.labelLarge,
+                                text = "Create your own color scheme",
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 1,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
                 
                 if (selectedColorSource != ColorSource.CUSTOM) {
                     Column(
@@ -4071,68 +4051,73 @@ private fun CustomColorsDialog(
                         )
                     }
                 } else {
-                    Column(modifier = Modifier.fillMaxWidth()) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
                         // Color preview row with selection
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 20.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            ColorPreviewItem(
-                                label = "Primary",
-                                color = primaryColor,
-                                isSelected = selectedColorType == ColorType.PRIMARY,
-                                onClick = {
-                                    HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
-                                    selectedColorType = ColorType.PRIMARY
-                                }
-                            )
-                            ColorPreviewItem(
-                                label = "Secondary",
-                                color = secondaryColor,
-                                isSelected = selectedColorType == ColorType.SECONDARY,
-                                onClick = {
-                                    HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
-                                    selectedColorType = ColorType.SECONDARY
-                                }
-                            )
-                            ColorPreviewItem(
-                                label = "Tertiary",
-                                color = tertiaryColor,
-                                isSelected = selectedColorType == ColorType.TERTIARY,
-                                onClick = {
-                                    HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
-                                    selectedColorType = ColorType.TERTIARY
-                                }
-                            )
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                ColorPreviewItem(
+                                    label = "Primary",
+                                    color = primaryColor,
+                                    isSelected = selectedColorType == ColorType.PRIMARY,
+                                    onClick = {
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                                        selectedColorType = ColorType.PRIMARY
+                                    }
+                                )
+                                ColorPreviewItem(
+                                    label = "Secondary",
+                                    color = secondaryColor,
+                                    isSelected = selectedColorType == ColorType.SECONDARY,
+                                    onClick = {
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                                        selectedColorType = ColorType.SECONDARY
+                                    }
+                                )
+                                ColorPreviewItem(
+                                    label = "Tertiary",
+                                    color = tertiaryColor,
+                                    isSelected = selectedColorType == ColorType.TERTIARY,
+                                    onClick = {
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                                        selectedColorType = ColorType.TERTIARY
+                                    }
+                                )
+                            }
                         }
 
                         // Color picker controls
-                        when (selectedColorType) {
-                            ColorType.PRIMARY -> ColorPickerControls(
-                                color = primaryColor,
-                                onColorChange = { primaryColor = it }
-                            )
-                            ColorType.SECONDARY -> ColorPickerControls(
-                                color = secondaryColor,
-                                onColorChange = { secondaryColor = it }
-                            )
-                            ColorType.TERTIARY -> ColorPickerControls(
-                                color = tertiaryColor,
-                                onColorChange = { tertiaryColor = it }
-                            )
+                        item {
+                            when (selectedColorType) {
+                                ColorType.PRIMARY -> ColorPickerControls(
+                                    color = primaryColor,
+                                    onColorChange = { primaryColor = it }
+                                )
+                                ColorType.SECONDARY -> ColorPickerControls(
+                                    color = secondaryColor,
+                                    onColorChange = { secondaryColor = it }
+                                )
+                                ColorType.TERTIARY -> ColorPickerControls(
+                                    color = tertiaryColor,
+                                    onColorChange = { tertiaryColor = it }
+                                )
+                            }
                         }
 
-                        // Preset colors
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            text = "Quick Presets",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        // Preset colors section
+                        item {
+                            Text(
+                                text = "Quick Presets",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
 
                         val presetColors = listOf(
                             Color(0xFF5C4AD5), Color(0xFFFF6B35), Color(0xFF1E88E5),
@@ -4142,11 +4127,8 @@ private fun CustomColorsDialog(
                         )
 
                         // Preset color grid
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            presetColors.chunked(6).forEach { rowColors ->
+                        presetColors.chunked(6).forEach { rowColors ->
+                            item {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -4177,49 +4159,55 @@ private fun CustomColorsDialog(
                         }
 
                         // Buttons
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            OutlinedButton(
-                                onClick = onDismiss,
-                                modifier = Modifier.weight(1f),
-                                border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline)
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Close,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Cancel")
+                                OutlinedButton(
+                                    onClick = onDismiss,
+                                    modifier = Modifier.weight(1f),
+                                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Close,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Cancel")
+                                }
+                                Button(
+                                    onClick = {
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+                                        onApply(primaryColor, secondaryColor, tertiaryColor)
+                                        val primaryHex = String.format("%06X", (primaryColor.toArgb() and 0xFFFFFF))
+                                        val secondaryHex = String.format("%06X", (secondaryColor.toArgb() and 0xFFFFFF))
+                                        val tertiaryHex = String.format("%06X", (tertiaryColor.toArgb() and 0xFFFFFF))
+                                        val customScheme = "custom_${primaryHex}_${secondaryHex}_${tertiaryHex}"
+                                        appSettings.setCustomColorScheme(customScheme)
+                                        Toast.makeText(context, "Custom colors applied!", Toast.LENGTH_SHORT).show()
+                                        onDismiss()
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary
+                                    )
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Check,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Apply")
+                                }
                             }
-                            Button(
-                                onClick = {
-                                    HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
-                                    onApply(primaryColor, secondaryColor, tertiaryColor)
-                                    val primaryHex = String.format("%06X", (primaryColor.toArgb() and 0xFFFFFF))
-                                    val secondaryHex = String.format("%06X", (secondaryColor.toArgb() and 0xFFFFFF))
-                                    val tertiaryHex = String.format("%06X", (tertiaryColor.toArgb() and 0xFFFFFF))
-                                    val customScheme = "custom_${primaryHex}_${secondaryHex}_${tertiaryHex}"
-                                    appSettings.setCustomColorScheme(customScheme)
-                                    Toast.makeText(context, "Custom colors applied!", Toast.LENGTH_SHORT).show()
-                                    onDismiss()
-                                },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                )
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Apply")
-                            }
+                        }
+
+                        // Bottom padding
+                        item {
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
                 }
@@ -4732,45 +4720,40 @@ private fun FontSelectionDialog(
             ) {
                 // Header
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 20.dp)
+                        .padding(horizontal = 0.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.TextFields,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
                     Column {
                         Text(
                             text = "Font Selection",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.displayMedium,
+                            fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Text(
-                            text = "Choose from available system fonts",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 6.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    shape = CircleShape
+                                )
+                        ) {
+                            Text(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.labelLarge,
+                                text = "Choose from available system fonts",
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 1,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
                 
                 if (selectedFontSource != FontSource.SYSTEM) {
                     Column(
@@ -4961,69 +4944,64 @@ private fun ParticleIntensityDialog(
                     .padding(bottom = 24.dp)
                     .graphicsLayer(alpha = contentAlpha)
             ) {
-                // Header
+                // Header 
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 20.dp)
+                        .padding(horizontal = 0.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Speed,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
                     Column {
                         Text(
                             text = "Particle Intensity",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.displayMedium,
+                            fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Text(
-                            text = "Control particle effect density",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 6.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    shape = CircleShape
+                                )
+                        ) {
+                            Text(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.labelLarge,
+                                text = "Control particle effect density",
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 1,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
-                
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = "Adjust the intensity of festive particles. Higher values create more particles.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 24.dp)
-                    )
 
-                    // Current intensity display
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Intensity: ${(intensity * 100).toInt()}%",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
+//                Spacer(modifier = Modifier.height(16.dp))
+//
+                Column(modifier = Modifier.fillMaxWidth()) {
+//                    Text(
+//                        text = "Adjust the intensity of festive particles. Higher values create more particles.",
+//                        style = MaterialTheme.typography.bodyMedium,
+//                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+//                        modifier = Modifier.padding(bottom = 24.dp)
+//                    )
+//
+//                    // Current intensity display
+//                    Row(
+//                        modifier = Modifier.fillMaxWidth(),
+//                        horizontalArrangement = Arrangement.Center,
+//                        verticalAlignment = Alignment.CenterVertically
+//                    ) {
+//                        Text(
+//                            text = "Intensity: ${(intensity * 100).toInt()}%",
+//                            style = MaterialTheme.typography.titleMedium,
+//                            fontWeight = FontWeight.SemiBold,
+//                            color = MaterialTheme.colorScheme.onSurface
+//                        )
+//                    }
 
                     Spacer(modifier = Modifier.height(24.dp))
 
