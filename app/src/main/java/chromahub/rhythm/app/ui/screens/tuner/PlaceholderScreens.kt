@@ -415,315 +415,151 @@ fun PlaylistsSettingsScreen(onBackClick: () -> Unit) {
     var operationProgressText by remember { mutableStateOf("") }
     var showCleanupConfirmDialog by remember { mutableStateOf(false) }
 
+    val settingGroups = listOf(
+        SettingGroup(
+            title = "Overview",
+            items = listOf(
+                SettingItem(
+                    Icons.Default.BarChart,
+                    "Collection Statistics",
+                    "${playlists.size} total • ${userPlaylists.size} custom • ${defaultPlaylists.size} default",
+                    onClick = {} // Read-only info
+                )
+            )
+        ),
+        SettingGroup(
+            title = "Management",
+            items = listOf(
+                SettingItem(
+                    Icons.Default.AddCircle,
+                    "Create New Playlist",
+                    "Add a new custom playlist",
+                    onClick = {
+                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                        showCreatePlaylistDialog = true
+                    }
+                ),
+                SettingItem(
+                    Icons.Default.Upload,
+                    "Import Playlists",
+                    "Import from JSON, M3U, or PLS files",
+                    onClick = {
+                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                        showImportDialog = true
+                    }
+                ),
+                SettingItem(
+                    Icons.Default.Download,
+                    "Export All Playlists",
+                    "Backup all playlists to file",
+                    onClick = {
+                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                        showBulkExportDialog = true
+                    }
+                )
+            ) + if (emptyPlaylists.isNotEmpty()) listOf(
+                SettingItem(
+                    Icons.Default.Delete,
+                    "Cleanup Empty Playlists",
+                    "Remove ${emptyPlaylists.size} empty playlist${if (emptyPlaylists.size > 1) "s" else ""}",
+                    onClick = {
+                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                        showCleanupConfirmDialog = true
+                    }
+                )
+            ) else emptyList()
+        ),
+        SettingGroup(
+            title = "Default Playlists",
+            items = if (defaultPlaylists.isNotEmpty()) {
+                defaultPlaylists.map { playlist ->
+                    SettingItem(
+                        Icons.Default.MusicNote,
+                        playlist.name,
+                        "${playlist.songs.size} songs",
+                        onClick = {} // Could navigate to playlist view
+                    )
+                }
+            } else {
+                listOf(
+                    SettingItem(
+                        Icons.Default.Info,
+                        "No Default Playlists",
+                        "Default playlists are automatically created",
+                        onClick = {}
+                    )
+                )
+            }
+        ),
+        SettingGroup(
+            title = "My Playlists",
+            items = if (userPlaylists.isNotEmpty()) {
+                userPlaylists.map { playlist ->
+                    SettingItem(
+                        Icons.Default.QueueMusic,
+                        playlist.name,
+                        "${playlist.songs.size} songs",
+                        onClick = {} // Could navigate to playlist view
+                    )
+                }
+            } else {
+                listOf(
+                    SettingItem(
+                        Icons.Default.Add,
+                        "No Custom Playlists",
+                        "Create your first playlist to get started",
+                        onClick = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                            showCreatePlaylistDialog = true
+                        }
+                    )
+                )
+            }
+        )
+    )
+
     CollapsibleHeaderScreen(
         title = "Playlists",
         showBackButton = true,
-        onBackClick = onBackClick
+        onBackClick = {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            onBackClick()
+        }
     ) { modifier ->
         LazyColumn(
             modifier = modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            item { Spacer(modifier = Modifier.height(8.dp)) }
-
-            // Statistics Card
-            item {
+            items(settingGroups) { group ->
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = group.title,
+                    style = MaterialTheme.typography.titleSmall.copy(fontFamily = FontFamily.Default, fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+                )
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                    shape = RoundedCornerShape(16.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.BarChart,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = "Your Collection",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = "${playlists.size}",
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    Column {
+                        group.items.forEachIndexed { index, item ->
+                            SettingRow(item = item)
+                            if (index < group.items.lastIndex) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(horizontal = 20.dp),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
                                 )
-                                Text("Total", style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer)
-                            }
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = "${userPlaylists.size}",
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                Text("Custom", style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer)
-                            }
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = "${defaultPlaylists.size}",
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                Text("Default", style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer)
                             }
                         }
                     }
                 }
             }
-
-            // Management Actions
-            item {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Settings,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = "Manage Playlists",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        TunerSettingCard(
-                            icon = Icons.Rounded.AddCircle,
-                            title = "Create New Playlist",
-                            description = "Add a new custom playlist",
-                            onClick = {
-                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
-                                showCreatePlaylistDialog = true
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        TunerSettingCard(
-                            icon = Icons.Rounded.Upload,
-                            title = "Import Playlists",
-                            description = "Import from JSON, M3U, or PLS files",
-                            onClick = {
-                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
-                                showImportDialog = true
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        TunerSettingCard(
-                            icon = Icons.Rounded.Download,
-                            title = "Export All Playlists",
-                            description = "Backup all playlists to file",
-                            onClick = {
-                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
-                                showBulkExportDialog = true
-                            }
-                        )
-
-                        if (emptyPlaylists.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(12.dp))
-                            TunerSettingCard(
-                                icon = Icons.Rounded.Delete,
-                                title = "Cleanup Empty Playlists",
-                                description = "Remove ${emptyPlaylists.size} empty playlist${if (emptyPlaylists.size > 1) "s" else ""}",
-                                onClick = {
-                                    HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
-                                    showCleanupConfirmDialog = true
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Default Playlists
-            if (defaultPlaylists.isNotEmpty()) {
-                item {
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(20.dp)) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Star,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    text = "Default Playlists",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                defaultPlaylists.forEach { playlist ->
-                                    Card(
-                                        colors = CardDefaults.cardColors(
-                                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                        ),
-                                        shape = RoundedCornerShape(12.dp)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(16.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.MusicNote,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(32.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(16.dp))
-                                            Column(modifier = Modifier.weight(1f)) {
-                                                Text(
-                                                    text = playlist.name,
-                                                    style = MaterialTheme.typography.bodyLarge,
-                                                    fontWeight = FontWeight.Medium
-                                                )
-                                                Text(
-                                                    text = "${playlist.songs.size} songs",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // User Playlists
-            if (userPlaylists.isNotEmpty()) {
-                item {
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(20.dp)) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Person,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    text = "My Playlists",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                userPlaylists.forEach { playlist ->
-                                    Card(
-                                        colors = CardDefaults.cardColors(
-                                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                        ),
-                                        shape = RoundedCornerShape(12.dp)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(16.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.QueueMusic,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(32.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(16.dp))
-                                            Column(modifier = Modifier.weight(1f)) {
-                                                Text(
-                                                    text = playlist.name,
-                                                    style = MaterialTheme.typography.bodyLarge,
-                                                    fontWeight = FontWeight.Medium
-                                                )
-                                                Text(
-                                                    text = "${playlist.songs.size} songs",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            }
-                                            IconButton(
-                                                onClick = {
-                                                    HapticUtils.performHapticFeedback(
-                                                        context,
-                                                        haptic,
-                                                        HapticFeedbackType.TextHandleMove
-                                                    )
-                                                    playlistToDelete = playlist
-                                                }
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Delete,
-                                                    contentDescription = "Delete",
-                                                    tint = MaterialTheme.colorScheme.error
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            item { Spacer(modifier = Modifier.height(8.dp)) }
         }
     }
 
