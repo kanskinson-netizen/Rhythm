@@ -72,6 +72,8 @@ import chromahub.rhythm.app.viewmodel.MusicViewModel
 import chromahub.rhythm.app.ui.theme.getFontPreviewStyle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.MainScope
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -1203,6 +1205,330 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
             }
         }
     }
+}
+
+@Composable
+fun ApiServiceRow(
+    title: String,
+    description: String,
+    status: String,
+    isConfigured: Boolean,
+    icon: ImageVector,
+    isEnabled: Boolean = true,
+    showToggle: Boolean = false,
+    onToggle: ((Boolean) -> Unit)? = null,
+    onClick: () -> Unit
+) {
+    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
+    
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(16.dp)
+    ) {
+        // Icon
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(
+                    when {
+                        !isEnabled -> MaterialTheme.colorScheme.surfaceVariant
+                        isConfigured -> MaterialTheme.colorScheme.primaryContainer
+                        else -> MaterialTheme.colorScheme.errorContainer
+                    }
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = when {
+                    !isEnabled -> MaterialTheme.colorScheme.onSurfaceVariant
+                    isConfigured -> MaterialTheme.colorScheme.onPrimaryContainer
+                    else -> MaterialTheme.colorScheme.onErrorContainer
+                },
+                modifier = Modifier.size(24.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        // Content
+        Column(modifier = Modifier.weight(1f)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Surface(
+                    color = when {
+                        !isEnabled -> MaterialTheme.colorScheme.surfaceVariant
+                        isConfigured -> MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                        else -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                    },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = if (!isEnabled) "Disabled" else status,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = when {
+                            !isEnabled -> MaterialTheme.colorScheme.onSurfaceVariant
+                            isConfigured -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.onErrorContainer
+                        },
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (isEnabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            )
+        }
+
+        // Toggle or Arrow icon
+        if (showToggle && onToggle != null) {
+            Switch(
+                checked = isEnabled,
+                onCheckedChange = { enabled ->
+                    HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                    onToggle(enabled)
+                },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = MaterialTheme.colorScheme.primary,
+                    checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            )
+        } else {
+            // Arrow icon (only for configurable services)
+            if (title == "Spotify Canvas") {
+                Icon(
+                    imageVector = RhythmIcons.Forward,
+                    contentDescription = "Configure",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SpotifyApiConfigDialog(
+    currentClientId: String,
+    currentClientSecret: String,
+    onDismiss: () -> Unit,
+    onSave: (clientId: String, clientSecret: String) -> Unit,
+    appSettings: AppSettings
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    var clientId by remember { mutableStateOf(currentClientId) }
+    var clientSecret by remember { mutableStateOf(currentClientSecret) }
+    var isTestingConnection by remember { mutableStateOf(false) }
+    var testResult by remember { mutableStateOf<Pair<Boolean, String>?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Spotify API Configuration",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Enter your Spotify API credentials to enable track search and Canvas videos.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                // Check if using default keys and display a warning
+                val isUsingDefaultKeys =
+                    currentClientId.isEmpty() && currentClientSecret.isEmpty()
+                if (isUsingDefaultKeys) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "You are currently using the app's default Spotify keys. For full functionality and to avoid rate limits, please input your own Client ID and Secret.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                        }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = clientId,
+                    onValueChange = {
+                        clientId = it
+                        testResult = null
+                    },
+                    label = { Text("Client ID") },
+                    placeholder = { Text("Your Spotify Client ID") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = clientSecret,
+                    onValueChange = {
+                        clientSecret = it
+                        testResult = null
+                    },
+                    label = { Text("Client Secret") },
+                    placeholder = { Text("Your Spotify Client Secret") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                // Test connection button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                isTestingConnection = true
+                                try {
+                                    // Temporarily set the credentials for testing
+                                    appSettings.setSpotifyClientId(clientId)
+                                    appSettings.setSpotifyClientSecret(clientSecret)
+
+                                    val canvasRepository =
+                                        chromahub.rhythm.app.data.CanvasRepository(
+                                            context,
+                                            appSettings
+                                        )
+                                    testResult = canvasRepository.testSpotifyApiConfiguration()
+                                } catch (e: Exception) {
+                                    testResult = Pair(false, "Error: ${e.message}")
+                                } finally {
+                                    isTestingConnection = false
+                                }
+                            }
+                        },
+                        enabled = !isTestingConnection && clientId.isNotBlank() && clientSecret.isNotBlank(),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        if (isTestingConnection) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        Text(if (isTestingConnection) "Testing..." else "Test Connection")
+                    }
+                }
+
+                // Test result display
+                testResult?.let { (success, message) ->
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (success)
+                                MaterialTheme.colorScheme.primaryContainer
+                            else
+                                MaterialTheme.colorScheme.errorContainer
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = if (success) Icons.Default.CheckCircle else Icons.Default.Error,
+                                contentDescription = null,
+                                tint = if (success)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                else
+                                    MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = message,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (success)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                else
+                                    MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
+
+                // Help text
+                Text(
+                    text = "To get your Spotify API credentials:\n• Go to developer.spotify.com\n• Create a new app\n• Copy the Client ID and Client Secret",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onSave(clientId, clientSecret)
+                },
+                enabled = clientId.isNotBlank() && clientSecret.isNotBlank()
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Save,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable
@@ -5084,6 +5410,20 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
     val context = LocalContext.current
     val hapticFeedback = LocalHapticFeedback.current
     val appSettings = AppSettings.getInstance(context)
+    val scope = rememberCoroutineScope()
+    
+    // API states
+    val deezerApiEnabled by appSettings.deezerApiEnabled.collectAsState()
+    val canvasApiEnabled by appSettings.canvasApiEnabled.collectAsState()
+    val lrclibApiEnabled by appSettings.lrclibApiEnabled.collectAsState()
+    val ytMusicApiEnabled by appSettings.ytMusicApiEnabled.collectAsState()
+    val spotifyApiEnabled by appSettings.spotifyApiEnabled.collectAsState()
+    val spotifyClientId by appSettings.spotifyClientId.collectAsState()
+    val spotifyClientSecret by appSettings.spotifyClientSecret.collectAsState()
+    val appleMusicApiEnabled by appSettings.appleMusicApiEnabled.collectAsState()
+    
+    // Spotify API dialog state
+    var showSpotifyConfigDialog by remember { mutableStateOf(false) }
 
     CollapsibleHeaderScreen(
         title = "API Management",
@@ -5097,10 +5437,15 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            item { Spacer(modifier = Modifier.height(24.dp)) }
+            
+           
+            
+            // API Services
             item {
-                Spacer(modifier = Modifier.height(24.dp))
                 Text(
                     text = "External Services",
                     style = MaterialTheme.typography.titleSmall.copy(
@@ -5117,36 +5462,188 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Column {
-                        TunerSettingRow(SettingItem(
-                            icon = Icons.Default.Api,
-                            title = "Last.fm Integration",
-                            description = "Connect to Last.fm for scrobbling",
-                            onClick = { /* TODO: Implement Last.fm settings */ }
-                        ))
+                        // Deezer API
+                        ApiServiceRow(
+                            title = "Deezer",
+                            description = "Free artist images and album artwork - no setup needed",
+                            status = "Ready",
+                            isConfigured = true,
+                            isEnabled = deezerApiEnabled,
+                            icon = Icons.Default.Public,
+                            showToggle = true,
+                            onToggle = { enabled -> appSettings.setDeezerApiEnabled(enabled) },
+                            onClick = { /* No configuration needed */ }
+                        )
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 20.dp),
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
                         )
-                        TunerSettingRow(SettingItem(
-                            icon = Icons.Default.MusicNote,
-                            title = "MusicBrainz",
-                            description = "Metadata lookup and corrections",
-                            onClick = { /* TODO: Implement MusicBrainz settings */ }
-                        ))
+                        
+                        // Spotify Canvas API
+                        ApiServiceRow(
+                            title = "Spotify Canvas",
+                            description = if (spotifyClientId.isNotEmpty() && spotifyClientSecret.isNotEmpty()) {
+                                "Spotify integration for Canvas videos (High Data Usage)"
+                            } else {
+                                "Canvas videos from Spotify (Please use your own key!)"
+                            },
+                            status = if (spotifyClientId.isNotEmpty() && spotifyClientSecret.isNotEmpty()) {
+                                "Active"
+                            } else {
+                                "Need Setup"
+                            },
+                            isConfigured = true,
+                            isEnabled = canvasApiEnabled && (spotifyApiEnabled || true),
+                            icon = RhythmIcons.Song,
+                            showToggle = true,
+                            onToggle = { enabled -> 
+                                appSettings.setCanvasApiEnabled(enabled)
+                                // Auto-clear canvas cache when disabled
+                                if (!enabled) {
+                                    scope.launch {
+                                        try {
+                                            val canvasRepository = chromahub.rhythm.app.data.CanvasRepository(context, appSettings)
+                                            canvasRepository.clearCache()
+                                            Log.d("ApiManagement", "Canvas cache cleared due to API being disabled")
+                                        } catch (e: Exception) {
+                                            Log.e("ApiManagement", "Error clearing canvas cache", e)
+                                        }
+                                    }
+                                }
+                            },
+                            onClick = { 
+                                showSpotifyConfigDialog = true 
+                            }
+                        )
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 20.dp),
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
                         )
-                        TunerSettingRow(SettingItem(
-                            icon = Icons.Default.Cloud,
-                            title = "Cloud Services",
-                            description = "Sync with cloud storage",
-                            onClick = { /* TODO: Implement cloud settings */ }
-                        ))
+                        
+                        // Apple Music API
+                        ApiServiceRow(
+                            title = "Apple Music",
+                            description = "Word-by-word synchronized lyrics (Highest Quality)",
+                            status = "Ready",
+                            isConfigured = true,
+                            isEnabled = appleMusicApiEnabled,
+                            icon = RhythmIcons.Queue,
+                            showToggle = true,
+                            onToggle = { enabled -> appSettings.setAppleMusicApiEnabled(enabled) },
+                            onClick = { /* No configuration needed */ }
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 20.dp),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+                        )
+                        
+                        // LRCLib API
+                        ApiServiceRow(
+                            title = "LRCLib",
+                            description = "Free line-by-line synced lyrics (Fallback)",
+                            status = "Ready",
+                            isConfigured = true,
+                            isEnabled = lrclibApiEnabled,
+                            icon = RhythmIcons.Queue,
+                            showToggle = true,
+                            onToggle = { enabled -> appSettings.setLrcLibApiEnabled(enabled) },
+                            onClick = { /* No configuration needed */ }
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 20.dp),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+                        )
+                        
+                        // YouTube Music API
+                        ApiServiceRow(
+                            title = "YouTube Music",
+                            description = "Fallback for artist images and album artwork",
+                            status = "Ready",
+                            isConfigured = true,
+                            isEnabled = ytMusicApiEnabled,
+                            icon = RhythmIcons.Album,
+                            showToggle = true,
+                            onToggle = { enabled -> appSettings.setYTMusicApiEnabled(enabled) },
+                            onClick = { /* No configuration needed */ }
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 20.dp),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+                        )
+                        
+                        // GitHub API
+                        ApiServiceRow(
+                            title = "GitHub",
+                            description = "App updates and release information",
+                            status = "Ready",
+                            isConfigured = true,
+                            isEnabled = true, // Always enabled for updates
+                            icon = RhythmIcons.Download,
+                            showToggle = false, // Can't disable update checks
+                            onClick = { /* No configuration needed */ }
+                        )
+                    }
+                }
+            }
+            
+            item { Spacer(modifier = Modifier.height(24.dp)) }
+
+             item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Info,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "API Services",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                        }
+                        
+                        Text(
+                            text = "Control which external API services are active to enhance your music experience. Toggle services on/off to manage data usage and functionality.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
                     }
                 }
             }
         }
+    }
+    
+    // Spotify API Configuration Dialog
+    if (showSpotifyConfigDialog) {
+        SpotifyApiConfigDialog(
+            currentClientId = spotifyClientId,
+            currentClientSecret = spotifyClientSecret,
+            onDismiss = { showSpotifyConfigDialog = false },
+            onSave = { clientId, clientSecret ->
+                appSettings.setSpotifyClientId(clientId)
+                appSettings.setSpotifyClientSecret(clientSecret)
+                // Auto-enable API if credentials are provided
+                if (clientId.isNotEmpty() && clientSecret.isNotEmpty()) {
+                    appSettings.setSpotifyApiEnabled(true)
+                }
+                showSpotifyConfigDialog = false
+            },
+            appSettings = appSettings
+        )
     }
 }
 
