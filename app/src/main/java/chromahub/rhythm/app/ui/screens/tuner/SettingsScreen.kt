@@ -181,13 +181,13 @@ fun TunerSettingsScreen(
             SettingGroup(
                 title = "Library & Content",
                 items = listOf(
-                    SettingItem(
-                        Icons.Default.Person, 
-                        "Group by Album Artist", 
-                        "Show collaboration albums under main artist", 
-                        toggleState = groupByAlbumArtist,
-                        onToggleChange = { appSettings.setGroupByAlbumArtist(it) }
-                    ),
+                    // SettingItem(
+                    //     Icons.Default.Person, 
+                    //     "Group by Album Artist", 
+                    //     "Show collaboration albums under main artist", 
+                    //     toggleState = groupByAlbumArtist,
+                    //     onToggleChange = { appSettings.setGroupByAlbumArtist(it) }
+                    // ),
                     SettingItem(Icons.Default.Folder, "Media Scan", "Manage blacklist and media scanning", onClick = { onNavigateTo(SettingsRoutes.MEDIA_SCAN) }),
                     SettingItem(Icons.AutoMirrored.Filled.QueueMusic, "Playlists", "Manage your playlists", onClick = { onNavigateTo(SettingsRoutes.PLAYLISTS) })
                 )
@@ -223,6 +223,7 @@ fun TunerSettingsScreen(
                 title = "Advanced",
                 items = listOf(
                     SettingItem(Icons.Default.BugReport, "Crash Log History", "View and manage crash reports", onClick = { onNavigateTo(SettingsRoutes.CRASH_LOG_HISTORY) }),
+                    SettingItem(Icons.Default.Science, "Experimental Features", "Try out cutting-edge features", onClick = { onNavigateTo(SettingsRoutes.EXPERIMENTAL_FEATURES) }),
                     SettingItem(Icons.Default.Settings, "Use Classic Settings", "Switch to the old settings interface", onClick = { appSettings.setUseTunerSettings(false) })
                 )
             )
@@ -268,6 +269,10 @@ fun TunerSettingsScreen(
 
 @Composable
 fun SettingRow(item: SettingItem) {
+    val hapticFeedback = LocalHapticFeedback.current
+    val context = LocalContext.current
+    val appSettings = AppSettings.getInstance(context)
+    val hapticFeedbackEnabled by appSettings.hapticFeedbackEnabled.collectAsState()
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -289,9 +294,19 @@ fun SettingRow(item: SettingItem) {
                 .weight(1f)
                 .then(
                     if (item.onClick != {} && item.toggleState == null) {
-                        Modifier.clickable(onClick = item.onClick)
+                        Modifier.clickable(onClick = {
+                            if (hapticFeedbackEnabled) {
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            }
+                            item.onClick()
+                        })
                     } else if (item.onClick != {} && item.toggleState != null) {
-                        Modifier.clickable(onClick = item.onClick)
+                        Modifier.clickable(onClick = {
+                            if (hapticFeedbackEnabled) {
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            }
+                            item.onClick()
+                        })
                     } else {
                         Modifier
                     }
@@ -322,7 +337,12 @@ fun SettingRow(item: SettingItem) {
             )
             Switch(
                 checked = item.toggleState,
-                onCheckedChange = { item.onToggleChange?.invoke(it) },
+                onCheckedChange = {
+                    if (hapticFeedbackEnabled) {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    }
+                    item.onToggleChange?.invoke(it)
+                },
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = MaterialTheme.colorScheme.primary,
                     checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
@@ -333,7 +353,12 @@ fun SettingRow(item: SettingItem) {
         } else if (item.toggleState != null) {
             Switch(
                 checked = item.toggleState,
-                onCheckedChange = { item.onToggleChange?.invoke(it) },
+                onCheckedChange = {
+                    if (hapticFeedbackEnabled) {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    }
+                    item.onToggleChange?.invoke(it)
+                },
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = MaterialTheme.colorScheme.primary,
                     checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
