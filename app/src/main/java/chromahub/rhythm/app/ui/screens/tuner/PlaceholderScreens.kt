@@ -6,6 +6,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -14,11 +15,13 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.animation.core.Spring
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -43,12 +46,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -60,15 +69,21 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import chromahub.rhythm.app.BuildConfig
 import chromahub.rhythm.app.data.AppSettings
 import chromahub.rhythm.app.data.Playlist
 import chromahub.rhythm.app.data.Song
 import chromahub.rhythm.app.util.HapticUtils
+import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import kotlin.system.exitProcess
 import chromahub.rhythm.app.ui.components.CollapsibleHeaderScreen
 import chromahub.rhythm.app.ui.components.RhythmIcons
 import chromahub.rhythm.app.ui.components.StandardBottomSheetHeader
+import chromahub.rhythm.app.ui.screens.LicensesBottomSheet
 import chromahub.rhythm.app.viewmodel.MusicViewModel
+import chromahub.rhythm.app.viewmodel.AppUpdaterViewModel
 import chromahub.rhythm.app.ui.theme.getFontPreviewStyle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -79,6 +94,13 @@ import java.util.Date
 import java.util.Locale
 import chromahub.rhythm.app.utils.FontLoader
 import chromahub.rhythm.app.ui.theme.parseCustomColorScheme
+
+// Equalizer Preset Data Class
+data class EqualizerPreset(
+    val name: String,
+    val icon: ImageVector,
+    val bands: List<Float>
+)
 
 @Composable
 private fun TunerSettingRow(item: SettingItem) {
@@ -1369,55 +1391,881 @@ fun SpotifyApiConfigDialog(
 
 @Composable
 fun AboutScreen(onBackClick: () -> Unit) {
+    val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+    val appUpdaterViewModel: AppUpdaterViewModel = viewModel()
+    var showLicensesSheet by remember { mutableStateOf(false) }
+
     CollapsibleHeaderScreen(
         title = "About",
         showBackButton = true,
         onBackClick = onBackClick
     ) { modifier ->
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            contentAlignment = Alignment.Center
+        LazyColumn(
+            modifier = modifier.fillMaxSize(),
+            contentPadding = PaddingValues(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MusicNote,
-                    contentDescription = "Rhythm",
-                    modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "Rhythm Music Player",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Surface(
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = RoundedCornerShape(8.dp)
+            item {
+                // App Header Card
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = "Tuner Beta",
-                        style = MaterialTheme.typography.labelLarge,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(24.dp)
+                    ) {
+                        // App Icon
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = CircleShape,
+                            modifier = Modifier.size(80.dp)
+                        ) {
+                            Icon(
+                                imageVector = RhythmIcons.MusicNote,
+                                contentDescription = "Rhythm",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier
+                                    .padding(20.dp)
+                                    .size(40.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "Rhythm",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        Text(
+                            text = "Music Player",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Surface(
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "v${BuildConfig.VERSION_NAME}",
+                                style = MaterialTheme.typography.labelLarge,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "A modern, feature-rich music player for Android",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
+            }
+
+            item {
+                // Project Details Card
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        ) {
+                            Icon(
+                                imageVector = RhythmIcons.Actions.Info,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Project Details",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        DetailRow("Version", BuildConfig.VERSION_NAME)
+                        DetailRow("Build", BuildConfig.VERSION_CODE.toString())
+                        DetailRow("Target SDK", Build.VERSION.SDK_INT.toString())
+                        DetailRow("Architecture", "ARM64 & ARM32")
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "Built with modern Android technologies and Material Design 3",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            item {
+                // Features Card
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Star,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Features",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        FeatureItem(
+                            icon = RhythmIcons.MusicNote,
+                            title = "Advanced Audio Engine",
+                            description = "High-quality audio playback with customizable equalizer"
+                        )
+
+                        FeatureItem(
+                            icon = RhythmIcons.Playlist,
+                            title = "Smart Playlists",
+                            description = "Auto-generated playlists based on your listening habits"
+                        )
+
+                        FeatureItem(
+                            icon = RhythmIcons.Download,
+                            title = "Offline Mode",
+                            description = "Download music for offline listening"
+                        )
+
+                        FeatureItem(
+                            icon = Icons.Rounded.Sync,
+                            title = "Cross-Platform Sync",
+                            description = "Sync your music library across devices"
+                        )
+                    }
+                }
+            }
+
+            item {
+                // Credits Card
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        ) {
+                            Icon(
+                                imageVector = RhythmIcons.ArtistFilled,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Credits",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        CreditItem(
+                            name = "ChromaHub Team",
+                            role = "Lead Development",
+                            description = "Core development and maintenance of Rhythm"
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Team ChromaHub
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Text(
+                                    text = "Team ChromaHub",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "Passionate developers creating innovative experiences",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Acknowledgments
+                        Text(
+                            text = "Special Thanks",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        Text(
+                            text = "• Google Material Design Team for design principles\n" +
+                                  "• Android Open Source Project contributors\n" +
+                                  "• Jetpack Compose development team\n" +
+                                  "• Open source community for inspiration and libraries",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            lineHeight = 20.sp
+                        )
+                    }
+                }
+            }
+
+            item {
+                // Community Credits Card
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        ) {
+                            Icon(
+                                imageVector = RhythmIcons.FavoriteFilled,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Community",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        Text(
+                            text = "Special thanks to our amazing community members who have contributed to making Rhythm better through testing, feedback, suggestions, and collaboration.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            lineHeight = 20.sp,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
+                        // Community Members Grid
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            CommunityMember(
+                                name = "Izzy",
+                                role = "Manages updates on IzzyOnDroid",
+                                githubUsername = "IzzySoft",
+                                avatarUrl = "https://github.com/IzzySoft.png",
+                                context = context
+                            )
+
+                            CommunityMember(
+                                name = "Christian",
+                                role = "Collab & Project Booming's Lead Dev",
+                                githubUsername = "mardous",
+                                avatarUrl = "https://github.com/mardous.png",
+                                context = context
+                            )
+
+                            CommunityMember(
+                                name = "Alex",
+                                role = "Spotify Canvas API Integration",
+                                githubUsername = "Paxsenix0",
+                                avatarUrl = "https://github.com/Paxsenix0.png",
+                                context = context
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Community Call-to-Action
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Icon(
+                                    imageVector = RhythmIcons.FavoriteFilled,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.secondary,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Want to be featured here?",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                Text(
+                                    text = "Contribute to Rhythm through testing, feedback, or code contributions and join our amazing community!",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                // Open Source Licenses Button
+                Button(
+                    onClick = {
+                        HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                        showLicensesSheet = true
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start,
+                        modifier = Modifier
+                            .padding(vertical = 16.dp)
+                            .fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = RhythmIcons.Settings,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Text(
+                                text = "Open Source Libraries",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "View all dependencies and licenses",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            item {
+                // Action Buttons Card
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        ) {
+                            Icon(
+                                imageVector = RhythmIcons.Download,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Actions",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                                appUpdaterViewModel.checkForUpdates()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = RhythmIcons.Download,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "Check for Updates",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        }
+
+                        Button(
+                            onClick = {
+                                HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://rhythmweb.vercel.app/"))
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                context.startActivity(intent)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = RhythmIcons.Settings,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "Visit Website",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        }
+
+                        Button(
+                            onClick = {
+                                HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/cromaguy/Rhythm"))
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                context.startActivity(intent)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = RhythmIcons.ArtistFilled,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "View on GitHub",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        }
+
+                        Button(
+                            onClick = {
+                                HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/cromaguy/Rhythm/issues"))
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                context.startActivity(intent)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = RhythmIcons.Edit,
+                                    contentDescription = "Report Bug",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "Report Bug or Suggest Feature",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        }
+
+                        Button(
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/RhythmSupport"))
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                context.startActivity(intent)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = RhythmIcons.Telegram,
+                                    contentDescription = "Telegram Support",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "Telegram Support Group",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
                 Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    text = "New modern settings interface\nwith improved organization and design",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
             }
         }
+
+        // Show licenses bottom sheet
+        if (showLicensesSheet) {
+            LicensesBottomSheet(
+                onDismiss = { showLicensesSheet = false }
+            )
+        }
+    }
+}
+
+@Composable
+private fun CommunityMember(
+    name: String,
+    role: String,
+    githubUsername: String,
+    avatarUrl: String,
+    context: android.content.Context
+) {
+    val haptics = LocalHapticFeedback.current
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .clickable {
+                HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/$githubUsername"))
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+            }
+            .background(
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
+                shape = RoundedCornerShape(12.dp)
+            )
+            .padding(12.dp)
+    ) {
+        // Avatar with fallback
+        val fallbackPainter = rememberVectorPainter(RhythmIcons.ArtistFilled)
+
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(avatarUrl)
+                .crossfade(true)
+                .build(),
+            contentDescription = "$name's avatar",
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            error = fallbackPainter,
+            placeholder = fallbackPainter
+        )
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = role,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "@$githubUsername",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Medium
+            )
+        }
+
+        Icon(
+            imageVector = RhythmIcons.ArtistFilled,
+            contentDescription = "View GitHub Profile",
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
+    }
+}
+
+@Composable
+private fun FeatureItem(
+    icon: ImageVector,
+    title: String,
+    description: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.primaryContainer,
+            shape = CircleShape,
+            modifier = Modifier.size(48.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier
+                    .padding(12.dp)
+                    .size(24.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun DetailRow(
+    label: String,
+    value: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1.5f),
+            textAlign = TextAlign.End
+        )
+    }
+}
+
+@Composable
+private fun TechStackItem(
+    technology: String,
+    description: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.primaryContainer,
+            shape = RoundedCornerShape(6.dp),
+            modifier = Modifier.padding(top = 2.dp)
+        ) {
+            Text(
+                text = "•",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = technology,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun CreditItem(
+    name: String,
+    role: String,
+    description: String
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
+        Text(
+            text = name,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = role,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp)
+        )
     }
 }
 
@@ -1625,20 +2473,21 @@ fun CacheManagementSettingsScreen(onBackClick: () -> Unit) {
     val musicViewModel: MusicViewModel = viewModel()
     val scope = rememberCoroutineScope()
     val haptics = LocalHapticFeedback.current
-    
+
     // Collect states
     val maxCacheSize by appSettings.maxCacheSize.collectAsState()
     val clearCacheOnExit by appSettings.clearCacheOnExit.collectAsState()
-    
+
     // Local states
     var currentCacheSize by remember { mutableStateOf(0L) }
     var isCalculatingSize by remember { mutableStateOf(false) }
     var isClearingCache by remember { mutableStateOf(false) }
     var showCacheSizeDialog by remember { mutableStateOf(false) }
+    var showClearCacheSuccess by remember { mutableStateOf(false) }
     var cacheDetails by remember { mutableStateOf<Map<String, Long>>(emptyMap()) }
-    
+
     // Canvas repository for cache management
-    val canvasRepository = remember { 
+    val canvasRepository = remember {
         chromahub.rhythm.app.data.CanvasRepository(context, appSettings)
     }
 
@@ -1654,30 +2503,38 @@ fun CacheManagementSettingsScreen(onBackClick: () -> Unit) {
             isCalculatingSize = false
         }
     }
-    
+
+    // Show cache size dialog
+    if (showCacheSizeDialog) {
+        CacheSizeDialog(
+            currentSize = maxCacheSize,
+            onDismiss = { showCacheSizeDialog = false },
+            onSave = { size ->
+                appSettings.setMaxCacheSize(size)
+                showCacheSizeDialog = false
+            }
+        )
+    }
+
     CollapsibleHeaderScreen(
         title = "Cache Management",
         showBackButton = true,
         onBackClick = onBackClick
     ) { modifier ->
         LazyColumn(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = modifier.fillMaxSize(),
+            contentPadding = PaddingValues(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item { Spacer(modifier = Modifier.height(8.dp)) }
-            
             item {
+                // Header description
                 Text(
                     text = "Manage cached data including images, temporary files, and other app data.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            
-            item { Spacer(modifier = Modifier.height(8.dp)) }
-            
+
             // Current Cache Status
             item {
                 Card(
@@ -1704,9 +2561,9 @@ fun CacheManagementSettingsScreen(onBackClick: () -> Unit) {
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
-                        
+
                         Spacer(modifier = Modifier.height(16.dp))
-                        
+
                         if (isCalculatingSize) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -1741,9 +2598,9 @@ fun CacheManagementSettingsScreen(onBackClick: () -> Unit) {
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }
-                            
+
                             Spacer(modifier = Modifier.height(12.dp))
-                            
+
                             // Cache breakdown
                             cacheDetails.forEach { (label, size) ->
                                 if (size > 0) {
@@ -1765,9 +2622,9 @@ fun CacheManagementSettingsScreen(onBackClick: () -> Unit) {
                                     Spacer(modifier = Modifier.height(4.dp))
                                 }
                             }
-                            
+
                             Spacer(modifier = Modifier.height(12.dp))
-                            
+
                             // Cache limit
                             Row(
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1788,62 +2645,448 @@ fun CacheManagementSettingsScreen(onBackClick: () -> Unit) {
                     }
                 }
             }
-            
-            // Settings
+
+            // Max cache size setting
             item {
-                TunerSettingCard(
-                    title = "Clear Cache on Exit",
-                    description = "Automatically clear cache when exiting the app",
-                    icon = Icons.Default.DeleteSweep,
-                    checked = clearCacheOnExit,
-                    onCheckedChange = { appSettings.setClearCacheOnExit(it) }
-                )
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable {
+                            showCacheSizeDialog = true
+                            HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+                        }
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.DataUsage,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Maximum Cache Size",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "Set the storage limit for cached data",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "${String.format("%.1f", maxCacheSize / (1024f * 1024f))} MB",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(
+                            imageVector = Icons.Filled.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
-            
-            // Clear cache button
+
+            // Clear cache on exit toggle
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable {
+                            appSettings.setClearCacheOnExit(!clearCacheOnExit)
+                            HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+                        }
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = null,
+                            tint = if (clearCacheOnExit) MaterialTheme.colorScheme.primary
+                                  else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Clear Cache on Exit",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "Automatically clear cached data when app closes",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = clearCacheOnExit,
+                            onCheckedChange = {
+                                appSettings.setClearCacheOnExit(it)
+                                HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+                            }
+                        )
+                    }
+                }
+            }
+
+            // Clear cache now button
             item {
                 Button(
                     onClick = {
                         if (!isClearingCache) {
+                            HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+                            isClearingCache = true
                             scope.launch {
-                                isClearingCache = true
-                                HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
                                 try {
+                                    // Clear cache using CacheManager with canvas repository
+                                    chromahub.rhythm.app.util.CacheManager.clearAllCache(context, null, canvasRepository)
+
+                                    // Clear in-memory caches from MusicRepository
+                                    musicViewModel.getMusicRepository().clearInMemoryCaches()
+
+                                    // Recalculate cache size
                                     currentCacheSize = chromahub.rhythm.app.util.CacheManager.getCacheSize(context, canvasRepository)
                                     cacheDetails = chromahub.rhythm.app.util.CacheManager.getDetailedCacheSize(context, canvasRepository)
-                                    Toast.makeText(context, "Cache cleared successfully", Toast.LENGTH_SHORT).show()
+
+                                    showClearCacheSuccess = true
+                                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                                    delay(3000)
+                                    showClearCacheSuccess = false
                                 } catch (e: Exception) {
-                                    Toast.makeText(context, "Error clearing cache: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    Log.e("CacheManagement", "Error clearing cache", e)
                                 } finally {
                                     isClearingCache = false
                                 }
                             }
                         }
                     },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !isClearingCache && currentCacheSize > 0,
+                    enabled = !isClearingCache && !isCalculatingSize,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
-                    )
+                        containerColor = if (showClearCacheSuccess)
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            MaterialTheme.colorScheme.errorContainer,
+                        contentColor = if (showClearCacheSuccess)
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        else
+                            MaterialTheme.colorScheme.onErrorContainer
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     if (isClearingCache) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
+                            modifier = Modifier.size(18.dp),
                             strokeWidth = 2.dp,
                             color = MaterialTheme.colorScheme.onErrorContainer
                         )
                         Spacer(modifier = Modifier.width(8.dp))
+                        Text("Clearing cache...")
+                    } else if (showClearCacheSuccess) {
+                        Icon(
+                            imageVector = Icons.Filled.CheckCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Cache cleared!")
+                    } else {
+                        Icon(
+                            imageVector = Icons.Filled.Delete,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Clear All Cache")
                     }
-                    Icon(Icons.Default.DeleteSweep, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(if (isClearingCache) "Clearing..." else "Clear All Cache Now")
                 }
             }
-            
-            item { Spacer(modifier = Modifier.height(8.dp)) }
+
+            // Information section
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Info,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "About Cache",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                        }
+
+                        listOf(
+                            "Cache includes album art, temporary files, and app data",
+                            "Clearing cache may temporarily slow down the app",
+                            "Cached data will rebuild automatically as needed",
+                            "Auto-clearing helps maintain optimal performance"
+                        ).forEach { info ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(vertical = 6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.FiberManualRecord,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(8.dp),
+                                    tint = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = info,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+            }
         }
     }
+}
+
+// CacheSizeDialog composable for setting maximum cache size
+@Composable
+private fun CacheSizeDialog(
+    currentSize: Long,
+    onDismiss: () -> Unit,
+    onSave: (Long) -> Unit
+) {
+    val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+
+    // Convert size ranges to slider values (in MB)
+    val minSize = 64L * 1024L * 1024L // 64 MB
+    val maxSize = 2048L * 1024L * 1024L // 2 GB
+    val stepSize = 64L * 1024L * 1024L // 64 MB steps
+
+    // Current size in MB for slider
+    val currentSizeMB = (currentSize / (1024L * 1024L)).coerceIn(64L, 2048L)
+    var selectedSizeMB by remember { mutableFloatStateOf(currentSizeMB.toFloat()) }
+
+    // Helper function to format size display
+    fun formatSizeDisplay(sizeMB: Float): String {
+        return when {
+            sizeMB >= 1024f -> "${String.format("%.1f", sizeMB / 1024f)} GB"
+            else -> "${sizeMB.toInt()} MB"
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Max Cache Size",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = "Set the maximum size for cached audio and artwork.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Current selection display
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = formatSizeDisplay(selectedSizeMB),
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Text(
+                            text = "Cache Size Limit",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Slider
+                Column {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "64 MB",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "2 GB",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Slider(
+                        value = selectedSizeMB,
+                        onValueChange = { newValue ->
+                            // Snap to 64MB increments
+                            val snappedValue =
+                                ((newValue / 64f).toInt() * 64f).coerceIn(64f, 2048f)
+                            selectedSizeMB = snappedValue
+                            HapticUtils.performHapticFeedback(
+                                context,
+                                haptics,
+                                HapticFeedbackType.TextHandleMove
+                            )
+                        },
+                        valueRange = 64f..2048f,
+                        steps = ((2048 - 64) / 64) - 1, // Number of steps between min and max
+                        colors = androidx.compose.material3.SliderDefaults.colors(
+                            thumbColor = MaterialTheme.colorScheme.primary,
+                            activeTrackColor = MaterialTheme.colorScheme.primary,
+                            inactiveTrackColor = MaterialTheme.colorScheme.primaryContainer
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Quick size options
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    val quickSizes = listOf(128f, 256f, 512f, 1024f)
+                    val quickLabels = listOf("128MB", "256MB", "512MB", "1GB")
+
+                    quickSizes.forEachIndexed { index, size ->
+                        Surface(
+                            onClick = {
+                                selectedSizeMB = size
+                                HapticUtils.performHapticFeedback(
+                                    context,
+                                    haptics,
+                                    HapticFeedbackType.TextHandleMove
+                                )
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (selectedSizeMB == size)
+                                MaterialTheme.colorScheme.secondaryContainer
+                            else
+                                MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = quickLabels[index],
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (selectedSizeMB == size)
+                                    MaterialTheme.colorScheme.onSecondaryContainer
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    HapticUtils.performHapticFeedback(
+                        context,
+                        haptics,
+                        HapticFeedbackType.LongPress
+                    )
+                    val sizeInBytes = selectedSizeMB.toLong() * 1024L * 1024L
+                    onSave(sizeInBytes)
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Save,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Cancel")
+            }
+        },
+        shape = RoundedCornerShape(24.dp)
+    )
 }
 
 // BackupInfoItem composable for displaying backup information
@@ -5487,55 +6730,696 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
 @Composable
 fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
     val context = LocalContext.current
-    val hapticFeedback = LocalHapticFeedback.current
-    val appSettings = AppSettings.getInstance(context)
+    val haptics = LocalHapticFeedback.current
+    val musicViewModel: MusicViewModel = viewModel()
+    val scope = rememberCoroutineScope()
+    
+    // Collect states from settings
+    val equalizerEnabledState by musicViewModel.equalizerEnabled.collectAsState()
+    val equalizerPresetState by musicViewModel.equalizerPreset.collectAsState()
+    val equalizerBandLevelsState by musicViewModel.equalizerBandLevels.collectAsState()
+    val bassBoostEnabledState by musicViewModel.bassBoostEnabled.collectAsState()
+    val bassBoostStrengthState by musicViewModel.bassBoostStrength.collectAsState()
+    val virtualizerEnabledState by musicViewModel.virtualizerEnabled.collectAsState()
+    val virtualizerStrengthState by musicViewModel.virtualizerStrength.collectAsState()
+    
+    // Local mutable states for UI
+    var isEqualizerEnabled by remember(equalizerEnabledState) { mutableStateOf(equalizerEnabledState) }
+    var selectedPreset by remember(equalizerPresetState) { mutableStateOf(equalizerPresetState) }
+    var bandLevels by remember(equalizerBandLevelsState) { 
+        mutableStateOf(
+            equalizerBandLevelsState.split(",").mapNotNull { it.toFloatOrNull() }.let { levels ->
+                if (levels.size == 5) levels else List(5) { 0f }
+            }
+        )
+    }
+    var isBassBoostEnabled by remember(bassBoostEnabledState) { mutableStateOf(bassBoostEnabledState) }
+    var bassBoostStrength by remember(bassBoostStrengthState) { mutableFloatStateOf(bassBoostStrengthState.toFloat()) }
+    var isVirtualizerEnabled by remember(virtualizerEnabledState) { mutableStateOf(virtualizerEnabledState) }
+    var virtualizerStrength by remember(virtualizerStrengthState) { mutableFloatStateOf(virtualizerStrengthState.toFloat()) }
+    
+    // Preset definitions
+    val presets = listOf(
+        EqualizerPreset("Flat", Icons.Rounded.LinearScale, listOf(0f, 0f, 0f, 0f, 0f)),
+        EqualizerPreset("Rock", Icons.Rounded.MusicNote, listOf(5f, 3f, -2f, 2f, 8f)),
+        EqualizerPreset("Pop", Icons.Rounded.Star, listOf(2f, 5f, 3f, -1f, 2f)),
+        EqualizerPreset("Jazz", Icons.Rounded.Piano, listOf(4f, 2f, -2f, 2f, 6f)),
+        EqualizerPreset("Classical", Icons.Rounded.LibraryMusic, listOf(3f, -2f, -3f, -1f, 4f)),
+        EqualizerPreset("Electronic", Icons.Rounded.GraphicEq, listOf(6f, 4f, 1f, 3f, 7f)),
+        EqualizerPreset("Hip Hop", Icons.Rounded.GraphicEq, listOf(7f, 4f, 0f, 2f, 6f)),
+        EqualizerPreset("Vocal", Icons.Rounded.RecordVoiceOver, listOf(0f, 3f, 5f, 4f, 2f))
+    )
+    
+    val frequencyLabels = listOf("60Hz", "230Hz", "910Hz", "3.6kHz", "14kHz")
+    
+    // Functions
+    fun applyPreset(preset: EqualizerPreset) {
+        HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+        selectedPreset = preset.name
+        bandLevels = preset.bands
+        
+        // Save to settings
+        musicViewModel.appSettings.setEqualizerPreset(preset.name)
+        musicViewModel.appSettings.setEqualizerBandLevels(preset.bands.joinToString(","))
+        
+        // Apply to service
+        musicViewModel.applyEqualizerPreset(preset.name, preset.bands)
+    }
+    
+    fun updateBandLevel(band: Int, level: Float) {
+        val newLevels = bandLevels.toMutableList()
+        newLevels[band] = level
+        bandLevels = newLevels
+        selectedPreset = "Custom"
+        
+        // Save to settings
+        musicViewModel.appSettings.setEqualizerBandLevels(newLevels.joinToString(","))
+        musicViewModel.appSettings.setEqualizerPreset("Custom")
+        
+        // Apply to service
+        val levelShort = (level * 100).toInt().toShort()
+        musicViewModel.setEqualizerBandLevel(band.toShort(), levelShort)
+    }
 
     CollapsibleHeaderScreen(
         title = "Equalizer",
         showBackButton = true,
-        onBackClick = {
-            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-            onBackClick()
-        }
+        onBackClick = onBackClick
     ) { modifier ->
         LazyColumn(
-            modifier = modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = 24.dp)
+            modifier = modifier.fillMaxSize(),
+            contentPadding = PaddingValues(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Equalizer Enable/Disable Card
             item {
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    text = "Audio Equalization",
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontFamily = FontFamily.Default,
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
-                )
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Equalizer controls will be implemented here",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 16.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Equalizer,
+                            contentDescription = null,
+                            tint = if (isEqualizerEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(32.dp)
                         )
-                        // TODO: Implement equalizer controls
-                        Text(
-                            text = "Coming Soon",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.primary
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Equalizer",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = if (isEqualizerEnabled) "Active" else "Disabled",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = isEqualizerEnabled,
+                            onCheckedChange = { enabled ->
+                                HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+                                isEqualizerEnabled = enabled
+                                musicViewModel.setEqualizerEnabled(enabled)
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
+                            )
                         )
                     }
                 }
+            }
+
+            if (isEqualizerEnabled) {
+                // Presets Section
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Tune,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "Presets",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Spacer(modifier = Modifier.weight(1f))
+                                Text(
+                                    text = selectedPreset,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                contentPadding = PaddingValues(horizontal = 4.dp)
+                            ) {
+                                items(presets) { preset ->
+                                    val isSelected = selectedPreset == preset.name
+
+                                    Card(
+                                        onClick = { applyPreset(preset) },
+                                        modifier = Modifier.size(width = 85.dp, height = 100.dp),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = if (isSelected)
+                                                MaterialTheme.colorScheme.primaryContainer
+                                            else
+                                                MaterialTheme.colorScheme.surfaceVariant
+                                        ),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 0.dp)
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(12.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = preset.icon,
+                                                contentDescription = null,
+                                                tint = if (isSelected)
+                                                    MaterialTheme.colorScheme.primary
+                                                else
+                                                    MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(if (isSelected) 28.dp else 24.dp)
+                                            )
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            Text(
+                                                text = preset.name,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (isSelected)
+                                                    MaterialTheme.colorScheme.primary
+                                                else
+                                                    MaterialTheme.colorScheme.onSurfaceVariant,
+                                                textAlign = TextAlign.Center,
+                                                maxLines = 1
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Frequency Bands Section
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Equalizer,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "Frequency Bands",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            // Frequency Response Chart
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp)
+                                ) {
+                                    Text(
+                                        text = "Frequency Response",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(60.dp)
+                                    ) {
+                                        val primaryColor = MaterialTheme.colorScheme.primary
+                                        val outlineColor = MaterialTheme.colorScheme.outline
+
+                                        Canvas(modifier = Modifier.fillMaxSize()) {
+                                            val width = size.width
+                                            val height = size.height
+                                            val bandWidth = width / bandLevels.size
+
+                                            // Draw center line (0dB)
+                                            drawLine(
+                                                color = outlineColor.copy(alpha = 0.5f),
+                                                start = Offset(0f, height / 2),
+                                                end = Offset(width, height / 2),
+                                                strokeWidth = 1.dp.toPx(),
+                                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 5f))
+                                            )
+
+                                            // Draw frequency response curve
+                                            val points = bandLevels.mapIndexed { index, level ->
+                                                val x = (index + 0.5f) * bandWidth
+                                                val normalizedLevel = (level + 15f) / 30f
+                                                val y = height * (1f - normalizedLevel)
+                                                Offset(x, y)
+                                            }
+
+                                            // Draw smooth curve
+                                            if (points.size > 1) {
+                                                val path = Path().apply {
+                                                    moveTo(points[0].x, points[0].y)
+                                                    for (i in 1 until points.size) {
+                                                        val p0 = points[i - 1]
+                                                        val p1 = points[i]
+                                                        val controlX = (p0.x + p1.x) / 2
+                                                        quadraticTo(controlX, p0.y, p1.x, p1.y)
+                                                    }
+                                                }
+
+                                                drawPath(
+                                                    path = path,
+                                                    color = primaryColor,
+                                                    style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+                                                )
+                                            }
+
+                                            // Draw points
+                                            points.forEach { point ->
+                                                drawCircle(
+                                                    color = primaryColor,
+                                                    radius = 4.dp.toPx(),
+                                                    center = point
+                                                )
+                                                drawCircle(
+                                                    color = Color.White,
+                                                    radius = 2.dp.toPx(),
+                                                    center = point
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            // Frequency Bands Grid
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                bandLevels.forEachIndexed { index, level ->
+                                    Card(
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                                        ),
+                                        shape = RoundedCornerShape(12.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                        ) {
+                                            // Frequency Label
+                                            Column(
+                                                horizontalAlignment = Alignment.Start,
+                                                modifier = Modifier.width(60.dp)
+                                            ) {
+                                                Text(
+                                                    text = frequencyLabels[index],
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                                Text(
+                                                    text = "${level.toInt()}dB",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = if (level != 0f)
+                                                        MaterialTheme.colorScheme.primary
+                                                    else
+                                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+
+                                            // Level Indicator Bar
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(8.dp)
+                                                    .background(
+                                                        MaterialTheme.colorScheme.surfaceVariant,
+                                                        RoundedCornerShape(4.dp)
+                                                    )
+                                            ) {
+                                                val progress = (level + 15f) / 30f
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxHeight()
+                                                        .fillMaxWidth(progress)
+                                                        .background(
+                                                            if (level > 0f) MaterialTheme.colorScheme.primary
+                                                            else if (level < 0f) MaterialTheme.colorScheme.error
+                                                            else MaterialTheme.colorScheme.outline,
+                                                            RoundedCornerShape(4.dp)
+                                                        )
+                                                )
+                                            }
+
+                                            // Slider Control
+                                            Box(
+                                                modifier = Modifier.width(120.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Slider(
+                                                    value = level,
+                                                    onValueChange = { newLevel ->
+                                                        HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                                                        updateBandLevel(index, newLevel)
+                                                    },
+                                                    valueRange = -15f..15f,
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    colors = SliderDefaults.colors(
+                                                        thumbColor = MaterialTheme.colorScheme.primary,
+                                                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                                                        inactiveTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Audio Effects Section
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.AudioFile,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "Audio Effects",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Bass Boost
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isBassBoostEnabled)
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                    else
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Speaker,
+                                            contentDescription = null,
+                                            tint = if (isBassBoostEnabled)
+                                                MaterialTheme.colorScheme.primary
+                                            else
+                                                MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+
+                                        Spacer(modifier = Modifier.width(12.dp))
+
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = "Bass Boost",
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                            Text(
+                                                text = if (isBassBoostEnabled) "${(bassBoostStrength/10).toInt()}% intensity" else "Disabled",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+
+                                        Switch(
+                                            checked = isBassBoostEnabled,
+                                            onCheckedChange = { enabled ->
+                                                HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+                                                isBassBoostEnabled = enabled
+                                                musicViewModel.setBassBoost(enabled, bassBoostStrength.toInt().toShort())
+                                            },
+                                            colors = SwitchDefaults.colors(
+                                                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
+                                            )
+                                        )
+                                    }
+
+                                    AnimatedVisibility(
+                                        visible = isBassBoostEnabled,
+                                        enter = fadeIn() + androidx.compose.animation.expandVertically(),
+                                        exit = fadeOut() + androidx.compose.animation.shrinkVertically()
+                                    ) {
+                                        Column {
+                                            Spacer(modifier = Modifier.height(12.dp))
+
+                                            Slider(
+                                                value = bassBoostStrength,
+                                                onValueChange = { strength ->
+                                                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                                                    bassBoostStrength = strength
+                                                    musicViewModel.setBassBoost(true, strength.toInt().toShort())
+                                                },
+                                                valueRange = 0f..1000f,
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = SliderDefaults.colors(
+                                                    thumbColor = MaterialTheme.colorScheme.primary,
+                                                    activeTrackColor = MaterialTheme.colorScheme.primary
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // Virtualizer
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isVirtualizerEnabled)
+                                        MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
+                                    else
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Headphones,
+                                            contentDescription = null,
+                                            tint = if (isVirtualizerEnabled)
+                                                MaterialTheme.colorScheme.primary
+                                            else
+                                                MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+
+                                        Spacer(modifier = Modifier.width(12.dp))
+
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = "Virtualizer",
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                            Text(
+                                                text = if (isVirtualizerEnabled) "${(virtualizerStrength/10).toInt()}% intensity" else "Disabled",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+
+                                        Switch(
+                                            checked = isVirtualizerEnabled,
+                                            onCheckedChange = { enabled ->
+                                                HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+                                                isVirtualizerEnabled = enabled
+                                                musicViewModel.setVirtualizer(enabled, virtualizerStrength.toInt().toShort())
+                                            },
+                                            colors = SwitchDefaults.colors(
+                                                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
+                                            )
+                                        )
+                                    }
+
+                                    AnimatedVisibility(
+                                        visible = isVirtualizerEnabled,
+                                        enter = fadeIn() + androidx.compose.animation.expandVertically(),
+                                        exit = fadeOut() + androidx.compose.animation.shrinkVertically()
+                                    ) {
+                                        Column {
+                                            Spacer(modifier = Modifier.height(12.dp))
+
+                                            Slider(
+                                                value = virtualizerStrength,
+                                                onValueChange = { strength ->
+                                                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                                                    virtualizerStrength = strength
+                                                    musicViewModel.setVirtualizer(true, strength.toInt().toShort())
+                                                },
+                                                valueRange = 0f..1000f,
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = SliderDefaults.colors(
+                                                    thumbColor = MaterialTheme.colorScheme.primary,
+                                                    activeTrackColor = MaterialTheme.colorScheme.primary
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // System Equalizer Section
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Settings,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "System Equalizer",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = "Access your device's built-in equalizer",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            FilledTonalButton(
+                                onClick = { 
+                                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+                                    musicViewModel.openSystemEqualizer()
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Settings,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Open System Equalizer")
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
