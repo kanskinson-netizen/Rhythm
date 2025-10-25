@@ -3109,14 +3109,6 @@ fun CacheManagementSettingsScreen(onBackClick: () -> Unit) {
             contentPadding = PaddingValues(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item {
-                // Header description
-                Text(
-                    text = "Manage cached data including images, temporary files, and other app data.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
 
             // Current Cache Status
             item {
@@ -3845,15 +3837,6 @@ fun BackupRestoreSettingsScreen(onBackClick: () -> Unit) {
                 .padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            item { Spacer(modifier = Modifier.height(8.dp)) }
-            
-            item {
-                Text(
-                    text = "Safeguard your personalized settings, playlists, and preferences.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
             
             item { Spacer(modifier = Modifier.height(8.dp)) }
             
