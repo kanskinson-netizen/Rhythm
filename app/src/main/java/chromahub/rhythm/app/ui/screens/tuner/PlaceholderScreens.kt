@@ -1608,22 +1608,22 @@ fun AboutScreen(onBackClick: () -> Unit) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp)
+                        modifier = Modifier.padding(16.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(bottom = 16.dp)
+                            modifier = Modifier.padding(bottom = 12.dp)
                         ) {
                             Icon(
                                 imageVector = RhythmIcons.Actions.Info,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 text = "Project Details",
-                                style = MaterialTheme.typography.titleLarge,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -1634,71 +1634,12 @@ fun AboutScreen(onBackClick: () -> Unit) {
                         DetailRow("Target SDK", Build.VERSION.SDK_INT.toString())
                         DetailRow("Architecture", "ARM64 & ARM32")
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
                             text = "Built with modern Android technologies and Material Design 3",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            item {
-                // Features Card
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Star,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = "Features",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-
-                        FeatureItem(
-                            icon = RhythmIcons.MusicNote,
-                            title = "Advanced Audio Engine",
-                            description = "High-quality audio playback with customizable equalizer"
-                        )
-
-                        FeatureItem(
-                            icon = RhythmIcons.Playlist,
-                            title = "Smart Playlists",
-                            description = "Auto-generated playlists based on your listening habits"
-                        )
-
-                        FeatureItem(
-                            icon = RhythmIcons.Download,
-                            title = "Offline Mode",
-                            description = "Download music for offline listening"
-                        )
-
-                        FeatureItem(
-                            icon = Icons.Rounded.Sync,
-                            title = "Cross-Platform Sync",
-                            description = "Sync your music library across devices"
                         )
                     }
                 }
@@ -1715,34 +1656,36 @@ fun AboutScreen(onBackClick: () -> Unit) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp)
+                        modifier = Modifier.padding(16.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(bottom = 16.dp)
+                            modifier = Modifier.padding(bottom = 12.dp)
                         ) {
                             Icon(
                                 imageVector = RhythmIcons.ArtistFilled,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 text = "Credits",
-                                style = MaterialTheme.typography.titleLarge,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
 
-                        CreditItem(
-                            name = "ChromaHub Team",
-                            role = "Lead Development",
-                            description = "Core development and maintenance of Rhythm"
+                        CommunityMember(
+                            name = "Anjishnu Nandi",
+                            role = "Lead Developer & Project Architect",
+                            githubUsername = "cromaguy",
+                            avatarUrl = "https://github.com/cromaguy.png",
+                            context = context
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         // Team ChromaHub
                         Card(
@@ -1755,29 +1698,29 @@ fun AboutScreen(onBackClick: () -> Unit) {
                         ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(16.dp)
+                                modifier = Modifier.padding(12.dp)
                             ) {
                                 Text(
                                     text = "Team ChromaHub",
-                                    style = MaterialTheme.typography.titleMedium,
+                                    style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
                                     text = "Passionate developers creating innovative experiences",
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = MaterialTheme.typography.bodySmall,
                                     textAlign = TextAlign.Center,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         // Acknowledgments
                         Text(
                             text = "Special Thanks",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.padding(bottom = 8.dp)
@@ -1788,9 +1731,9 @@ fun AboutScreen(onBackClick: () -> Unit) {
                                   "• Android Open Source Project contributors\n" +
                                   "• Jetpack Compose development team\n" +
                                   "• Open source community for inspiration and libraries",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            lineHeight = 20.sp
+                            lineHeight = 18.sp
                         )
                     }
                 }
@@ -1807,22 +1750,22 @@ fun AboutScreen(onBackClick: () -> Unit) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp)
+                        modifier = Modifier.padding(16.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(bottom = 16.dp)
+                            modifier = Modifier.padding(bottom = 12.dp)
                         ) {
                             Icon(
                                 imageVector = RhythmIcons.FavoriteFilled,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 text = "Community",
-                                style = MaterialTheme.typography.titleLarge,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -1830,15 +1773,15 @@ fun AboutScreen(onBackClick: () -> Unit) {
 
                         Text(
                             text = "Special thanks to our amazing community members who have contributed to making Rhythm better through testing, feedback, suggestions, and collaboration.",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            lineHeight = 20.sp,
-                            modifier = Modifier.padding(bottom = 16.dp)
+                            lineHeight = 18.sp,
+                            modifier = Modifier.padding(bottom = 12.dp)
                         )
 
                         // Community Members Grid
                         Column(
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             CommunityMember(
                                 name = "Izzy",
@@ -1865,7 +1808,7 @@ fun AboutScreen(onBackClick: () -> Unit) {
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         // Community Call-to-Action
                         Card(
@@ -1878,24 +1821,24 @@ fun AboutScreen(onBackClick: () -> Unit) {
                         ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(16.dp)
+                                modifier = Modifier.padding(12.dp)
                             ) {
                                 Icon(
                                     imageVector = RhythmIcons.FavoriteFilled,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.secondary,
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier.size(24.dp)
                                 )
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(6.dp))
                                 Text(
                                     text = "Want to be featured here?",
-                                    style = MaterialTheme.typography.titleMedium,
+                                    style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                                 Text(
                                     text = "Contribute to Rhythm through testing, feedback, or code contributions and join our amazing community!",
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = MaterialTheme.typography.bodySmall,
                                     textAlign = TextAlign.Center,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                                     modifier = Modifier.padding(top = 4.dp)
@@ -1924,29 +1867,29 @@ fun AboutScreen(onBackClick: () -> Unit) {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Start,
                         modifier = Modifier
-                            .padding(vertical = 16.dp)
+                            .padding(vertical = 12.dp)
                             .fillMaxWidth()
                     ) {
                         Icon(
                             imageVector = RhythmIcons.Settings,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
                         Column(
                             modifier = Modifier.weight(1f),
                             horizontalAlignment = Alignment.Start
                         ) {
                             Text(
                                 text = "Open Source Libraries",
-                                style = MaterialTheme.typography.titleMedium,
+                                style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = "View all dependencies and licenses",
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -1965,8 +1908,8 @@ fun AboutScreen(onBackClick: () -> Unit) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -1976,12 +1919,12 @@ fun AboutScreen(onBackClick: () -> Unit) {
                                 imageVector = RhythmIcons.Download,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 text = "Actions",
-                                style = MaterialTheme.typography.titleLarge,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -2002,17 +1945,17 @@ fun AboutScreen(onBackClick: () -> Unit) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier.padding(vertical = 8.dp)
+                                modifier = Modifier.padding(vertical = 6.dp)
                             ) {
                                 Icon(
                                     imageVector = RhythmIcons.Download,
                                     contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(modifier = Modifier.width(12.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = "Check for Updates",
-                                    style = MaterialTheme.typography.titleMedium
+                                    style = MaterialTheme.typography.titleSmall
                                 )
                             }
                         }
@@ -2034,17 +1977,17 @@ fun AboutScreen(onBackClick: () -> Unit) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier.padding(vertical = 8.dp)
+                                modifier = Modifier.padding(vertical = 6.dp)
                             ) {
                                 Icon(
                                     imageVector = RhythmIcons.Settings,
                                     contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(modifier = Modifier.width(12.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = "Visit Website",
-                                    style = MaterialTheme.typography.titleMedium
+                                    style = MaterialTheme.typography.titleSmall
                                 )
                             }
                         }
@@ -2066,17 +2009,17 @@ fun AboutScreen(onBackClick: () -> Unit) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier.padding(vertical = 8.dp)
+                                modifier = Modifier.padding(vertical = 6.dp)
                             ) {
                                 Icon(
                                     imageVector = RhythmIcons.ArtistFilled,
                                     contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(modifier = Modifier.width(12.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = "View on GitHub",
-                                    style = MaterialTheme.typography.titleMedium
+                                    style = MaterialTheme.typography.titleSmall
                                 )
                             }
                         }
@@ -2098,17 +2041,17 @@ fun AboutScreen(onBackClick: () -> Unit) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier.padding(vertical = 8.dp)
+                                modifier = Modifier.padding(vertical = 6.dp)
                             ) {
                                 Icon(
                                     imageVector = RhythmIcons.Edit,
                                     contentDescription = "Report Bug",
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(modifier = Modifier.width(12.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = "Report Bug or Suggest Feature",
-                                    style = MaterialTheme.typography.titleMedium
+                                    style = MaterialTheme.typography.titleSmall
                                 )
                             }
                         }
@@ -2129,17 +2072,17 @@ fun AboutScreen(onBackClick: () -> Unit) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier.padding(vertical = 8.dp)
+                                modifier = Modifier.padding(vertical = 6.dp)
                             ) {
                                 Icon(
                                     imageVector = RhythmIcons.Telegram,
                                     contentDescription = "Telegram Support",
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(modifier = Modifier.width(12.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = "Telegram Support Group",
-                                    style = MaterialTheme.typography.titleMedium
+                                    style = MaterialTheme.typography.titleSmall
                                 )
                             }
                         }
@@ -2186,7 +2129,7 @@ private fun CommunityMember(
                 color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
                 shape = RoundedCornerShape(12.dp)
             )
-            .padding(12.dp)
+            .padding(10.dp)
     ) {
         // Avatar with fallback
         val fallbackPainter = rememberVectorPainter(RhythmIcons.ArtistFilled)
@@ -2198,27 +2141,27 @@ private fun CommunityMember(
                 .build(),
             contentDescription = "$name's avatar",
             modifier = Modifier
-                .size(48.dp)
+                .size(40.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.primaryContainer),
             error = fallbackPainter,
             placeholder = fallbackPainter
         )
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(10.dp))
 
         Column(
             modifier = Modifier.weight(1f)
         ) {
             Text(
                 text = name,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = role,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
@@ -2233,7 +2176,7 @@ private fun CommunityMember(
             imageVector = RhythmIcons.ArtistFilled,
             contentDescription = "View GitHub Profile",
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(18.dp)
         )
     }
 }
@@ -2248,37 +2191,37 @@ private fun FeatureItem(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
         Surface(
             color = MaterialTheme.colorScheme.primaryContainer,
             shape = CircleShape,
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.size(40.dp)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier
-                    .padding(12.dp)
-                    .size(24.dp)
+                    .padding(8.dp)
+                    .size(20.dp)
             )
         }
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(12.dp))
 
         Column(
             modifier = Modifier.weight(1f)
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = description,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -2298,13 +2241,13 @@ private fun DetailRow(
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f)
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1.5f),
@@ -2366,25 +2309,25 @@ private fun CreditItem(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(vertical = 6.dp)
     ) {
         Text(
             text = name,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
             text = role,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.primary
         )
         Text(
             text = description,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp)
+            modifier = Modifier.padding(top = 2.dp)
         )
     }
 }
@@ -4976,7 +4919,7 @@ fun ThemeCustomizationSettingsScreen(onBackClick: () -> Unit) {
 
             // Tips Card
             item {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
                 Card(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
@@ -7062,8 +7005,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                 .padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            item { Spacer(modifier = Modifier.height(24.dp)) }
-            
+            item { Spacer(modifier = Modifier.height(8.dp)) }
            
             
             // API Services
