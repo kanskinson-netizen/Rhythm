@@ -94,6 +94,13 @@ import java.util.Date
 import java.util.Locale
 import chromahub.rhythm.app.utils.FontLoader
 import chromahub.rhythm.app.ui.theme.parseCustomColorScheme
+import androidx.compose.ui.viewinterop.AndroidView
+import android.widget.TextView
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.core.text.HtmlCompat
+import chromahub.rhythm.app.ui.components.M3CircularWaveProgressIndicator
+import chromahub.rhythm.app.ui.components.M3FourColorCircularLoader
 
 // Equalizer Preset Data Class
 data class EqualizerPreset(
@@ -1420,30 +1427,25 @@ fun AboutScreen(onBackClick: () -> Unit) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(24.dp)
                     ) {
-                        // App Icon
-                        Surface(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = CircleShape,
-                            modifier = Modifier.size(80.dp)
+                        // Rhythm logo and name
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
                         ) {
-                            Icon(
-                                imageVector = RhythmIcons.MusicNote,
-                                contentDescription = "Rhythm",
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier
-                                    .padding(20.dp)
-                                    .size(40.dp)
+                            Image(
+                                painter = painterResource(id = chromahub.rhythm.app.R.drawable.rhythm_splash_logo),
+                                contentDescription = "Rhythm Logo",
+                                modifier = Modifier.size(52.dp)
+                            )
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text(
+                                text = "Rhythm",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text(
-                            text = "Rhythm",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
 
                         Text(
                             text = "Music Player",
@@ -2273,57 +2275,638 @@ private fun CreditItem(
 fun UpdatesSettingsScreen(onBackClick: () -> Unit) {
     val context = LocalContext.current
     val appSettings = AppSettings.getInstance(context)
+    val updaterViewModel: AppUpdaterViewModel = viewModel()
+    val scope = rememberCoroutineScope()
+    val haptics = LocalHapticFeedback.current
+
+    // Collect state from ViewModel and AppSettings
     val updatesEnabled by appSettings.updatesEnabled.collectAsState()
     val autoCheckForUpdates by appSettings.autoCheckForUpdates.collectAsState()
+    val updateChannel by appSettings.updateChannel.collectAsState()
+    val currentVersion by updaterViewModel.currentVersion.collectAsState()
+    val latestVersion by updaterViewModel.latestVersion.collectAsState()
+    val isCheckingForUpdates by updaterViewModel.isCheckingForUpdates.collectAsState()
+    val updateAvailable by updaterViewModel.updateAvailable.collectAsState()
+    val error by updaterViewModel.error.collectAsState()
+    val isDownloading by updaterViewModel.isDownloading.collectAsState()
+    val downloadProgress by updaterViewModel.downloadProgress.collectAsState()
+    val downloadedFile by updaterViewModel.downloadedFile.collectAsState()
+    val whatsNew = latestVersion?.whatsNew ?: emptyList()
+    val knownIssues = latestVersion?.knownIssues ?: emptyList()
+
+    // Determine status text for header
+    val statusText = when {
+        error != null -> "Error"
+        isCheckingForUpdates -> "Checking..."
+        updateAvailable && latestVersion != null -> "Update Available"
+        !updatesEnabled -> "Updates Disabled"
+        !autoCheckForUpdates -> "Manual Check"
+        else -> "Up to Date"
+    }
+
+    // Check for updates when the screen is first shown and updates are enabled
+    LaunchedEffect(updatesEnabled) {
+        if (updatesEnabled) {
+            updaterViewModel.checkForUpdates(force = true)
+        }
+    }
 
     CollapsibleHeaderScreen(
         title = "Updates",
         showBackButton = true,
-        onBackClick = onBackClick
+        onBackClick = onBackClick,
+//        actions = {
+//            Text(
+//                text = statusText,
+//                style = MaterialTheme.typography.bodyMedium,
+//                color = when {
+//                    error != null -> MaterialTheme.colorScheme.error
+//                    updateAvailable -> Color(0xFF4CAF50)
+//                    !updatesEnabled -> MaterialTheme.colorScheme.onSurfaceVariant
+//                    else -> MaterialTheme.colorScheme.primary
+//                },
+//                modifier = Modifier.padding(end = 16.dp)
+//            )
+//        }
     ) { modifier ->
-        val updateItems = mutableListOf(
-            SettingItem(
-                Icons.Default.SystemUpdate,
-                "Enable Updates",
-                "Allow the app to check for and download updates",
-                toggleState = updatesEnabled,
-                onToggleChange = { appSettings.setUpdatesEnabled(it) }
-            )
-        )
-
-        if (updatesEnabled) {
-            updateItems.add(
-                SettingItem(
-                    Icons.Default.Update,
-                    "Periodic Check",
-                    "Automatically check for updates from Rhythm's GitHub repo",
-                    toggleState = autoCheckForUpdates,
-                    onToggleChange = { appSettings.setAutoCheckForUpdates(it) }
-                )
-            )
-        }
-
-        val settingGroups = listOf(
-            SettingGroup(
-                title = "Update Settings",
-                items = updateItems
-            )
-        )
-
         LazyColumn(
-            modifier = modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = 24.dp)
+            modifier = modifier.fillMaxSize(),
+            contentPadding = PaddingValues(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(settingGroups) { group ->
-                Spacer(modifier = Modifier.height(24.dp))
+            // Combined App Info and Update Status Card
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // Rhythm logo and name
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Image(
+                                painter = painterResource(id = chromahub.rhythm.app.R.drawable.rhythm_splash_logo),
+                                contentDescription = "Rhythm Logo",
+                                modifier = Modifier.size(52.dp)
+                            )
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text(
+                                text = "Rhythm",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Version info
+                        Text(
+                            text = "V ${currentVersion.versionName}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "Released: ${currentVersion.releaseDate}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // Status display with loader and progress like onboarding
+                        when {
+                            error != null -> {
+                                Icon(
+                                    imageVector = Icons.Rounded.Error,
+                                    contentDescription = "Error",
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(40.dp)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Update Check Failed",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = error ?: "Unknown error occurred",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    OutlinedButton(
+                                        onClick = { updaterViewModel.clearError() },
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Close,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Dismiss")
+                                    }
+                                    Button(
+                                        onClick = {
+                                            if (error?.contains("unknown sources", ignoreCase = true) == true ||
+                                                error?.contains("install from unknown", ignoreCase = true) == true) {
+                                                val intent = Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                                                    data = Uri.parse("package:${context.packageName}")
+                                                }
+                                                try {
+                                                    context.startActivity(intent)
+                                                } catch (e: Exception) {
+                                                    val fallbackIntent = Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS)
+                                                    context.startActivity(fallbackIntent)
+                                                }
+                                            } else {
+                                                updaterViewModel.checkForUpdates(force = true)
+                                            }
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (error?.contains("unknown sources", ignoreCase = true) == true ||
+                                                             error?.contains("install from unknown", ignoreCase = true) == true) 
+                                                Icons.Rounded.Settings else Icons.Rounded.Refresh,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(if (error?.contains("unknown sources", ignoreCase = true) == true ||
+                                                 error?.contains("install from unknown", ignoreCase = true) == true) "Open Settings" else "Retry")
+                                    }
+                                }
+                            }
+
+                            !updatesEnabled -> {
+                                Icon(
+                                    imageVector = Icons.Rounded.UpdateDisabled,
+                                    contentDescription = "Updates disabled",
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(40.dp)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Updates Disabled",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "App updates have been disabled in settings",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Button(
+                                    onClick = { appSettings.setUpdatesEnabled(true) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.SystemUpdate,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Enable Updates")
+                                }
+                            }
+
+                            isCheckingForUpdates -> {
+                                M3FourColorCircularLoader(
+                                    modifier = Modifier.size(40.dp)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Checking for updates...",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                OutlinedButton(
+                                    onClick = { updaterViewModel.checkForUpdates(force = true) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Search,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Check Now")
+                                }
+                            }
+
+                            updateAvailable && latestVersion != null -> {
+                                Icon(
+                                    imageVector = Icons.Rounded.Update,
+                                    contentDescription = "Update available",
+                                    tint = Color(0xFF4CAF50),
+                                    modifier = Modifier.size(40.dp)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Update Available",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF4CAF50)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Version ${latestVersion?.versionName}",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Released: ${latestVersion?.releaseDate}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                latestVersion?.let { version ->
+                                    if (version.apkSize > 0) {
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = RhythmIcons.Download,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                text = version.apkAssetName,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                text = "(${updaterViewModel.getReadableFileSize(version.apkSize)})",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                if (isDownloading) {
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = "Downloading update...",
+                                            style = MaterialTheme.typography.bodyLarge
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        LinearProgressIndicator(
+                                            progress = { downloadProgress / 100f },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            color = MaterialTheme.colorScheme.primary,
+                                            trackColor = MaterialTheme.colorScheme.primaryContainer
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = "${downloadProgress.toInt()}%",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        OutlinedButton(
+                                            onClick = { updaterViewModel.cancelDownload() },
+                                            colors = ButtonDefaults.outlinedButtonColors(
+                                                contentColor = MaterialTheme.colorScheme.error
+                                            ),
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(12.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Cancel,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Cancel Download")
+                                        }
+                                    }
+                                } else if (downloadedFile != null) {
+                                    Icon(
+                                        imageVector = RhythmIcons.Check,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(40.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "Download Complete",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = downloadedFile?.name ?: "",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Button(
+                                        onClick = { updaterViewModel.installDownloadedApk() },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = RhythmIcons.Check,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Install Update")
+                                        }
+                                    }
+                                } else {
+                                    Button(
+                                        onClick = { updaterViewModel.downloadUpdate() },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = RhythmIcons.Download,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Download Update")
+                                        }
+                                    }
+                                }
+                            }
+
+                            !isCheckingForUpdates && error == null -> {
+                                if (!autoCheckForUpdates) {
+                                    Icon(
+                                        imageVector = RhythmIcons.Refresh,
+                                        contentDescription = "Manual check only",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(40.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "Manual Check Only",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "Automatic update checking is disabled. You can still check manually.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Button(
+                                            onClick = { updaterViewModel.checkForUpdates(force = true) },
+                                            modifier = Modifier.weight(1f),
+                                            shape = RoundedCornerShape(12.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Search,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Check Now")
+                                        }
+                                        OutlinedButton(
+                                            onClick = { appSettings.setAutoCheckForUpdates(true) },
+                                            modifier = Modifier.weight(1f),
+                                            shape = RoundedCornerShape(12.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Autorenew,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Enable Auto-check")
+                                        }
+                                    }
+                                } else {
+                                    Icon(
+                                        imageVector = RhythmIcons.Check,
+                                        contentDescription = "Up to date",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(40.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "You are up to date!",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Button(
+                                        onClick = { updaterViewModel.checkForUpdates(force = true) },
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Refresh,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Check Again")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // What's New section
+            if (updatesEnabled && latestVersion != null && whatsNew.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "What's New",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            val onSurfaceColor = MaterialTheme.colorScheme.onSurface.toArgb()
+                            whatsNew.forEachIndexed { index, change ->
+                                Row(
+                                    modifier = Modifier.padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .padding(top = 8.dp)
+                                            .background(
+                                                MaterialTheme.colorScheme.primary,
+                                                CircleShape
+                                            )
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    AndroidView(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        factory = { ctx ->
+                                            TextView(ctx).apply {
+                                                setTextColor(onSurfaceColor)
+                                            }
+                                        },
+                                        update = { textView ->
+                                            textView.text = HtmlCompat.fromHtml(change, HtmlCompat.FROM_HTML_MODE_COMPACT)
+                                            textView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
+                                        }
+                                    )
+                                }
+                                if (index < whatsNew.size - 1) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Known Issues section
+            if (updatesEnabled && latestVersion != null && knownIssues.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Known Issues",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            val onSurfaceColor = MaterialTheme.colorScheme.onSurface.toArgb()
+                            knownIssues.forEachIndexed { index, issue ->
+                                Row(
+                                    modifier = Modifier.padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .padding(top = 8.dp)
+                                            .background(
+                                                MaterialTheme.colorScheme.error,
+                                                CircleShape
+                                            )
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    AndroidView(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        factory = { ctx ->
+                                            TextView(ctx).apply {
+                                                setTextColor(onSurfaceColor)
+                                            }
+                                        },
+                                        update = { textView ->
+                                            textView.text = HtmlCompat.fromHtml(issue, HtmlCompat.FROM_HTML_MODE_COMPACT)
+                                            textView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
+                                        }
+                                    )
+                                }
+                                if (index < knownIssues.size - 1) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Settings Section below
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = group.title,
-                    style = MaterialTheme.typography.titleSmall.copy(fontFamily = FontFamily.Default, fontWeight = FontWeight.SemiBold),
+                    text = "Update Settings",
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        fontFamily = FontFamily.Default,
+                        fontWeight = FontWeight.SemiBold
+                    ),
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
                 )
+            }
+
+            item {
+                val updateItems = mutableListOf(
+                    SettingItem(
+                        Icons.Default.SystemUpdate,
+                        "Enable Updates",
+                        "Allow the app to check for and download updates",
+                        toggleState = updatesEnabled,
+                        onToggleChange = { appSettings.setUpdatesEnabled(it) }
+                    )
+                )
+
+                if (updatesEnabled) {
+                    updateItems.add(
+                        SettingItem(
+                            Icons.Default.Update,
+                            "Periodic Check",
+                            "Automatically check for updates from Rhythm's GitHub repo",
+                            toggleState = autoCheckForUpdates,
+                            onToggleChange = { appSettings.setAutoCheckForUpdates(it) }
+                        )
+                    )
+                }
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(18.dp),
@@ -2331,9 +2914,9 @@ fun UpdatesSettingsScreen(onBackClick: () -> Unit) {
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Column {
-                        group.items.forEachIndexed { index, item ->
+                        updateItems.forEachIndexed { index, item ->
                             TunerSettingRow(item = item)
-                            if (index < group.items.lastIndex) {
+                            if (index < updateItems.lastIndex) {
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = 20.dp),
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
