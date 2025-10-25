@@ -1,5 +1,6 @@
 package chromahub.rhythm.app.ui.screens.tuner
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -72,6 +73,7 @@ import chromahub.rhythm.app.ui.components.CollapsibleHeaderScreen
 import chromahub.rhythm.app.ui.components.RhythmIcons
 import chromahub.rhythm.app.data.AppSettings
 import android.content.Context
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -139,7 +141,7 @@ fun TunerSettingsScreen(
                 title = "Appearance",
                 items = listOf(
                     SettingItem(Icons.Default.Palette, "Theme Customization", "Customize colors, fonts, and appearance", onClick = { onNavigateTo(SettingsRoutes.THEME_CUSTOMIZATION) }),
-                    SettingItem(Icons.Default.Reorder, "Library Tab Order", "Reorder tabs in the library", onClick = { onNavigateTo(SettingsRoutes.LIBRARY_TAB_ORDER) })
+                    // SettingItem(Icons.Default.Reorder, "Library Tab Order", "Reorder tabs in the library", onClick = { onNavigateTo(SettingsRoutes.LIBRARY_TAB_ORDER) })
                 )
             ),
             SettingGroup(
@@ -173,7 +175,7 @@ fun TunerSettingsScreen(
                     ),
                     SettingItem(Icons.Default.QueueMusic, "Queue & Playback", "Configure queue and playback behavior", onClick = { onNavigateTo(SettingsRoutes.QUEUE_PLAYBACK) }),
                     SettingItem(Icons.Default.GraphicEq, "Equalizer", "Adjust audio frequencies and effects", onClick = { onNavigateTo(SettingsRoutes.EQUALIZER) }),
-                    SettingItem(Icons.Default.AccessTime, "Sleep Timer", "Auto-stop playback after set time", onClick = { onNavigateTo(SettingsRoutes.SLEEP_TIMER) })
+                    // SettingItem(Icons.Default.AccessTime, "Sleep Timer", "Auto-stop playback after set time", onClick = { onNavigateTo(SettingsRoutes.SLEEP_TIMER) })
                 )
             ),
             SettingGroup(
@@ -220,7 +222,8 @@ fun TunerSettingsScreen(
             SettingGroup(
                 title = "Advanced",
                 items = listOf(
-                    SettingItem(Icons.Default.BugReport, "Crash Log History", "View and manage crash reports", onClick = { onNavigateTo(SettingsRoutes.CRASH_LOG_HISTORY) })
+                    SettingItem(Icons.Default.BugReport, "Crash Log History", "View and manage crash reports", onClick = { onNavigateTo(SettingsRoutes.CRASH_LOG_HISTORY) }),
+                    SettingItem(Icons.Default.Settings, "Use Classic Settings", "Switch to the old settings interface", onClick = { appSettings.setUseTunerSettings(false) })
                 )
             )
         )
@@ -363,6 +366,20 @@ fun TunerSettingsScreenPreview() {
 fun SettingsScreen(onBack: () -> Unit, appSettings: chromahub.rhythm.app.data.AppSettings) {
     var currentRoute by remember { mutableStateOf<String?>(null) }
     
+    // Handle back navigation - if we're in a subsettings screen, go back to main screen
+    val handleBack = {
+        if (currentRoute != null) {
+            currentRoute = null
+        } else {
+            onBack()
+        }
+    }
+    
+    // Handle system back gestures when in subsettings
+    BackHandler(enabled = currentRoute != null) {
+        handleBack()
+    }
+    
     AnimatedContent(
         targetState = currentRoute,
         transitionSpec = {
@@ -394,7 +411,7 @@ fun SettingsScreen(onBack: () -> Unit, appSettings: chromahub.rhythm.app.data.Ap
             SettingsRoutes.NOTIFICATIONS -> NotificationsSettingsScreen(onBackClick = { currentRoute = null })
             SettingsRoutes.PLAYLISTS -> PlaylistsSettingsScreen(onBackClick = { currentRoute = null })
             SettingsRoutes.MEDIA_SCAN -> MediaScanSettingsScreen(onBackClick = { currentRoute = null })
-            SettingsRoutes.ABOUT -> AboutScreen(onBackClick = { currentRoute = null })
+            SettingsRoutes.ABOUT -> chromahub.rhythm.app.ui.screens.tuner.AboutScreen(onBackClick = { currentRoute = null })
             SettingsRoutes.UPDATES -> UpdatesSettingsScreen(onBackClick = { currentRoute = null })
             SettingsRoutes.EXPERIMENTAL_FEATURES -> ExperimentalFeaturesScreen(onBackClick = { currentRoute = null })
             SettingsRoutes.API_MANAGEMENT -> ApiManagementSettingsScreen(onBackClick = { currentRoute = null })
@@ -407,7 +424,7 @@ fun SettingsScreen(onBack: () -> Unit, appSettings: chromahub.rhythm.app.data.Ap
             SettingsRoutes.CRASH_LOG_HISTORY -> CrashLogHistorySettingsScreen(onBackClick = { currentRoute = null }, appSettings = appSettings)
             SettingsRoutes.QUEUE_PLAYBACK -> QueuePlaybackSettingsScreen(onBackClick = { currentRoute = null })
             else -> TunerSettingsScreen(
-                onBackClick = onBack,
+                onBackClick = handleBack,
                 onNavigateTo = { route -> currentRoute = route }
             )
         }

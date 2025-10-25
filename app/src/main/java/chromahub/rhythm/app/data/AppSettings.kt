@@ -168,6 +168,9 @@ class AppSettings private constructor(context: Context) {
         // Notification Settings
         private const val KEY_USE_CUSTOM_NOTIFICATION = "use_custom_notification"
         
+        // UI Settings
+        private const val KEY_USE_TUNER_SETTINGS = "use_tuner_settings"
+        
         // Blacklisted Songs
         private const val KEY_BLACKLISTED_SONGS = "blacklisted_songs"
         
@@ -659,6 +662,10 @@ class AppSettings private constructor(context: Context) {
     // Notification Settings
     private val _useCustomNotification = MutableStateFlow(prefs.getBoolean(KEY_USE_CUSTOM_NOTIFICATION, false))
     val useCustomNotification: StateFlow<Boolean> = _useCustomNotification.asStateFlow()
+    
+    // UI Settings
+    private val _useTunerSettings = MutableStateFlow(prefs.getBoolean(KEY_USE_TUNER_SETTINGS, true))
+    val useTunerSettings: StateFlow<Boolean> = _useTunerSettings.asStateFlow()
     
     // Blacklisted Songs
     private val _blacklistedSongs = MutableStateFlow<List<String>>(
@@ -1301,6 +1308,12 @@ class AppSettings private constructor(context: Context) {
     fun setUseCustomNotification(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_USE_CUSTOM_NOTIFICATION, enabled).apply()
         _useCustomNotification.value = enabled
+    }
+    
+    // UI Settings Methods
+    fun setUseTunerSettings(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_USE_TUNER_SETTINGS, enabled).apply()
+        _useTunerSettings.value = enabled
     }
     
     // Blacklisted Songs Methods

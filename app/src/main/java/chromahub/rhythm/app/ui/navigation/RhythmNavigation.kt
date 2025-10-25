@@ -93,6 +93,8 @@ import chromahub.rhythm.app.ui.screens.PlayerScreen
 import chromahub.rhythm.app.ui.screens.PlaylistDetailScreen
 import chromahub.rhythm.app.ui.screens.SearchScreen
 import chromahub.rhythm.app.ui.screens.SettingsScreen
+import chromahub.rhythm.app.ui.screens.tuner.SettingsScreen as TunerSettingsScreenWrapper
+import chromahub.rhythm.app.ui.screens.tuner.*
 import chromahub.rhythm.app.ui.screens.AboutScreen // Added import for AboutScreen
 import chromahub.rhythm.app.ui.screens.MediaScanLoader // Add MediaScanLoader import
 import chromahub.rhythm.app.util.HapticUtils
@@ -167,6 +169,23 @@ sealed class Screen(val route: String) {
         fun createRoute(playlistId: String) = "playlist/$playlistId"
     }
     object About : Screen("about")
+    
+    // Tuner Settings Subroutes
+    object TunerNotifications : Screen("tuner_notifications_settings")
+    object TunerExperimentalFeatures : Screen("tuner_experimental_features_settings")
+    object TunerAbout : Screen("tuner_about_screen")
+    object TunerUpdates : Screen("tuner_updates_screen")
+    object TunerMediaScan : Screen("tuner_media_scan_settings")
+    object TunerPlaylists : Screen("tuner_playlist_settings")
+    object TunerApiManagement : Screen("tuner_api_management_settings")
+    object TunerCacheManagement : Screen("tuner_cache_management_settings")
+    object TunerBackupRestore : Screen("tuner_backup_restore_settings")
+    object TunerLibraryTabOrder : Screen("tuner_library_tab_order_settings")
+    object TunerThemeCustomization : Screen("tuner_theme_customization_settings")
+    object TunerEqualizer : Screen("tuner_equalizer_settings")
+    object TunerSleepTimer : Screen("tuner_sleep_timer_settings")
+    object TunerCrashLogHistory : Screen("tuner_crash_log_history_settings")
+    object TunerQueuePlayback : Screen("tuner_queue_playback_settings")
 }
 
 @Composable
@@ -918,41 +937,54 @@ fun RhythmNavigation(
                                     )
                         }
                     ) {
-                        SettingsScreen(
-                            currentSong = currentSong,
-                            isPlaying = isPlaying,
-                            progress = progress,
-                            onPlayPause = onPlayPause,
-                            onPlayerClick = {
-                                navController.navigate(Screen.Player.route)
-                            },
-                            onSkipNext = onSkipNext,
-                            showLyrics = showLyrics,
-                            showOnlineOnlyLyrics = showOnlineOnlyLyrics,
-                            onShowLyricsChange = { show ->
-                                viewModel.setShowLyrics(show)
-                            },
-                            onShowOnlineOnlyLyricsChange = { onlineOnly ->
-                                @Suppress("DEPRECATION")
-                                viewModel.appSettings.setOnlineOnlyLyrics(onlineOnly)
-                            },
-                            onLyricsSourcePreferenceChange = { preference ->
-                                viewModel.setLyricsSourcePreference(preference)
-                            },
-                            onOpenSystemEqualizer = {
-                                viewModel.openSystemEqualizer()
-                            },
-                            onBack = {
-                                navController.popBackStack()
-                            },
-                            onCheckForUpdates = {
-                                // Navigate to the app updater screen
-                                navController.navigate(Screen.AppUpdater.createRoute(true))
-                            },
-                            onNavigateToAbout = {
-                                navController.navigate(Screen.About.route)
-                            }
-                        )
+                        val useTunerSettings by appSettings.useTunerSettings.collectAsState()
+                        
+                        if (useTunerSettings) {
+                            // Use the new tuner settings screen by default
+                            TunerSettingsScreenWrapper(
+                                onBack = {
+                                    navController.popBackStack()
+                                },
+                                appSettings = appSettings
+                            )
+                        } else {
+                            // Use the old settings screen
+                            SettingsScreen(
+                                currentSong = currentSong,
+                                isPlaying = isPlaying,
+                                progress = progress,
+                                onPlayPause = onPlayPause,
+                                onPlayerClick = {
+                                    navController.navigate(Screen.Player.route)
+                                },
+                                onSkipNext = onSkipNext,
+                                showLyrics = showLyrics,
+                                showOnlineOnlyLyrics = showOnlineOnlyLyrics,
+                                onShowLyricsChange = { show ->
+                                    viewModel.setShowLyrics(show)
+                                },
+                                onShowOnlineOnlyLyricsChange = { onlineOnly ->
+                                    @Suppress("DEPRECATION")
+                                    viewModel.appSettings.setOnlineOnlyLyrics(onlineOnly)
+                                },
+                                onLyricsSourcePreferenceChange = { preference ->
+                                    viewModel.setLyricsSourcePreference(preference)
+                                },
+                                onOpenSystemEqualizer = {
+                                    viewModel.openSystemEqualizer()
+                                },
+                                onBack = {
+                                    navController.popBackStack()
+                                },
+                                onCheckForUpdates = {
+                                    // Navigate to the app updater screen
+                                    navController.navigate(Screen.AppUpdater.createRoute(true))
+                                },
+                                onNavigateToAbout = {
+                                    navController.navigate(Screen.About.route)
+                                }
+                            )
+                        }
                     }
 
                     composable(
@@ -994,6 +1026,67 @@ fun RhythmNavigation(
                                 navController.navigate(Screen.AppUpdater.createRoute(true))
                             }
                         )
+                    }
+                    
+                    // Tuner Settings Subroutes
+                    composable(Screen.TunerNotifications.route) {
+                        NotificationsSettingsScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    
+                    composable(Screen.TunerExperimentalFeatures.route) {
+                        ExperimentalFeaturesScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    
+                    composable(Screen.TunerAbout.route) {
+                        chromahub.rhythm.app.ui.screens.tuner.AboutScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    
+                    composable(Screen.TunerUpdates.route) {
+                        UpdatesSettingsScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    
+                    composable(Screen.TunerMediaScan.route) {
+                        MediaScanSettingsScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    
+                    composable(Screen.TunerPlaylists.route) {
+                        PlaylistsSettingsScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    
+                    composable(Screen.TunerApiManagement.route) {
+                        ApiManagementSettingsScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    
+                    composable(Screen.TunerCacheManagement.route) {
+                        CacheManagementSettingsScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    
+                    composable(Screen.TunerBackupRestore.route) {
+                        BackupRestoreSettingsScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    
+                    composable(Screen.TunerLibraryTabOrder.route) {
+                        LibraryTabOrderSettingsScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    
+                    composable(Screen.TunerThemeCustomization.route) {
+                        ThemeCustomizationSettingsScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    
+                    composable(Screen.TunerEqualizer.route) {
+                        EqualizerSettingsScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    
+                    composable(Screen.TunerSleepTimer.route) {
+                        SleepTimerSettingsScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    
+                    composable(Screen.TunerCrashLogHistory.route) {
+                        CrashLogHistorySettingsScreen(onBackClick = { navController.popBackStack() }, appSettings = appSettings)
+                    }
+                    
+                    composable(Screen.TunerQueuePlayback.route) {
+                        QueuePlaybackSettingsScreen(onBackClick = { navController.popBackStack() })
                     }
 
                     composable(

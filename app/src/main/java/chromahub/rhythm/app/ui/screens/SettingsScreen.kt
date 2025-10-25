@@ -189,9 +189,15 @@ fun SettingsScreen(
     onNavigateToAbout: () -> Unit
 ) {
     val context = LocalContext.current
-    var showTuner by remember { mutableStateOf(false) }
-    
     val appSettings = remember { AppSettings.getInstance(context) }
+    
+    val useTunerSettings by appSettings.useTunerSettings.collectAsState()
+    var showTuner by remember { mutableStateOf(useTunerSettings) }
+    
+    // Update showTuner when preference changes
+    LaunchedEffect(useTunerSettings) {
+        showTuner = useTunerSettings
+    }
     
     if (showTuner) {
         chromahub.rhythm.app.ui.screens.tuner.SettingsScreen(
@@ -1078,6 +1084,15 @@ fun SettingsScreen(
                         isHighlighted = highlightedSection == "User Interface & Controls"
                     )
 
+                    val useTunerSettings by appSettings.useTunerSettings.collectAsState()
+                    SettingsToggleItem(
+                        title = "Use Tuner Settings UI",
+                        description = "Use the new modern settings interface (recommended)",
+                        icon = Icons.Filled.Tune,
+                        checked = useTunerSettings,
+                        onCheckedChange = { appSettings.setUseTunerSettings(it) }
+                    )
+
                     val hapticFeedbackEnabled by appSettings.hapticFeedbackEnabled.collectAsState()
                     SettingsToggleItem(
                         title = "Haptic Feedback",
@@ -1813,6 +1828,7 @@ fun SettingsScreen(
                                         haptics,
                                         HapticFeedbackType.TextHandleMove
                                     )
+                                    appSettings.setUseTunerSettings(true)
                                     showTuner = true
                                 },
                                 colors = ButtonDefaults.outlinedButtonColors(
