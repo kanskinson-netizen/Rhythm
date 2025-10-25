@@ -104,7 +104,7 @@ data class SettingItem(
     val icon: ImageVector,
     val title: String,
     val description: String? = null,
-    val onClick: () -> Unit = {},
+    val onClick: (() -> Unit)? = null,
     val toggleState: Boolean? = null,
     val onToggleChange: ((Boolean) -> Unit)? = null
 )
@@ -344,12 +344,12 @@ fun SettingRow(item: SettingItem) {
             modifier = Modifier
                 .weight(1f)
                 .then(
-                    if (item.onClick != {} && item.toggleState == null) {
+                    if (item.onClick != null && item.toggleState == null) {
                         Modifier.clickable(onClick = {
                             HapticUtils.performHapticFeedback(context, hapticFeedback, HapticFeedbackType.LongPress)
                             item.onClick()
                         })
-                    } else if (item.onClick != {} && item.toggleState != null) {
+                    } else if (item.onClick != null && item.toggleState != null) {
                         Modifier.clickable(onClick = {
                             HapticUtils.performHapticFeedback(context, hapticFeedback, HapticFeedbackType.LongPress)
                             item.onClick()
@@ -373,7 +373,7 @@ fun SettingRow(item: SettingItem) {
             }
         }
 
-        if (item.toggleState != null && item.onClick != {}) {
+        if (item.toggleState != null && item.onClick != null) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
                 contentDescription = "Navigate",
@@ -409,7 +409,7 @@ fun SettingRow(item: SettingItem) {
                     uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
                 )
             )
-        } else if (item.onClick != {}) {
+        } else if (item.onClick != null) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
                 contentDescription = "Navigate",
