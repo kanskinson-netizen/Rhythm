@@ -190,6 +190,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.material.icons.rounded.ArrowCircleDown
 import androidx.compose.material.icons.rounded.ArrowCircleUp
+import androidx.compose.ui.text.font.FontFamily
 import chromahub.rhythm.app.ui.components.RhythmIcons
 import chromahub.rhythm.app.ui.components.M3FourColorCircularLoader
 import chromahub.rhythm.app.util.AudioFormatDetector
@@ -557,7 +558,9 @@ fun LibraryScreen(
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            LargeTopAppBar(
+            Column {
+                Spacer(modifier = Modifier.height(5.dp)) // Add more padding before the header starts
+                LargeTopAppBar(
                 navigationIcon = {
                     // Refresh button on far left
                     FilledIconButton(
@@ -582,22 +585,17 @@ fun LibraryScreen(
                     }
                 },
                 title = {
-                    val expandedTextStyle = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
-                    val collapsedTextStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
-
-                    val fraction = scrollBehavior.state.collapsedFraction
-                    val currentFontSize = lerp(expandedTextStyle.fontSize.value, collapsedTextStyle.fontSize.value, fraction).sp
-                    val currentFontWeight = if (fraction < 0.5f) FontWeight.Bold else FontWeight.Bold // Changed to FontWeight.Bold
+                    val collapsedFraction = scrollBehavior.state.collapsedFraction
+                    val fontSize = (24 + (32 - 24) * (1 - collapsedFraction)).sp // Interpolate between 24sp and 32sp
 
                     Text(
                         text = "Library",
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontSize = currentFontSize,
-                            fontWeight = currentFontWeight
+                        style = MaterialTheme.typography.headlineLarge.copy(
+                            fontFamily = FontFamily.Default,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = fontSize
                         ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(start = 8.dp) // Added padding
+                        modifier = Modifier.padding(start = 14.dp) // Adjust start padding for title
                     )
                 },
                 actions = {
@@ -850,6 +848,7 @@ fun LibraryScreen(
                 scrollBehavior = scrollBehavior,
                 modifier = Modifier.padding(horizontal = 8.dp) // Added padding
             )
+            }
         },
         bottomBar = {},
         floatingActionButton = {
