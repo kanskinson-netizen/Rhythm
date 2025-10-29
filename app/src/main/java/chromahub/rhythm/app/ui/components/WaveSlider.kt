@@ -222,8 +222,7 @@ private fun DrawScope.drawWaveProgress(
 }
 
 /**
- * Draws the Material 3 expressive handle shape
- * Based on Material 3 design guidelines for expressive components
+ * Draws a clean Material 3 thumb without shadows
  */
 private fun DrawScope.drawExpressiveHandle(
     centerX: Float,
@@ -232,134 +231,22 @@ private fun DrawScope.drawExpressiveHandle(
     isPlaying: Boolean,
     layoutDirection: LayoutDirection
 ) {
-    val handleSize = 24.dp.toPx()
-    val innerRadius = 8.dp.toPx()
+    val handleSize = 20.dp.toPx() // Slightly smaller for cleaner look
+    val radius = handleSize / 2
     
-    // Create expressive shape using organic curves
-    val handlePath = Path().apply {
-        val radius = handleSize / 2
-        val controlOffset = radius * 0.3f // Control point offset for organic curves
-        
-        // Start from top
-        moveTo(centerX, centerY - radius)
-        
-        // Top-right curve (asymmetric for expressiveness)
-        cubicTo(
-            centerX + controlOffset, centerY - radius,
-            centerX + radius, centerY - controlOffset * 0.7f,
-            centerX + radius, centerY
-        )
-        
-        // Right-bottom curve
-        cubicTo(
-            centerX + radius, centerY + controlOffset * 1.2f,
-            centerX + controlOffset * 0.8f, centerY + radius,
-            centerX, centerY + radius
-        )
-        
-        // Bottom-left curve
-        cubicTo(
-            centerX - controlOffset * 0.8f, centerY + radius,
-            centerX - radius, centerY + controlOffset * 1.2f,
-            centerX - radius, centerY
-        )
-        
-        // Left-top curve (completing the organic shape)
-        cubicTo(
-            centerX - radius, centerY - controlOffset * 0.7f,
-            centerX - controlOffset, centerY - radius,
-            centerX, centerY - radius
-        )
-        
-        close()
-    }
-    
-    // Draw shadow behind the main handle first
-    val shadowOffset = 2.dp.toPx()
-    val shadowPath = Path().apply {
-        val radius = handleSize / 2
-        val controlOffset = radius * 0.3f
-        
-        // Offset the entire path slightly for shadow effect
-        moveTo(centerX + shadowOffset * 0.5f, centerY - radius + shadowOffset)
-        
-        cubicTo(
-            centerX + controlOffset + shadowOffset * 0.5f, centerY - radius + shadowOffset,
-            centerX + radius + shadowOffset * 0.5f, centerY - controlOffset * 0.7f + shadowOffset,
-            centerX + radius + shadowOffset * 0.5f, centerY + shadowOffset
-        )
-        
-        cubicTo(
-            centerX + radius + shadowOffset * 0.5f, centerY + controlOffset * 1.2f + shadowOffset,
-            centerX + controlOffset * 0.8f + shadowOffset * 0.5f, centerY + radius + shadowOffset,
-            centerX + shadowOffset * 0.5f, centerY + radius + shadowOffset
-        )
-        
-        cubicTo(
-            centerX - controlOffset * 0.8f + shadowOffset * 0.5f, centerY + radius + shadowOffset,
-            centerX - radius + shadowOffset * 0.5f, centerY + controlOffset * 1.2f + shadowOffset,
-            centerX - radius + shadowOffset * 0.5f, centerY + shadowOffset
-        )
-        
-        cubicTo(
-            centerX - radius + shadowOffset * 0.5f, centerY - controlOffset * 0.7f + shadowOffset,
-            centerX - controlOffset + shadowOffset * 0.5f, centerY - radius + shadowOffset,
-            centerX + shadowOffset * 0.5f, centerY - radius + shadowOffset
-        )
-        
-        close()
-    }
-    
-    drawPath(
-        path = shadowPath,
-        color = Color.Black.copy(alpha = 0.15f)
+    // Draw the main circular thumb
+    drawCircle(
+        color = handleColor,
+        radius = radius,
+        center = Offset(centerX, centerY)
     )
     
-    // Draw the main handle shape with elevation effect
-    drawPath(
-        path = handlePath,
-        color = handleColor.copy(alpha = 0.95f)
-    )
-    
-    // Add inner accent for dynamic feel when playing
+    // Add a subtle inner circle for depth when playing
     if (isPlaying) {
-        val innerPath = Path().apply {
-            val innerControlOffset = innerRadius * 0.4f
-            
-            // Create smaller inner shape with slightly different curves
-            moveTo(centerX, centerY - innerRadius)
-            
-            cubicTo(
-                centerX + innerControlOffset, centerY - innerRadius,
-                centerX + innerRadius, centerY - innerControlOffset * 0.6f,
-                centerX + innerRadius, centerY
-            )
-            
-            cubicTo(
-                centerX + innerRadius, centerY + innerControlOffset * 1.3f,
-                centerX + innerControlOffset * 0.7f, centerY + innerRadius,
-                centerX, centerY + innerRadius
-            )
-            
-            cubicTo(
-                centerX - innerControlOffset * 0.7f, centerY + innerRadius,
-                centerX - innerRadius, centerY + innerControlOffset * 1.3f,
-                centerX - innerRadius, centerY
-            )
-            
-            cubicTo(
-                centerX - innerRadius, centerY - innerControlOffset * 0.6f,
-                centerX - innerControlOffset, centerY - innerRadius,
-                centerX, centerY - innerRadius
-            )
-            
-            close()
-        }
-        
-        // Draw the inner accent with a lighter color
-        drawPath(
-            path = innerPath,
-            color = handleColor.copy(alpha = 0.4f)
+        drawCircle(
+            color = Color.White.copy(alpha = 0.3f),
+            radius = radius * 0.5f,
+            center = Offset(centerX, centerY)
         )
     }
 }
