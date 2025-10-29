@@ -3,6 +3,11 @@ package chromahub.rhythm.app.ui.screens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -122,7 +127,7 @@ fun QueueBottomSheet(
     )
 
     LaunchedEffect(Unit) {
-        delay(100)
+        delay(50) // Reduced delay for faster appearance
         showContent = true
     }
 
@@ -391,6 +396,18 @@ private fun NowPlayingCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Subtle pulsing animation for the Now Playing indicator
+    val infiniteTransition = rememberInfiniteTransition(label = "nowPlayingPulse")
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.7f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseAlpha"
+    )
+    
     Card(
         onClick = onClick,
         modifier = modifier
@@ -399,7 +416,11 @@ private fun NowPlayingCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         ),
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 4.dp
+        )
     ) {
         Row(
             modifier = Modifier
@@ -461,11 +482,11 @@ private fun NowPlayingCard(
                 )
             }
             
-            // Playing indicator
+            // Playing indicator with pulse animation
             Icon(
                 imageVector = RhythmIcons.MusicNote,
                 contentDescription = "Now playing",
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = pulseAlpha),
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -481,6 +502,25 @@ private fun QueueItem(
     onRemove: () -> Unit
 ) {
     val context = LocalContext.current
+    
+    // Enhanced drag animation
+    // val dragScale by animateFloatAsState(
+    //     targetValue = if (isDragging) 1.02f else 1f,
+    //     animationSpec = spring(
+    //         dampingRatio = Spring.DampingRatioMediumBouncy,
+    //         stiffness = Spring.StiffnessMedium
+    //     ),
+    //     label = "dragScale"
+    // )
+    
+    // val dragElevation by animateFloatAsState(
+    //     targetValue = if (isDragging) 8f else 0f,
+    //     animationSpec = spring(
+    //         dampingRatio = Spring.DampingRatioMediumBouncy,
+    //         stiffness = Spring.StiffnessMedium
+    //     ),
+    //     label = "dragElevation"
+    // )
     
     OutlinedCard(
         onClick = onSongClick,
@@ -501,11 +541,9 @@ private fun QueueItem(
         modifier = Modifier
             .fillMaxWidth()
             .graphicsLayer {
-                if (isDragging) {
-//                    shadowElevation = 0f
-//                    scaleX = 1.02f
-//                    scaleY = 1.02f
-                }
+                // scaleX = dragScale
+                // scaleY = dragScale
+                // shadowElevation = dragElevation
             }
     ) {
         Row(
@@ -580,6 +618,15 @@ private fun QueueItem(
             }
             
             // Drag handle with improved visual feedback
+            val handleScale by animateFloatAsState(
+                targetValue = if (isDragging) 1.3f else 1f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMedium
+                ),
+                label = "handleScale"
+            )
+            
             Icon(
                 imageVector = Icons.Default.DragHandle,
                 contentDescription = "Drag to reorder",
@@ -590,23 +637,39 @@ private fun QueueItem(
                 modifier = Modifier
                     .size(20.dp)
                     .graphicsLayer {
-                        if (isDragging) {
-                            scaleX = 1.2f
-                            scaleY = 1.2f
-                        }
+                        scaleX = handleScale
+                        scaleY = handleScale
                     }
             )
                         
             Spacer(modifier = Modifier.width(8.dp))
             
-            // Remove button
+            // Remove button with hover effect
+            var isPressed by remember { mutableStateOf(false) }
+            val buttonScale by animateFloatAsState(
+                targetValue = if (isPressed) 0.9f else 1f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMedium
+                ),
+                label = "buttonScale"
+            )
+            
             IconButton(
-                onClick = onRemove,
+                onClick = {
+                    isPressed = true
+                    onRemove()
+                },
                 colors = IconButtonDefaults.iconButtonColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f),
                     contentColor = MaterialTheme.colorScheme.onErrorContainer
                 ),
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier
+                    .size(32.dp)
+                    .graphicsLayer {
+                        scaleX = buttonScale
+                        scaleY = buttonScale
+                    }
             ) {
                 Icon(
                     imageVector = Icons.Default.Clear,
@@ -620,34 +683,46 @@ private fun QueueItem(
 
 @Composable
 private fun AnimateIn(
+    delay: Int = 50,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
+        delay(delay.toLong())
         visible = true
     }
 
     val alpha by androidx.compose.animation.core.animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
-        animationSpec = tween(durationMillis = 300, delayMillis = 50),
+        animationSpec = tween(durationMillis = 350, delayMillis = 0),
         label = "alpha"
     )
 
     val scale by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (visible) 1f else 0.95f,
+        targetValue = if (visible) 1f else 0.92f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
+            stiffness = Spring.StiffnessMediumLow
         ),
         label = "scale"
+    )
+
+    val translationY by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (visible) 0f else 20f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "translationY"
     )
 
     Box(
         modifier = modifier.graphicsLayer(
             alpha = alpha,
             scaleX = scale,
-            scaleY = scale
+            scaleY = scale,
+            translationY = translationY
         )
     ) {
         content()

@@ -5,7 +5,13 @@ import android.media.AudioManager
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -96,7 +102,7 @@ fun PlaybackBottomSheet(
     onRefreshDevices: () -> Unit,
     onDismiss: () -> Unit,
     appSettings: AppSettings,
-    sheetState: SheetState = rememberModalBottomSheetState()
+    sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 ) {
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
@@ -139,7 +145,7 @@ fun PlaybackBottomSheet(
 
     // Initialize system volume and monitor for changes
     LaunchedEffect(Unit) {
-        delay(100)
+        delay(250) // Reduced delay for faster appearance
         showContent = true
         
         // Get system volume
@@ -179,121 +185,107 @@ fun PlaybackBottomSheet(
         contentColor = MaterialTheme.colorScheme.onBackground,
         tonalElevation = 0.dp
     ) {
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 24.dp)
-                .graphicsLayer {
-                    alpha = contentAlpha
-                    translationY = contentTranslation
-                },
-            contentPadding = PaddingValues(vertical = 0.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // Header
-            item {
-                AnimatedVisibility(
-                    visible = showContent,
-                    enter = fadeIn() + slideInVertically { it },
-                    exit = fadeOut() + slideOutVertically { it }
-                ) {
-                    PlaybackHeader(
-                        haptics = haptics
-                    )
-                }
+            // Header - Fixed at top, doesn't scroll
+            AnimatedVisibility(
+                visible = showContent,
+                enter = fadeIn() + slideInVertically { it },
+                exit = fadeOut() + slideOutVertically { it }
+            ) {
+                PlaybackHeader(
+                    haptics = haptics
+                )
             }
             
-            // Active Device Card
-            item {
-                AnimatedVisibility(
-                    visible = showContent,
-                    enter = fadeIn() + slideInVertically { it },
-                    exit = fadeOut() + slideOutVertically { it }
-                ) {
-                    ActiveDeviceCard(
-                        location = currentLocation,
-                        onSwitchDevice = {
-                            // Use native Android output switcher
-                            musicViewModel.showOutputSwitcherDialog()
-                        },
-                        onRefreshDevices = onRefreshDevices,
-                        haptics = haptics
-                    )
-                }
-            }
+            Spacer(modifier = Modifier.height(16.dp))
             
-            // Volume Control Section
-            item {
-                AnimatedVisibility(
-                    visible = showContent,
-                    enter = fadeIn() + slideInVertically { it },
-                    exit = fadeOut() + slideOutVertically { it }
-                ) {
-                    VolumeControlCard(
-                        volume = volume,
-                        isMuted = isMuted,
-                        systemVolume = systemVolume,
-                        systemMaxVolume = systemMaxVolume,
-                        appSettings = appSettings,
-                        context = context,
-                        onVolumeChange = onVolumeChange,
-                        onToggleMute = onToggleMute,
-                        onMaxVolume = onMaxVolume,
-                        onSystemVolumeChange = { newVolume ->
-                            systemVolume = newVolume
-                        },
-                        haptics = haptics
-                    )
+            // Scrollable content
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(vertical = 0.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                // Active Device Card
+                item {
+                    AnimateIn {
+                        ActiveDeviceCard(
+                            location = currentLocation,
+                            onSwitchDevice = {
+                                // Use native Android output switcher
+                                musicViewModel.showOutputSwitcherDialog()
+                            },
+                            onRefreshDevices = onRefreshDevices,
+                            haptics = haptics
+                        )
+                    }
                 }
-            }
-            
-            // Playback Speed Section
-            item {
-                AnimatedVisibility(
-                    visible = showContent,
-                    enter = fadeIn() + slideInVertically { it },
-                    exit = fadeOut() + slideOutVertically { it }
-                ) {
-                    PlaybackSpeedCard(
-                        currentSpeed = playbackSpeed,
-                        onSpeedChange = { speed ->
-                            musicViewModel.setPlaybackSpeed(speed)
-                        },
-                        haptics = haptics,
-                        context = context
-                    )
+                
+                // Volume Control Section
+                item {
+                    AnimateIn {
+                        VolumeControlCard(
+                            volume = volume,
+                            isMuted = isMuted,
+                            systemVolume = systemVolume,
+                            systemMaxVolume = systemMaxVolume,
+                            appSettings = appSettings,
+                            context = context,
+                            onVolumeChange = onVolumeChange,
+                            onToggleMute = onToggleMute,
+                            onMaxVolume = onMaxVolume,
+                            onSystemVolumeChange = { newVolume ->
+                                systemVolume = newVolume
+                            },
+                            haptics = haptics
+                        )
+                    }
                 }
-            }
-            
-            // Playback Settings Section
-            item {
-                AnimatedVisibility(
-                    visible = showContent,
-                    enter = fadeIn() + slideInVertically { it },
-                    exit = fadeOut() + slideOutVertically { it }
-                ) {
-                    PlaybackSettingsCard(
-                        gaplessPlayback = gaplessPlayback,
-                        shuffleUsesExoplayer = shuffleUsesExoplayer,
-                        autoAddToQueue = autoAddToQueue,
-                        clearQueueOnNewSong = clearQueueOnNewSong,
-                        shuffleModePersistence = shuffleModePersistence,
-                        repeatModePersistence = repeatModePersistence,
-                        lyricsSourcePreference = lyricsSourcePreference,
-                        useSystemVolume = useSystemVolume,
-                        onGaplessPlaybackChange = {
-                            musicViewModel.setGaplessPlayback(it)
-                        },
-                        onShuffleUsesExoplayerChange = { appSettings.setShuffleUsesExoplayer(it) },
-                        onAutoAddToQueueChange = { appSettings.setAutoAddToQueue(it) },
-                        onClearQueueOnNewSongChange = { appSettings.setClearQueueOnNewSong(it) },
-                        onShuffleModePersistenceChange = { appSettings.setShuffleModePersistence(it) },
-                        onRepeatModePersistenceChange = { appSettings.setRepeatModePersistence(it) },
-                        onLyricsSourcePreferenceChange = { appSettings.setLyricsSourcePreference(it) },
-                        onUseSystemVolumeChange = { appSettings.setUseSystemVolume(it) },
-                        haptics = haptics,
-                        context = context
-                    )
+                
+                // Playback Speed Section
+                item {
+                    AnimateIn {
+                        PlaybackSpeedCard(
+                            currentSpeed = playbackSpeed,
+                            onSpeedChange = { speed ->
+                                musicViewModel.setPlaybackSpeed(speed)
+                            },
+                            haptics = haptics,
+                            context = context
+                        )
+                    }
+                }
+                
+                // Playback Settings Section
+                item {
+                    AnimateIn {
+                        PlaybackSettingsCard(
+                            gaplessPlayback = gaplessPlayback,
+                            shuffleUsesExoplayer = shuffleUsesExoplayer,
+                            autoAddToQueue = autoAddToQueue,
+                            clearQueueOnNewSong = clearQueueOnNewSong,
+                            shuffleModePersistence = shuffleModePersistence,
+                            repeatModePersistence = repeatModePersistence,
+                            lyricsSourcePreference = lyricsSourcePreference,
+                            useSystemVolume = useSystemVolume,
+                            onGaplessPlaybackChange = {
+                                musicViewModel.setGaplessPlayback(it)
+                            },
+                            onShuffleUsesExoplayerChange = { appSettings.setShuffleUsesExoplayer(it) },
+                            onAutoAddToQueueChange = { appSettings.setAutoAddToQueue(it) },
+                            onClearQueueOnNewSongChange = { appSettings.setClearQueueOnNewSong(it) },
+                            onShuffleModePersistenceChange = { appSettings.setShuffleModePersistence(it) },
+                            onRepeatModePersistenceChange = { appSettings.setRepeatModePersistence(it) },
+                            onLyricsSourcePreferenceChange = { appSettings.setLyricsSourcePreference(it) },
+                            onUseSystemVolumeChange = { appSettings.setUseSystemVolume(it) },
+                            haptics = haptics,
+                            context = context
+                        )
+                    }
                 }
             }
         }
@@ -349,15 +341,37 @@ private fun ActiveDeviceCard(
 ) {
     val context = LocalContext.current
     
+    // Subtle pulse animation for connected device
+    val infiniteTransition = rememberInfiniteTransition(label = "devicePulse")
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.02f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseScale"
+    )
+    
     Card(
         onClick = onSwitchDevice,
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp),
+            // .graphicsLayer {
+            //     if (location != null) {
+            //         scaleX = pulseScale
+            //         scaleY = pulseScale
+            //     }
+            // },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         ),
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 4.dp
+        )
     ) {
         Column(
             modifier = Modifier
@@ -377,9 +391,23 @@ private fun ActiveDeviceCard(
                 
                 Spacer(modifier = Modifier.weight(1f))
                 
-                // Refresh button
+                // Refresh button with rotation animation
+                var isRefreshing by remember { mutableStateOf(false) }
+                val rotation by androidx.compose.animation.core.animateFloatAsState(
+                    targetValue = if (isRefreshing) 360f else 0f,
+                    animationSpec = androidx.compose.animation.core.tween(
+                        durationMillis = 500,
+                        easing = androidx.compose.animation.core.FastOutSlowInEasing
+                    ),
+                    finishedListener = {
+                        isRefreshing = false
+                    },
+                    label = "rotation"
+                )
+                
                 IconButton(
                     onClick = {
+                        isRefreshing = true
                         HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
                         onRefreshDevices()
                     },
@@ -390,7 +418,11 @@ private fun ActiveDeviceCard(
                         imageVector = RhythmIcons.Refresh,
                         contentDescription = "Refresh devices",
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier
+                            .size(18.dp)
+                            .graphicsLayer {
+                                rotationZ = rotation
+                            }
                     )
                 }
             }
@@ -525,6 +557,16 @@ private fun VolumeControlCard(
     val currentVolume = if (useSystemVolume) systemVolume else volume
     val currentIsMuted = if (useSystemVolume) (systemVolume == 0f) else isMuted
     
+    // Animated volume for smooth transitions
+    val animatedVolume by animateFloatAsState(
+        targetValue = if (currentIsMuted) 0f else currentVolume,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "animatedVolume"
+    )
+    
     // System volume control functions
     val setSystemVolume = { newVolume: Float ->
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -557,7 +599,10 @@ private fun VolumeControlCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        )
     ) {
         Column(
             modifier = Modifier
@@ -569,13 +614,23 @@ private fun VolumeControlCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Animated icon based on volume level
+                val iconAlpha by animateFloatAsState(
+                    targetValue = if (currentIsMuted) 0.5f else 1f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    ),
+                    label = "iconAlpha"
+                )
+                
                 Icon(
                     imageVector = if (currentIsMuted) RhythmIcons.VolumeOff else 
-                                if (currentVolume < 0.3f) RhythmIcons.VolumeMute else 
-                                if (currentVolume < 0.7f) RhythmIcons.VolumeDown else 
+                                if (animatedVolume < 0.3f) RhythmIcons.VolumeMute else 
+                                if (animatedVolume < 0.7f) RhythmIcons.VolumeDown else 
                                 RhythmIcons.VolumeUp,
                     contentDescription = "Volume",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = iconAlpha),
                     modifier = Modifier.size(24.dp)
                 )
                 
@@ -599,7 +654,7 @@ private fun VolumeControlCard(
                 
                 // Volume percentage
                 Text(
-                    text = "${(if (currentIsMuted) 0f else currentVolume * 100).toInt()}%",
+                    text = "${(animatedVolume * 100).toInt()}%",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -642,7 +697,7 @@ private fun VolumeControlCard(
                 
                 // Volume slider
                 Slider(
-                    value = if (currentIsMuted) 0f else currentVolume,
+                    value = currentVolume,
                     onValueChange = { newVolume ->
                         HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
                         if (useSystemVolume) {
@@ -709,7 +764,10 @@ private fun PlaybackSpeedCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        )
     ) {
         Column(
             modifier = Modifier
@@ -858,7 +916,10 @@ private fun PlaybackSettingsCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        )
     ) {
         Column(
             modifier = Modifier
@@ -1103,3 +1164,52 @@ private fun getDeviceIcon(location: PlaybackLocation) = when {
     location.id == "speaker" -> RhythmIcons.SpeakerFilled
     else -> RhythmIcons.Speaker
 }
+
+@Composable
+private fun AnimateIn(
+    delay: Int = 50,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(delay.toLong())
+        visible = true
+    }
+
+    val alpha by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = androidx.compose.animation.core.tween(durationMillis = 350, delayMillis = 0),
+        label = "alpha"
+    )
+
+    val scale by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (visible) 1f else 0.92f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "scale"
+    )
+
+    val translationY by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (visible) 0f else 20f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "translationY"
+    )
+
+    Box(
+        modifier = modifier.graphicsLayer(
+            alpha = alpha,
+            scaleX = scale,
+            scaleY = scale,
+            translationY = translationY
+        )
+    ) {
+        content()
+    }
+}
+

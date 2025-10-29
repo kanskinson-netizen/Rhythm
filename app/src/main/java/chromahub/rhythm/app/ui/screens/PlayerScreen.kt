@@ -490,7 +490,7 @@ fun PlayerScreen(
     // Bottom sheet states
     val queueSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val addToPlaylistSheetState = rememberModalBottomSheetState()
-    val deviceOutputSheetState = rememberModalBottomSheetState()
+    val deviceOutputSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val albumBottomSheetState = rememberModalBottomSheetState()
     val artistBottomSheetState = rememberModalBottomSheetState()
     var showQueueSheet by remember { mutableStateOf(false) }
