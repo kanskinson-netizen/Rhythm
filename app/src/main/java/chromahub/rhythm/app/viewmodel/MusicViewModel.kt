@@ -676,6 +676,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     _songs.value = updatedSongs
                     _isGenreDetectionComplete.value = true
                     _isGenreDetectionRunning.value = false
+                    appSettings.setGenreDetectionCompleted(true)
                     Log.d(TAG, "Background genre detection completed, updated ${updatedSongs.count { it.genre != null }} songs with genres")
                 }
             )
