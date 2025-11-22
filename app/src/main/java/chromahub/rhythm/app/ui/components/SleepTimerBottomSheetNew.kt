@@ -4,11 +4,13 @@ package chromahub.rhythm.app.ui.screens
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -29,6 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -180,56 +183,61 @@ fun SleepTimerBottomSheetNew(
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // Header
+            // Header with improved layout
             item {
                 Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 0.dp, vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Icon(
-                        imageVector = if (isTimerActive) Icons.Rounded.Timer else Icons.Rounded.AccessTime,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .let { 
-                                if (isTimerActive) it
-                                    .rotate(rotationAngle)
-                                    .scale(pulseScale) 
-                                else it 
-                            }
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
+                    Column {
                         Text(
                             text = "Sleep Timer",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.displayMedium,
+                            fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Text(
-                            text = when {
-                                isTimerActive -> "Active • ${formatTime(remainingSeconds)} remaining"
-                                !isPlaying || !serviceConnected || currentSong == null -> "No music playing • Timer unavailable"
-                                else -> "Set automatic playback control"
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (!isPlaying || !serviceConnected || currentSong == null) {
-                                MaterialTheme.colorScheme.error
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 6.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    shape = androidx.compose.foundation.shape.CircleShape
+                                )
+                        ) {
+                            Text(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.labelLarge,
+                                text = when {
+                                    isTimerActive -> "Active • ${formatTime(remainingSeconds)} remaining"
+                                    !isPlaying || !serviceConnected || currentSong == null -> "No music playing"
+                                    else -> "Set automatic playback control"
+                                },
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                maxLines = 1,
+                                color = if (!isPlaying || !serviceConnected || currentSong == null) {
+                                    MaterialTheme.colorScheme.error
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                }
+                            )
+                        }
+                    }
+
+                    if (isTimerActive) {
+                        Icon(
+                            imageVector = Icons.Rounded.Timer,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .rotate(rotationAngle)
+                                .scale(pulseScale)
                         )
                     }
                 }
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // Text(
-                //     text = "Schedule automatic playback control after a specified time period.",
-                //     style = MaterialTheme.typography.bodyMedium,
-                //     color = MaterialTheme.colorScheme.onSurfaceVariant
-                // )
             }
             
             // Timer Display (when active)
@@ -347,7 +355,7 @@ fun SleepTimerBottomSheetNew(
                 item {
                     Card(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(20.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -432,7 +440,7 @@ fun SleepTimerBottomSheetNew(
                 item {
                     Card(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(20.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -491,7 +499,7 @@ fun SleepTimerBottomSheetNew(
             item {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(20.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(

@@ -45,9 +45,13 @@ fun CollapsibleHeaderScreen(
     onBackClick: () -> Unit = {},
     actions: @Composable () -> Unit = {},
     filterDropdown: @Composable () -> Unit = {}, // New parameter for the filter dropdown
+    scrollBehaviorKey: String? = null, // Key for preserving scroll behavior state
     content: @Composable (Modifier) -> Unit
 ) {
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
+        rememberTopAppBarState(),
+        canScroll = { true }
+    )
 
 
     val lazyListState = rememberLazyListState()

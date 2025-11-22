@@ -158,6 +158,11 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         const val BROADCAST_SLEEP_TIMER_STATUS = "chromahub.rhythm.app.broadcast.SLEEP_TIMER_STATUS"
         const val EXTRA_TIMER_ACTIVE = "timer_active"
         const val EXTRA_REMAINING_TIME = "remaining_time"
+        
+        // Audio session ID
+        const val ACTION_GET_AUDIO_SESSION_ID = "chromahub.rhythm.app.action.GET_AUDIO_SESSION_ID"
+        const val BROADCAST_AUDIO_SESSION_ID = "chromahub.rhythm.app.broadcast.AUDIO_SESSION_ID"
+        const val EXTRA_AUDIO_SESSION_ID = "audio_session_id"
 
         // Playback custom commands
         const val REPEAT_MODE_ALL = "repeat_all"
@@ -1173,6 +1178,15 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     }
     
     // Audio Effects (Equalizer) functionality
+    fun getAudioSessionId(): Int {
+        return try {
+            player.audioSessionId
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting audio session ID", e)
+            0
+        }
+    }
+    
     fun initializeAudioEffects() {
         try {
             val audioSessionId = player.audioSessionId

@@ -25,7 +25,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
@@ -59,9 +61,11 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,6 +79,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import chromahub.rhythm.app.ui.components.CollapsibleHeaderScreen
 import chromahub.rhythm.app.ui.components.RhythmIcons
+import chromahub.rhythm.app.ui.utils.LazyListStateSaver
 import chromahub.rhythm.app.data.AppSettings
 import android.content.Context
 import androidx.compose.material.icons.filled.Settings
@@ -110,7 +115,8 @@ data class SettingItem(
     val description: String? = null,
     val onClick: (() -> Unit)? = null,
     val toggleState: Boolean? = null,
-    val onToggleChange: ((Boolean) -> Unit)? = null
+    val onToggleChange: ((Boolean) -> Unit)? = null,
+    val data: Any? = null
 )
 
 data class SettingGroup(
@@ -121,7 +127,8 @@ data class SettingGroup(
 @Composable
 fun TunerSettingsScreen(
     onBackClick: () -> Unit,
-    onNavigateTo: (String) -> Unit // Add navigation callback
+    onNavigateTo: (String) -> Unit, // Add navigation callback
+    scrollState: LazyListState? = null // Optional scroll state parameter
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val context = LocalContext.current
@@ -234,7 +241,15 @@ fun TunerSettingsScreen(
             )
         )
 
+        val lazyListState = scrollState ?: rememberSaveable(
+            key = "tuner_settings_scroll_state",
+            saver = LazyListStateSaver
+        ) {
+            LazyListState()
+        }
+        
         LazyColumn(
+            state = lazyListState,
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background) // Ensure background color for the scrollable content
@@ -460,7 +475,15 @@ fun TunerSettingsScreenPreview() {
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun SettingsScreen(onBack: () -> Unit, appSettings: chromahub.rhythm.app.data.AppSettings) {
-    var currentRoute by remember { mutableStateOf<String?>(null) }
+    var currentRoute by rememberSaveable { mutableStateOf<String?>(null) }
+    
+    // Hoist the main settings scroll state to persist across navigation
+    val mainSettingsScrollState = rememberSaveable(
+        key = "main_tuner_settings_scroll_state",
+        saver = LazyListStateSaver
+    ) {
+        LazyListState()
+    }
     
     // Handle back navigation - if we're in a subsettings screen, go back to main screen
     val handleBack = {
@@ -501,7 +524,8 @@ fun SettingsScreen(onBack: () -> Unit, appSettings: chromahub.rhythm.app.data.Ap
                 ) + fadeOut(animationSpec = tween(300))
             }
         },
-        label = "settings_navigation"
+        label = "settings_navigation",
+        contentKey = { it ?: "main_settings" }
     ) { route ->
         when (route) {
             SettingsRoutes.NOTIFICATIONS -> NotificationsSettingsScreen(onBackClick = { currentRoute = null })
@@ -522,7 +546,8 @@ fun SettingsScreen(onBack: () -> Unit, appSettings: chromahub.rhythm.app.data.Ap
             SettingsRoutes.LYRICS_SOURCE -> LyricsSourceSettingsScreen(onBackClick = { currentRoute = null })
             else -> TunerSettingsScreen(
                 onBackClick = handleBack,
-                onNavigateTo = { route -> currentRoute = route }
+                onNavigateTo = { route -> currentRoute = route },
+                scrollState = mainSettingsScrollState
             )
         }
     }

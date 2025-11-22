@@ -23,6 +23,10 @@ import chromahub.rhythm.app.network.YTMusicApiService
 object NetworkClient {
     private const val TAG = "NetworkClient"
     
+    // API Keys - Only set by developer
+    private const val SPOTIFY_CANVAS_API_KEY = "sk-paxsenix-fwM2gVBOGKQAiUDkJrlRyzJCiiBWH_ZXvGo_SwdXLsGD9bjR"
+    private const val APPLE_MUSIC_API_KEY = "sk-paxsenix-fwM2gVBOGKQAiUDkJrlRyzJCiiBWH_ZXvGo_SwdXLsGD9bjR"
+    
     private const val LRCLIB_BASE_URL = "https://lrclib.net/"
     private const val DEEZER_BASE_URL = "https://api.deezer.com/"
     private const val CANVAS_BASE_URL = "https://api.paxsenix.org/spotify/"
@@ -156,6 +160,12 @@ object NetworkClient {
         .build()
     
     private val canvasHttpClient = OkHttpClient.Builder()
+        .addInterceptor { chain ->
+            val request = chain.request().newBuilder()
+                .addHeader("Authorization", "Bearer $SPOTIFY_CANVAS_API_KEY")
+                .build()
+            chain.proceed(request)
+        }
         .addInterceptor(deezerHeadersInterceptor())
         .addInterceptor(loggingInterceptor)
         .addInterceptor(retryInterceptor)
@@ -217,6 +227,12 @@ object NetworkClient {
         .build()
     
     private val appleMusicHttpClient = OkHttpClient.Builder()
+        .addInterceptor { chain ->
+            val request = chain.request().newBuilder()
+                .addHeader("Authorization", "Bearer $APPLE_MUSIC_API_KEY")
+                .build()
+            chain.proceed(request)
+        }
         .addInterceptor(deezerHeadersInterceptor())
         .addInterceptor(loggingInterceptor)
         .addInterceptor(retryInterceptor)

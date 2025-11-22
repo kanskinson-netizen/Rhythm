@@ -33,6 +33,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.border
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
@@ -84,6 +85,7 @@ import chromahub.rhythm.app.ui.components.CollapsibleHeaderScreen
 import chromahub.rhythm.app.ui.components.RhythmIcons
 import chromahub.rhythm.app.ui.components.StandardBottomSheetHeader
 import chromahub.rhythm.app.ui.screens.LicensesBottomSheet
+import chromahub.rhythm.app.ui.utils.LazyListStateSaver
 import chromahub.rhythm.app.viewmodel.MusicViewModel
 import chromahub.rhythm.app.viewmodel.AppUpdaterViewModel
 import chromahub.rhythm.app.ui.theme.getFontPreviewStyle
@@ -314,7 +316,15 @@ fun NotificationsSettingsScreen(onBackClick: () -> Unit) {
             )
         )
 
+        val lazyListState = rememberSaveable(
+            key = "notifications_settings_scroll_state",
+            saver = LazyListStateSaver
+        ) {
+            androidx.compose.foundation.lazy.LazyListState()
+        }
+        
         LazyColumn(
+            state = lazyListState,
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
@@ -533,7 +543,8 @@ fun PlaylistsSettingsScreen(onBackClick: () -> Unit) {
                         Icons.Default.MusicNote,
                         playlist.name,
                         "${playlist.songs.size} songs",
-                        onClick = {} // Could navigate to playlist view
+                        onClick = null, // No action for default playlists
+                        data = playlist.id
                     )
                 }
             } else {
@@ -542,7 +553,7 @@ fun PlaylistsSettingsScreen(onBackClick: () -> Unit) {
                         Icons.Default.Info,
                         "No Default Playlists",
                         "Default playlists are automatically created",
-                        onClick = {}
+                        onClick = null
                     )
                 )
             }
@@ -555,7 +566,8 @@ fun PlaylistsSettingsScreen(onBackClick: () -> Unit) {
                         Icons.Default.QueueMusic,
                         playlist.name,
                         "${playlist.songs.size} songs",
-                        onClick = {} // Could navigate to playlist view
+                        onClick = null, // No navigation
+                        data = playlist.id // Store playlist ID for deletion
                     )
                 }
             } else {
@@ -582,7 +594,15 @@ fun PlaylistsSettingsScreen(onBackClick: () -> Unit) {
             onBackClick()
         }
     ) { modifier ->
+        val lazyListState = rememberSaveable(
+            key = "playlists_settings_scroll_state",
+            saver = LazyListStateSaver
+        ) {
+            androidx.compose.foundation.lazy.LazyListState()
+        }
+        
         LazyColumn(
+            state = lazyListState,
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
@@ -686,7 +706,17 @@ fun PlaylistsSettingsScreen(onBackClick: () -> Unit) {
                 ) {
                     Column {
                         group.items.forEachIndexed { index, item ->
-                            SettingRow(item = item)
+                            if (group.title == "Default Playlists" || group.title == "My Playlists") {
+                                PlaylistSettingRow(
+                                    item = item,
+                                    isDefaultPlaylist = group.title == "Default Playlists",
+                                    onDelete = { playlist ->
+                                        playlistToDelete = playlist
+                                    }
+                                )
+                            } else {
+                                SettingRow(item = item)
+                            }
                             if (index < group.items.lastIndex) {
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = 20.dp),
@@ -756,51 +786,178 @@ fun PlaylistsSettingsScreen(onBackClick: () -> Unit) {
     if (showCleanupConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showCleanupConfirmDialog = false },
-            title = { Text("Cleanup Empty Playlists?") },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = { 
+                Text(
+                    text = "Cleanup Empty Playlists?",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            },
             text = {
                 Text("This will permanently delete ${emptyPlaylists.size} empty playlist${if (emptyPlaylists.size > 1) "s" else ""}. This action cannot be undone.")
             },
             confirmButton = {
-                TextButton(
+                Button(
                     onClick = {
                         emptyPlaylists.forEach { playlist ->
                             musicViewModel.deletePlaylist(playlist.id)
                         }
                         showCleanupConfirmDialog = false
-                    }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
                 ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Delete")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showCleanupConfirmDialog = false }) {
+                OutlinedButton(onClick = { showCleanupConfirmDialog = false }) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text("Cancel")
                 }
-            }
+            },
+            shape = RoundedCornerShape(24.dp)
         )
     }
 
     playlistToDelete?.let { playlist ->
         AlertDialog(
             onDismissRequest = { playlistToDelete = null },
-            title = { Text("Delete Playlist?") },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = { 
+                Text(
+                    text = "Delete Playlist?",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            },
             text = { Text("Are you sure you want to delete \"${playlist.name}\"? This action cannot be undone.") },
             confirmButton = {
-                TextButton(
+                Button(
                     onClick = {
                         musicViewModel.deletePlaylist(playlist.id)
                         playlistToDelete = null
-                    }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
                 ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Delete")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { playlistToDelete = null }) {
+                OutlinedButton(onClick = { playlistToDelete = null }) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text("Cancel")
                 }
-            }
+            },
+            shape = RoundedCornerShape(24.dp)
         )
+    }
+}
+
+@Composable
+private fun PlaylistSettingRow(
+    item: SettingItem,
+    isDefaultPlaylist: Boolean,
+    onDelete: (Playlist) -> Unit
+) {
+    val hapticFeedback = LocalHapticFeedback.current
+    val context = LocalContext.current
+    val musicViewModel: MusicViewModel = viewModel()
+    val playlists by musicViewModel.playlists.collectAsState()
+    
+    // Get playlist from data field (should be playlist ID)
+    val playlistId = item.data as? String
+    val playlist = playlists.find { it.id == playlistId }
+    
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = item.icon,
+            contentDescription = item.title,
+            modifier = Modifier
+                .size(40.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(50))
+                .padding(8.dp),
+            tint = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = item.title,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            item.description?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        // Show delete icon only for user playlists
+        if (!isDefaultPlaylist && playlist != null) {
+            IconButton(
+                onClick = {
+                    HapticUtils.performHapticFeedback(context, hapticFeedback, HapticFeedbackType.LongPress)
+                    onDelete(playlist)
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete playlist",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
     }
 }
 
@@ -1004,7 +1161,15 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
         showBackButton = true,
         onBackClick = onBackClick
     ) { modifier ->
+        val lazyListState = rememberSaveable(
+            key = "media_scan_settings_scroll_state",
+            saver = LazyListStateSaver
+        ) {
+            androidx.compose.foundation.lazy.LazyListState()
+        }
+        
         LazyColumn(
+            state = lazyListState,
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
@@ -1950,7 +2115,8 @@ fun SpotifyApiConfigDialog(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Cancel")
             }
-        }
+        },
+        shape = RoundedCornerShape(24.dp)
     )
 }
 
@@ -1966,7 +2132,15 @@ fun AboutScreen(onBackClick: () -> Unit) {
         showBackButton = true,
         onBackClick = onBackClick
     ) { modifier ->
+        val lazyListState = rememberSaveable(
+            key = "about_screen_scroll_state",
+            saver = LazyListStateSaver
+        ) {
+            androidx.compose.foundation.lazy.LazyListState()
+        }
+        
         LazyColumn(
+            state = lazyListState,
             modifier = modifier.fillMaxSize(),
             contentPadding = PaddingValues(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -2373,7 +2547,7 @@ fun AboutScreen(onBackClick: () -> Unit) {
                         Button(
                             onClick = {
                                 HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
-                                appUpdaterViewModel.checkForUpdates()
+                                appUpdaterViewModel.checkForUpdates(force = true)
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -2837,7 +3011,15 @@ fun UpdatesSettingsScreen(onBackClick: () -> Unit) {
 //            )
 //        }
     ) { modifier ->
+        val lazyListState = rememberSaveable(
+            key = "updates_settings_scroll_state",
+            saver = LazyListStateSaver
+        ) {
+            androidx.compose.foundation.lazy.LazyListState()
+        }
+        
         LazyColumn(
+            state = lazyListState,
             modifier = modifier.fillMaxSize(),
             contentPadding = PaddingValues(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -3621,7 +3803,13 @@ fun UpdatesSettingsScreen(onBackClick: () -> Unit) {
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showChannelDialog = false }) {
+                OutlinedButton(onClick = { showChannelDialog = false }) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text("Close")
                 }
             },
@@ -3698,7 +3886,13 @@ fun UpdatesSettingsScreen(onBackClick: () -> Unit) {
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showIntervalDialog = false }) {
+                OutlinedButton(onClick = { showIntervalDialog = false }) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text("Close")
                 }
             },
@@ -8343,7 +8537,15 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
         showBackButton = true,
         onBackClick = onBackClick
     ) { modifier ->
+        val lazyListState = rememberSaveable(
+            key = "equalizer_settings_scroll_state",
+            saver = LazyListStateSaver
+        ) {
+            androidx.compose.foundation.lazy.LazyListState()
+        }
+        
         LazyColumn(
+            state = lazyListState,
             modifier = modifier.fillMaxSize(),
             contentPadding = PaddingValues(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -8351,8 +8553,13 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
             // Equalizer Enable/Disable Card
             item {
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isEqualizerEnabled)
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                        else
+                            MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    shape = RoundedCornerShape(20.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -8400,8 +8607,8 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                 // Presets Section
                 item {
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                        shape = RoundedCornerShape(20.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -8429,6 +8636,22 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                                     color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.Medium
                                 )
+                                if (selectedPreset == "Custom") {
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    FilledIconButton(
+                                        onClick = { applyPreset(presets[0]) },
+                                        modifier = Modifier.size(32.dp),
+                                        colors = IconButtonDefaults.filledIconButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                        )
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Refresh,
+                                            contentDescription = "Reset to Flat",
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
                             }
 
                             Spacer(modifier = Modifier.height(16.dp))
@@ -8490,8 +8713,8 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                 // Frequency Bands Section
                 item {
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                        shape = RoundedCornerShape(20.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -8519,10 +8742,14 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                             // Frequency Response Chart
                             Card(
                                 colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                                    containerColor = MaterialTheme.colorScheme.surface
                                 ),
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.fillMaxWidth()
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                )
                             ) {
                                 Column(
                                     modifier = Modifier.padding(16.dp)
@@ -8608,7 +8835,7 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                             // Frequency Bands Grid
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 bandLevels.forEachIndexed { index, level ->
                                     Card(
@@ -8621,7 +8848,7 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                                         Row(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(16.dp),
+                                                .padding(horizontal = 16.dp, vertical = 12.dp),
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                                         ) {
@@ -8646,50 +8873,21 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                                                 )
                                             }
 
-                                            // Level Indicator Bar
-                                            Box(
-                                                modifier = Modifier
-                                                    .weight(1f)
-                                                    .height(8.dp)
-                                                    .background(
-                                                        MaterialTheme.colorScheme.surfaceVariant,
-                                                        RoundedCornerShape(4.dp)
-                                                    )
-                                            ) {
-                                                val progress = (level + 15f) / 30f
-                                                Box(
-                                                    modifier = Modifier
-                                                        .fillMaxHeight()
-                                                        .fillMaxWidth(progress)
-                                                        .background(
-                                                            if (level > 0f) MaterialTheme.colorScheme.primary
-                                                            else if (level < 0f) MaterialTheme.colorScheme.error
-                                                            else MaterialTheme.colorScheme.outline,
-                                                            RoundedCornerShape(4.dp)
-                                                        )
-                                                )
-                                            }
-
                                             // Slider Control
-                                            Box(
-                                                modifier = Modifier.width(120.dp),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Slider(
-                                                    value = level,
-                                                    onValueChange = { newLevel ->
-                                                        HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
-                                                        updateBandLevel(index, newLevel)
-                                                    },
-                                                    valueRange = -15f..15f,
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    colors = SliderDefaults.colors(
-                                                        thumbColor = MaterialTheme.colorScheme.primary,
-                                                        activeTrackColor = MaterialTheme.colorScheme.primary,
-                                                        inactiveTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                                                    )
+                                            Slider(
+                                                value = level,
+                                                onValueChange = { newLevel ->
+                                                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                                                    updateBandLevel(index, newLevel)
+                                                },
+                                                valueRange = -15f..15f,
+                                                modifier = Modifier.weight(1f),
+                                                colors = SliderDefaults.colors(
+                                                    thumbColor = MaterialTheme.colorScheme.primary,
+                                                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                                                    inactiveTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                                                 )
-                                            }
+                                            )
                                         }
                                     }
                                 }
@@ -8701,8 +8899,8 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                 // Audio Effects Section
                 item {
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                        shape = RoundedCornerShape(20.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -8899,8 +9097,8 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                 // System Equalizer Section
                 item {
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                        shape = RoundedCornerShape(20.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(

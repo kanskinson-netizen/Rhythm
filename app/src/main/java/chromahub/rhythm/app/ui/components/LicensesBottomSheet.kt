@@ -23,6 +23,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -34,6 +35,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import chromahub.rhythm.app.ui.components.RhythmIcons
@@ -66,42 +68,55 @@ fun LicensesBottomSheet(
                 .padding(horizontal = 24.dp, vertical = 16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header
+            // Header with improved layout matching particle intensity
             Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 0.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Icon(
-                    imageVector = RhythmIcons.Settings,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(32.dp)
-                )
-                Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(
-                        text = "Open Source Libraries",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
+                        text = "Open Source Licenses",
+                        style = MaterialTheme.typography.displayMedium,
+                        fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier
+                            .padding(top = 6.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                shape = androidx.compose.foundation.shape.CircleShape
+                            )
+                    ) {
+                        Text(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                            text = "Built with amazing open source projects",
+                            overflow = TextOverflow.Ellipsis,
+                            maxLines = 1,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = "Rhythm is built with amazing open source libraries. We're grateful to the following projects and their contributors:",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // List of libraries
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            // Libraries Card
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                ),
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                 LicenseSheetItem(
                     name = "Jetpack Compose",
                     description = "Android's modern toolkit for building native UI",
@@ -200,36 +215,82 @@ fun LicensesBottomSheet(
                     context = context,
                     haptic = haptic
                 )
+                
+                LicenseSheetItem(
+                    name = "JAudioTagger",
+                    description = "Audio metadata editing library for Java",
+                    license = "LGPL v2.1",
+                    url = "https://github.com/Borewit/jaudiotagger-android",
+                    context = context,
+                    haptic = haptic
+                )
+                
+                LicenseSheetItem(
+                    name = "AndroidX Fragment",
+                    description = "Modular UI components for Android",
+                    license = "Apache License 2.0",
+                    url = "https://developer.android.com/jetpack/androidx/releases/fragment",
+                    context = context,
+                    haptic = haptic
+                )
+                
+                LicenseSheetItem(
+                    name = "AndroidX MediaRouter",
+                    description = "Media routing support for Android",
+                    license = "Apache License 2.0",
+                    url = "https://developer.android.com/jetpack/androidx/releases/mediarouter",
+                    context = context,
+                    haptic = haptic
+                )
+                
+                LicenseSheetItem(
+                    name = "Material Icons Extended",
+                    description = "Extended set of Material Design icons",
+                    license = "Apache License 2.0",
+                    url = "https://developer.android.com/jetpack/compose/resources/material-icons",
+                    context = context,
+                    haptic = haptic
+                )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Info card
+            // License info card
             Card(
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
                 ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(16.dp)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Apache License 2.0",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                    Icon(
+                        imageVector = RhythmIcons.Actions.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
                     )
-                    Text(
-                        text = "All libraries used in Rhythm are licensed under the Apache License 2.0, which permits use, reproduction, and distribution with proper attribution.",
-                        style = MaterialTheme.typography.bodySmall,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Apache License 2.0",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "All libraries permit use, reproduction, and distribution with proper attribution",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
@@ -247,56 +308,59 @@ private fun LicenseSheetItem(
     context: android.content.Context,
     haptic: androidx.compose.ui.hapticfeedback.HapticFeedback
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .clickable {
-                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(intent)
-            }
-            .background(
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
-                shape = RoundedCornerShape(16.dp)
-            )
-            .padding(16.dp)
+    Card(
+        onClick = {
+            HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = name,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-                Text(
-                    text = license,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(top = 4.dp)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Spacer(modifier = Modifier.height(6.dp))
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                ) {
+                    Text(
+                        text = license,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
             Icon(
-                imageVector = RhythmIcons.ArtistFilled,
+                imageVector = RhythmIcons.Forward,
                 contentDescription = "View License",
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp)
             )
         }
