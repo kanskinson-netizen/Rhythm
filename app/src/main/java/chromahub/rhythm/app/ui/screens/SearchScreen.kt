@@ -111,7 +111,6 @@ import chromahub.rhythm.app.ui.components.CreatePlaylistDialog
 import chromahub.rhythm.app.ui.screens.ArtistBottomSheet
 import chromahub.rhythm.app.util.ImageUtils
 import chromahub.rhythm.app.util.HapticUtils
-import chromahub.rhythm.app.ui.screens.SettingsSectionHeader
 import chromahub.rhythm.app.ui.components.M3PlaceholderType
 
 @OptIn(ExperimentalMaterial3Api::class)

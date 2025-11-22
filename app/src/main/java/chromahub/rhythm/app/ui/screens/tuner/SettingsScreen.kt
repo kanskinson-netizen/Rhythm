@@ -229,8 +229,7 @@ fun TunerSettingsScreen(
                 title = "Advanced",
                 items = listOf(
                     SettingItem(Icons.Default.BugReport, "Crash Log History", "View and manage crash reports", onClick = { onNavigateTo(SettingsRoutes.CRASH_LOG_HISTORY) }),
-                    SettingItem(Icons.Default.Science, "Experimental Features", "Try out cutting-edge features", onClick = { onNavigateTo(SettingsRoutes.EXPERIMENTAL_FEATURES) }),
-                    SettingItem(Icons.Default.Settings, "Use Classic Settings", "Switch to the old settings interface", onClick = { appSettings.setUseTunerSettings(false) })
+                    SettingItem(Icons.Default.Science, "Experimental Features", "Try out cutting-edge features", onClick = { onNavigateTo(SettingsRoutes.EXPERIMENTAL_FEATURES) })
                 )
             )
         )

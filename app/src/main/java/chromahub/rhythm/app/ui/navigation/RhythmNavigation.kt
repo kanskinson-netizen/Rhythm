@@ -93,7 +93,6 @@ import chromahub.rhythm.app.ui.screens.PlayerScreen
 
 import chromahub.rhythm.app.ui.screens.PlaylistDetailScreen
 import chromahub.rhythm.app.ui.screens.SearchScreen
-import chromahub.rhythm.app.ui.screens.SettingsScreen
 import chromahub.rhythm.app.ui.screens.tuner.SettingsScreen as TunerSettingsScreenWrapper
 import chromahub.rhythm.app.ui.screens.tuner.*
 import chromahub.rhythm.app.ui.screens.AboutScreen // Added import for AboutScreen
@@ -966,54 +965,13 @@ fun RhythmNavigation(
                                     )
                         }
                     ) {
-                        val useTunerSettings by appSettings.useTunerSettings.collectAsState()
-                        
-                        if (useTunerSettings) {
-                            // Use the new tuner settings screen by default
-                            TunerSettingsScreenWrapper(
-                                onBack = {
-                                    navController.popBackStack()
-                                },
-                                appSettings = appSettings
-                            )
-                        } else {
-                            // Use the old settings screen
-                            SettingsScreen(
-                                currentSong = currentSong,
-                                isPlaying = isPlaying,
-                                progress = progress,
-                                onPlayPause = onPlayPause,
-                                onPlayerClick = {
-                                    navController.navigate(Screen.Player.route)
-                                },
-                                onSkipNext = onSkipNext,
-                                showLyrics = showLyrics,
-                                showOnlineOnlyLyrics = showOnlineOnlyLyrics,
-                                onShowLyricsChange = { show ->
-                                    viewModel.setShowLyrics(show)
-                                },
-                                onShowOnlineOnlyLyricsChange = { onlineOnly ->
-                                    @Suppress("DEPRECATION")
-                                    viewModel.appSettings.setOnlineOnlyLyrics(onlineOnly)
-                                },
-                                onLyricsSourcePreferenceChange = { preference ->
-                                    viewModel.setLyricsSourcePreference(preference)
-                                },
-                                onOpenSystemEqualizer = {
-                                    viewModel.openSystemEqualizer()
-                                },
-                                onBack = {
-                                    navController.popBackStack()
-                                },
-                                onCheckForUpdates = {
-                                    // Navigate to the app updater screen
-                                    navController.navigate(Screen.AppUpdater.createRoute(true))
-                                },
-                                onNavigateToAbout = {
-                                    navController.navigate(Screen.About.route)
-                                }
-                            )
-                        }
+                        // Use the tuner settings screen (now the default)
+                        TunerSettingsScreenWrapper(
+                            onBack = {
+                                navController.popBackStack()
+                            },
+                            appSettings = appSettings
+                        )
                     }
 
                     composable(

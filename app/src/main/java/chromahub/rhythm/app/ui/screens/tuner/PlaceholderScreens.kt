@@ -4221,7 +4221,7 @@ fun CacheManagementSettingsScreen(onBackClick: () -> Unit) {
 
 // CacheSizeDialog composable for setting maximum cache size
 @Composable
-private fun CacheSizeDialog(
+fun CacheSizeDialog(
     currentSize: Long,
     onDismiss: () -> Unit,
     onSave: (Long) -> Unit
