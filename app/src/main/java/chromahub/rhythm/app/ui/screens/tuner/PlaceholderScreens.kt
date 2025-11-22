@@ -3003,57 +3003,62 @@ fun UpdatesSettingsScreen(onBackClick: () -> Unit) {
                 }
             }
             // What's New section
-            if (updatesEnabled && latestVersion != null && whatsNew.isNotEmpty()) {
-                item {
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Text(
-                        text = "What's New",
-                        style = MaterialTheme.typography.titleSmall.copy(fontFamily = FontFamily.Default, fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
-                    )
-                }
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(18.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(20.dp)
+            item {
+                AnimatedVisibility(
+                    visible = updatesEnabled && latestVersion != null && whatsNew.isNotEmpty(),
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Column {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            text = "What's New",
+                            style = MaterialTheme.typography.titleSmall.copy(fontFamily = FontFamily.Default, fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                         ) {
-                            val onSurfaceColor = MaterialTheme.colorScheme.onSurface.toArgb()
-                            whatsNew.forEachIndexed { index, change ->
-                                Row(
-                                    modifier = Modifier.padding(vertical = 2.dp),
-                                    verticalAlignment = Alignment.Top
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(6.dp)
-                                            .padding(top = 8.dp)
-                                            .background(
-                                                MaterialTheme.colorScheme.primary,
-                                                CircleShape
-                                            )
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    AndroidView(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        factory = { ctx ->
-                                            TextView(ctx).apply {
-                                                setTextColor(onSurfaceColor)
+                            Column(
+                                modifier = Modifier.padding(20.dp)
+                            ) {
+                                val onSurfaceColor = MaterialTheme.colorScheme.onSurface.toArgb()
+                                whatsNew.forEachIndexed { index, change ->
+                                    Row(
+                                        modifier = Modifier.padding(vertical = 2.dp),
+                                        verticalAlignment = Alignment.Top
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(6.dp)
+                                                .padding(top = 8.dp)
+                                                .background(
+                                                    MaterialTheme.colorScheme.primary,
+                                                    CircleShape
+                                                )
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        AndroidView(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            factory = { ctx ->
+                                                TextView(ctx).apply {
+                                                    setTextColor(onSurfaceColor)
+                                                }
+                                            },
+                                            update = { textView ->
+                                                textView.text = HtmlCompat.fromHtml(change, HtmlCompat.FROM_HTML_MODE_COMPACT)
+                                                textView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
                                             }
-                                        },
-                                        update = { textView ->
-                                            textView.text = HtmlCompat.fromHtml(change, HtmlCompat.FROM_HTML_MODE_COMPACT)
-                                            textView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
-                                        }
-                                    )
-                                }
-                                if (index < whatsNew.size - 1) {
-                                    Spacer(modifier = Modifier.height(1.dp))
+                                        )
+                                    }
+                                    if (index < whatsNew.size - 1) {
+                                        Spacer(modifier = Modifier.height(1.dp))
+                                    }
                                 }
                             }
                         }
@@ -3062,57 +3067,62 @@ fun UpdatesSettingsScreen(onBackClick: () -> Unit) {
             }
 
             // Known Issues section
-            if (updatesEnabled && latestVersion != null && knownIssues.isNotEmpty()) {
-                item {
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Text(
-                        text = "Known Issues",
-                        style = MaterialTheme.typography.titleSmall.copy(fontFamily = FontFamily.Default, fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
-                    )
-                }
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(18.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(20.dp)
+            item {
+                AnimatedVisibility(
+                    visible = updatesEnabled && latestVersion != null && knownIssues.isNotEmpty(),
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Column {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            text = "Known Issues",
+                            style = MaterialTheme.typography.titleSmall.copy(fontFamily = FontFamily.Default, fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                         ) {
-                            val onSurfaceColor = MaterialTheme.colorScheme.onSurface.toArgb()
-                            knownIssues.forEachIndexed { index, issue ->
-                                Row(
-                                    modifier = Modifier.padding(vertical = 2.dp),
-                                    verticalAlignment = Alignment.Top
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(6.dp)
-                                            .padding(top = 8.dp)
-                                            .background(
-                                                MaterialTheme.colorScheme.error,
-                                                CircleShape
-                                            )
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    AndroidView(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        factory = { ctx ->
-                                            TextView(ctx).apply {
-                                                setTextColor(onSurfaceColor)
+                            Column(
+                                modifier = Modifier.padding(20.dp)
+                            ) {
+                                val onSurfaceColor = MaterialTheme.colorScheme.onSurface.toArgb()
+                                knownIssues.forEachIndexed { index, issue ->
+                                    Row(
+                                        modifier = Modifier.padding(vertical = 2.dp),
+                                        verticalAlignment = Alignment.Top
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(6.dp)
+                                                .padding(top = 8.dp)
+                                                .background(
+                                                    MaterialTheme.colorScheme.error,
+                                                    CircleShape
+                                                )
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        AndroidView(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            factory = { ctx ->
+                                                TextView(ctx).apply {
+                                                    setTextColor(onSurfaceColor)
+                                                }
+                                            },
+                                            update = { textView ->
+                                                textView.text = HtmlCompat.fromHtml(issue, HtmlCompat.FROM_HTML_MODE_COMPACT)
+                                                textView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
                                             }
-                                        },
-                                        update = { textView ->
-                                            textView.text = HtmlCompat.fromHtml(issue, HtmlCompat.FROM_HTML_MODE_COMPACT)
-                                            textView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
-                                        }
-                                    )
-                                }
-                                if (index < knownIssues.size - 1) {
-                                    Spacer(modifier = Modifier.height(1.dp))
+                                        )
+                                    }
+                                    if (index < knownIssues.size - 1) {
+                                        Spacer(modifier = Modifier.height(1.dp))
+                                    }
                                 }
                             }
                         }
