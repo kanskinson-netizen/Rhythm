@@ -19,8 +19,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,8 +31,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.FileOpen
+import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Save
+import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,6 +51,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -54,6 +60,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -65,15 +72,35 @@ import kotlinx.coroutines.delay
 fun LyricsEditorBottomSheet(
     currentLyrics: String,
     songTitle: String,
+    initialTimeOffset: Int = 0,
     onDismiss: () -> Unit,
-    onSave: (String) -> Unit
+    onSave: (String, Int) -> Unit,
+    onRefresh: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     var editedLyrics by remember { mutableStateOf(currentLyrics) }
+    var timeOffset by remember { mutableIntStateOf(initialTimeOffset) }
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
     )
+    
+    // Check if lyrics are synced (contain LRC timestamps)
+    val hasSyncedLyrics = remember(editedLyrics) {
+        editedLyrics.contains(Regex("""\[\d{2}:\d{2}\.\d{2,3}\]"""))
+    }
+    
+    // Update editedLyrics when currentLyrics changes (from refresh)
+    LaunchedEffect(currentLyrics) {
+        if (currentLyrics != editedLyrics) {
+            editedLyrics = currentLyrics
+        }
+    }
+    
+    // Update timeOffset when initialTimeOffset changes
+    LaunchedEffect(initialTimeOffset) {
+        timeOffset = initialTimeOffset
+    }
 
     // Animation states
     var showContent by remember { mutableStateOf(false) }
@@ -99,6 +126,35 @@ fun LyricsEditorBottomSheet(
     LaunchedEffect(Unit) {
         delay(100)
         showContent = true
+    }
+
+    // Function to adjust LRC timestamps
+    fun adjustLyricsTimestamps(lyrics: String, offsetMs: Int): String {
+        if (offsetMs == 0) return lyrics
+        
+        val lrcRegex = Regex("""^\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)$""", RegexOption.MULTILINE)
+        return lyrics.lines().joinToString("\n") { line ->
+            lrcRegex.matchEntire(line)?.let { match ->
+                val minutes = match.groupValues[1].toInt()
+                val seconds = match.groupValues[2].toInt()
+                val centiseconds = match.groupValues[3].padEnd(3, '0').take(3).toInt()
+                val text = match.groupValues[4]
+                
+                // Convert to milliseconds
+                var totalMs = (minutes * 60 * 1000) + (seconds * 1000) + centiseconds
+                totalMs += offsetMs
+                
+                // Don't allow negative timestamps
+                if (totalMs < 0) totalMs = 0
+                
+                // Convert back to LRC format
+                val newMinutes = totalMs / 60000
+                val newSeconds = (totalMs % 60000) / 1000
+                val newCentiseconds = (totalMs % 1000)
+                
+                "[%02d:%02d.%03d]%s".format(newMinutes, newSeconds, newCentiseconds, text)
+            } ?: line
+        }
     }
 
     // File picker launcher for loading .lrc files
@@ -129,7 +185,7 @@ fun LyricsEditorBottomSheet(
                     outputStream.write(editedLyrics.toByteArray())
                     outputStream.flush()
                     Toast.makeText(context, "Lyrics saved successfully", Toast.LENGTH_SHORT).show()
-                    onSave(editedLyrics)
+                    onSave(editedLyrics, timeOffset)
                     onDismiss()
                 }
             } catch (e: Exception) {
@@ -166,6 +222,285 @@ fun LyricsEditorBottomSheet(
                     songTitle = songTitle,
                     hasLyrics = editedLyrics.isNotBlank()
                 )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Timestamp Adjustment Controls
+            AnimatedVisibility(
+                visible = showContent,
+                enter = fadeIn() + slideInVertically { it },
+                exit = fadeOut() + slideOutVertically { it }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Rounded.Sync,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = if (hasSyncedLyrics) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Sync Adjustment",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (hasSyncedLyrics) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            if (hasSyncedLyrics) {
+                                Text(
+                                    text = "${if (timeOffset >= 0) "+" else ""}${timeOffset}ms",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            
+                            // Reset/Refresh button
+                            FilledTonalButton(
+                                onClick = {
+                                    HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+                                    timeOffset = 0
+                                    onRefresh()
+                                },
+                                modifier = Modifier.height(36.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                ),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+                            ) {
+                                Text("Reset", style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                    }
+                    
+                    // Show info message if lyrics are not synced
+                    if (!hasSyncedLyrics) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Sync adjustment only works with time-synced lyrics (LRC format). Use Reset to fetch synced lyrics if available.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Earlier Button (-500ms)
+                        OutlinedButton(
+                            onClick = {
+                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+                                timeOffset -= 500
+                                editedLyrics = adjustLyricsTimestamps(editedLyrics, -500)
+                                onSave(editedLyrics, timeOffset) // Apply changes immediately with offset
+                            },
+                            enabled = hasSyncedLyrics,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(72.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary,
+                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                            ),
+                            contentPadding = PaddingValues(vertical = 8.dp, horizontal = 4.dp)
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Remove,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "500ms",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Earlier",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (hasSyncedLyrics) 
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                )
+                            }
+                        }
+                        
+                        // Earlier Button (-100ms)
+                        OutlinedButton(
+                            onClick = {
+                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+                                timeOffset -= 100
+                                editedLyrics = adjustLyricsTimestamps(editedLyrics, -100)
+                                onSave(editedLyrics, timeOffset) // Apply changes immediately with offset
+                            },
+                            enabled = hasSyncedLyrics,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(72.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary,
+                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                            ),
+                            contentPadding = PaddingValues(vertical = 8.dp, horizontal = 4.dp)
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Remove,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "100ms",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Earlier",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (hasSyncedLyrics) 
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                )
+                            }
+                        }
+                        
+                        // Later Button (+100ms)
+                        OutlinedButton(
+                            onClick = {
+                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+                                timeOffset += 100
+                                editedLyrics = adjustLyricsTimestamps(editedLyrics, 100)
+                                onSave(editedLyrics, timeOffset) // Apply changes immediately with offset
+                            },
+                            enabled = hasSyncedLyrics,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(72.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.secondary,
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
+                                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                            ),
+                            contentPadding = PaddingValues(vertical = 8.dp, horizontal = 4.dp)
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "100ms",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Later",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (hasSyncedLyrics) 
+                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                )
+                            }
+                        }
+                        
+                        // Later Button (+500ms)
+                        OutlinedButton(
+                            onClick = {
+                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+                                timeOffset += 500
+                                editedLyrics = adjustLyricsTimestamps(editedLyrics, 500)
+                                onSave(editedLyrics, timeOffset) // Apply changes immediately with offset
+                            },
+                            enabled = hasSyncedLyrics,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(72.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.secondary,
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
+                                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                            ),
+                            contentPadding = PaddingValues(vertical = 8.dp, horizontal = 4.dp)
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "500ms",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Later",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (hasSyncedLyrics) 
+                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

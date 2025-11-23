@@ -109,6 +109,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _isLoadingLyrics = MutableStateFlow(false)
     val isLoadingLyrics: StateFlow<Boolean> = _isLoadingLyrics.asStateFlow()
+    
+    // Track lyrics adjustment offset
+    private val _lyricsTimeOffset = MutableStateFlow(0)
+    val lyricsTimeOffset: StateFlow<Int> = _lyricsTimeOffset.asStateFlow()
 
     // New helper methods
     private val _serviceConnected = MutableStateFlow(false)
@@ -1850,13 +1854,39 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     fun playAlbum(album: Album) {
         viewModelScope.launch {
             Log.d(TAG, "Playing album: ${album.title} (ID: ${album.id})")
-            val songs = repository.getSongsForAlbum(album.id)
-            Log.d(TAG, "Found ${songs.size} songs for album")
-            if (songs.isNotEmpty()) {
-                playQueue(songs)
+            // Use album's songs directly if available (they're already loaded)
+            if (album.songs.isNotEmpty()) {
+                Log.d(TAG, "Using ${album.songs.size} songs from album object")
+                // Sort by track number to maintain album order
+                val sortedSongs = album.songs.sortedWith { a, b ->
+                    when {
+                        a.trackNumber > 0 && b.trackNumber > 0 -> a.trackNumber.compareTo(b.trackNumber)
+                        a.trackNumber > 0 -> -1
+                        b.trackNumber > 0 -> 1
+                        else -> a.title.compareTo(b.title, ignoreCase = true)
+                    }
+                }
+                playQueue(sortedSongs)
             } else {
-                Log.e(TAG, "No songs found for album: ${album.title} (ID: ${album.id})")
-                debugQueueState()
+                // Fallback to querying if album.songs is empty
+                Log.d(TAG, "Album songs empty, querying repository")
+                val songs = repository.getSongsForAlbum(album.id)
+                Log.d(TAG, "Found ${songs.size} songs for album")
+                if (songs.isNotEmpty()) {
+                    // Sort by track number
+                    val sortedSongs = songs.sortedWith { a, b ->
+                        when {
+                            a.trackNumber > 0 && b.trackNumber > 0 -> a.trackNumber.compareTo(b.trackNumber)
+                            a.trackNumber > 0 -> -1
+                            b.trackNumber > 0 -> 1
+                            else -> a.title.compareTo(b.title, ignoreCase = true)
+                        }
+                    }
+                    playQueue(sortedSongs)
+                } else {
+                    Log.e(TAG, "No songs found for album: ${album.title} (ID: ${album.id})")
+                    debugQueueState()
+                }
             }
         }
     }
@@ -3087,15 +3117,57 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     }
     
     /**
-     * Save edited lyrics for the current song to cache
+     * Clear lyrics cache for current song and refetch from sources
      */
-    fun saveEditedLyrics(editedLyrics: String) {
+    fun clearLyricsCacheAndRefetch() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val song = _currentSong.value
                 if (song != null) {
                     val artist = song.artist
                     val title = song.title
+                    
+                    // Delete cached lyrics file
+                    val fileName = "${artist}_${title}.json".replace(Regex("[^a-zA-Z0-9._-]"), "_")
+                    val lyricsDir = File(getApplication<Application>().filesDir, "lyrics")
+                    val file = File(lyricsDir, fileName)
+                    if (file.exists()) {
+                        file.delete()
+                        Log.d(TAG, "Deleted lyrics cache for: $title by $artist")
+                    }
+                    
+                    // Clear in-memory lyrics
+                    _currentLyrics.value = null
+                    
+                    // Reset time offset
+                    _lyricsTimeOffset.value = 0
+                    
+                    // Refetch from sources
+                    withContext(Dispatchers.Main) {
+                        fetchLyricsForCurrentSong(0)
+                    }
+                } else {
+                    Log.w(TAG, "Cannot clear cache - no current song")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error clearing lyrics cache", e)
+            }
+        }
+    }
+    
+    /**
+     * Save edited lyrics for the current song to cache
+     */
+    fun saveEditedLyrics(editedLyrics: String, timeOffset: Int = 0) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val song = _currentSong.value
+                if (song != null) {
+                    val artist = song.artist
+                    val title = song.title
+                    
+                    // Store the time offset
+                    _lyricsTimeOffset.value = timeOffset
                     
                     // Determine if lyrics are synced (contains timestamps)
                     val isSynced = editedLyrics.contains(Regex("\\[\\d{2}:\\d{2}\\.\\d{2}]"))

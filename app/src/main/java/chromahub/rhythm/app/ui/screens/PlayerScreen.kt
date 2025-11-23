@@ -3236,11 +3236,15 @@ fun PlayerScreen(
         LyricsEditorBottomSheet(
             currentLyrics = lyrics?.getBestLyrics() ?: "",
             songTitle = song?.title ?: "Unknown",
+            initialTimeOffset = musicViewModel.lyricsTimeOffset.collectAsState().value,
             onDismiss = { showLyricsEditorDialog = false },
-            onSave = { editedLyrics ->
-                // Save lyrics to cache and update current lyrics
-                musicViewModel.saveEditedLyrics(editedLyrics)
-                showLyricsEditorDialog = false
+            onSave = { editedLyrics, timeOffset ->
+                // Save lyrics to cache and update current lyrics immediately with offset
+                musicViewModel.saveEditedLyrics(editedLyrics, timeOffset)
+            },
+            onRefresh = {
+                // Clear cache and refetch lyrics from source priority
+                musicViewModel.clearLyricsCacheAndRefetch()
             }
         )
     }
