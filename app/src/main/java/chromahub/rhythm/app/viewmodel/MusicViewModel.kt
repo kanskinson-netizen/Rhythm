@@ -410,9 +410,63 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val _queueOperationError = MutableStateFlow<String?>(null)
     val queueOperationError: StateFlow<String?> = _queueOperationError.asStateFlow()
     
+    // Queue action dialog state
+    data class QueueActionRequest(
+        val song: Song,
+        val timestamp: Long = System.currentTimeMillis()
+    )
+    private val _queueActionRequest = MutableStateFlow<QueueActionRequest?>(null)
+    val queueActionRequest: StateFlow<QueueActionRequest?> = _queueActionRequest.asStateFlow()
+    
     // Clear queue operation error
     fun clearQueueOperationError() {
         _queueOperationError.value = null
+    }
+    
+    // Dismiss queue action dialog
+    fun dismissQueueActionDialog() {
+        _queueActionRequest.value = null
+    }
+    
+    // Handle queue action choice from dialog
+    fun handleQueueActionChoice(song: Song, clearQueue: Boolean) {
+        _queueActionRequest.value = null
+        if (clearQueue) {
+            // Replace queue with contextual queue or single song
+            val shouldAutoAddToQueue = autoAddToQueue.value
+            if (shouldAutoAddToQueue) {
+                val contextualQueue = createContextualQueue(song)
+                if (contextualQueue.size > 1) {
+                    playQueue(contextualQueue)
+                    return
+                }
+            }
+            playQueue(listOf(song))
+        } else {
+            // Add to existing queue and play it
+            val currentQueueSongs = _currentQueue.value.songs.toMutableList()
+            val currentIndex = _currentQueue.value.currentIndex
+            val insertIndex = if (currentQueueSongs.isEmpty() || currentIndex == -1) 0 else (currentIndex + 1).coerceAtMost(currentQueueSongs.size)
+            
+            currentQueueSongs.add(insertIndex, song)
+            
+            mediaController?.let { controller ->
+                val mediaItem = song.toMediaItem()
+                controller.addMediaItem(insertIndex, mediaItem)
+                
+                _currentQueue.value = Queue(currentQueueSongs, insertIndex)
+                controller.seekToDefaultPosition(insertIndex)
+                controller.prepare()
+                controller.play()
+                
+                _currentSong.value = song
+                _isPlaying.value = true
+                _isFavorite.value = _favoriteSongs.value.contains(song.id)
+                startProgressUpdates()
+                
+                Log.d(TAG, "Added song to queue at position $insertIndex and started playing")
+            }
+        }
     }
 
     enum class SortOrder {
@@ -1549,6 +1603,13 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 // Clear queue setting enabled - start fresh
                 Log.d(TAG, "Clearing queue and playing single song (clearQueueOnNewSong=true)")
                 playQueue(listOf(song))
+                return
+            }
+            
+            // Check if queue is not empty and song is not in queue - ask user
+            if (currentQueueSongs.isNotEmpty() && songIndexInQueue == -1) {
+                Log.d(TAG, "Queue exists with ${currentQueueSongs.size} songs, requesting user action")
+                _queueActionRequest.value = QueueActionRequest(song)
                 return
             }
             

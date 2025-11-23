@@ -83,6 +83,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import chromahub.rhythm.app.ui.screens.AddToPlaylistBottomSheet
 import chromahub.rhythm.app.ui.components.CreatePlaylistDialog
+import chromahub.rhythm.app.ui.components.QueueActionDialog
 import chromahub.rhythm.app.ui.components.MiniPlayer
 import chromahub.rhythm.app.ui.components.RhythmIcons
 import chromahub.rhythm.app.ui.screens.LibraryScreen
@@ -1995,6 +1996,25 @@ fun RhythmNavigation(
                 }
             }
         }
+        
+        // Queue action dialog - show at top level
+        val queueActionRequest by viewModel.queueActionRequest.collectAsState()
+        val currentQueueForDialog by viewModel.currentQueue.collectAsState()
+        
+        queueActionRequest?.let { request ->
+            QueueActionDialog(
+                song = request.song,
+                queueSize = currentQueueForDialog.songs.size,
+                onDismiss = { viewModel.dismissQueueActionDialog() },
+                onClearAndPlay = { 
+                    viewModel.handleQueueActionChoice(request.song, clearQueue = true)
+                },
+                onAddToQueue = {
+                    viewModel.handleQueueActionChoice(request.song, clearQueue = false)
+                }
+            )
+        }
+        
         // Media scan loader overlay for refresh operations
         AnimatedVisibility(
             visible = isMediaScanning,
