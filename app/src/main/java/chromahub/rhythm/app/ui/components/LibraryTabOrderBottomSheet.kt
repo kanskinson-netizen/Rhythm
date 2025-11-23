@@ -24,6 +24,8 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Reorder
 import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -31,6 +33,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -65,7 +68,9 @@ fun LibraryTabOrderBottomSheet(
 ) {
     val context = LocalContext.current
     val tabOrder by appSettings.libraryTabOrder.collectAsState()
+    val hiddenTabs by appSettings.hiddenLibraryTabs.collectAsState()
     var reorderableList by remember { mutableStateOf(tabOrder.toList()) }
+    var hiddenTabsSet by remember { mutableStateOf(hiddenTabs) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     
@@ -122,7 +127,7 @@ fun LibraryTabOrderBottomSheet(
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Text(
-                    text = "Reorder tabs to customize your library experience",
+                    text = "Reorder tabs and toggle visibility to customize your library",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -188,12 +193,41 @@ fun LibraryTabOrderBottomSheet(
                                 text = tabName,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
                             )
                         }
                         
-                        // Reorder buttons
+                        // Visibility and reorder buttons
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            // Visibility toggle button
+                            val isHidden = hiddenTabsSet.contains(tabId)
+                            val visibleTabsCount = reorderableList.count { !hiddenTabsSet.contains(it) }
+                            
+                            IconButton(
+                                onClick = {
+                                    // Prevent hiding the last visible tab
+                                    if (!isHidden && visibleTabsCount <= 1) {
+                                        Toast.makeText(context, "At least one tab must be visible", Toast.LENGTH_SHORT).show()
+                                        return@IconButton
+                                    }
+                                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                                    hiddenTabsSet = if (isHidden) {
+                                        hiddenTabsSet - tabId
+                                    } else {
+                                        hiddenTabsSet + tabId
+                                    }
+                                },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isHidden) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (isHidden) "Show tab" else "Hide tab",
+                                    tint = if (isHidden) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            
                             // Move up button
                             FilledIconButton(
                                 onClick = {
@@ -265,8 +299,10 @@ fun LibraryTabOrderBottomSheet(
                         onClick = {
                             HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
                             appSettings.resetLibraryTabOrder()
+                            appSettings.setHiddenLibraryTabs(emptySet())
                             reorderableList = listOf("SONGS", "PLAYLISTS", "ALBUMS", "ARTISTS", "EXPLORER")
-                            Toast.makeText(context, "Tab order reset to default", Toast.LENGTH_SHORT).show()
+                            hiddenTabsSet = emptySet()
+                            Toast.makeText(context, "Tab order and visibility reset to default", Toast.LENGTH_SHORT).show()
                         },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp)
@@ -285,7 +321,8 @@ fun LibraryTabOrderBottomSheet(
                         onClick = {
                             HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
                             appSettings.setLibraryTabOrder(reorderableList)
-                            Toast.makeText(context, "Tab order saved", Toast.LENGTH_SHORT).show()
+                            appSettings.setHiddenLibraryTabs(hiddenTabsSet)
+                            Toast.makeText(context, "Tab order and visibility saved", Toast.LENGTH_SHORT).show()
                             scope.launch {
                                 sheetState.hide()
                             }.invokeOnCompletion {

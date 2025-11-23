@@ -2257,11 +2257,8 @@ private fun ModernMoodSection(
                     onPlayClick = {
                         HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
                         if (energeticSongs.isNotEmpty()) {
-                            viewModel.playSongWithQueueOption(
-                                song = energeticSongs.first(), 
-                                replaceQueue = true, 
-                                shuffleQueue = true
-                            )
+                            // Play all energetic songs shuffled
+                            viewModel.playQueue(energeticSongs.shuffled())
                             onSongClick(energeticSongs.first())
                         }
                     }
@@ -2280,10 +2277,8 @@ private fun ModernMoodSection(
                     onPlayClick = {
                         HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
                         if (relaxingSongs.isNotEmpty()) {
-                            viewModel.playSongWithQueueOption(
-                                song = relaxingSongs.first(), 
-                                replaceQueue = true
-                            )
+                            // Play all relaxing songs in order
+                            viewModel.playQueue(relaxingSongs)
                             onSongClick(relaxingSongs.first())
                         }
                     }
@@ -2302,10 +2297,8 @@ private fun ModernMoodSection(
                     onPlayClick = {
                         HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
                         if (moodBasedSongs.isNotEmpty()) {
-                            viewModel.playSongWithQueueOption(
-                                song = moodBasedSongs.first(), 
-                                replaceQueue = true
-                            )
+                            // Play all focus songs in order
+                            viewModel.playQueue(moodBasedSongs)
                             onSongClick(moodBasedSongs.first())
                         }
                     }

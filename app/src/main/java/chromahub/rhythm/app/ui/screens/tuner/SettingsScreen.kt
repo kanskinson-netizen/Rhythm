@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Equalizer
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Lyrics
@@ -51,15 +52,19 @@ import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Update
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -124,6 +129,7 @@ data class SettingGroup(
     val items: List<SettingItem>
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TunerSettingsScreen(
     onBackClick: () -> Unit,
@@ -140,6 +146,9 @@ fun TunerSettingsScreen(
     val useSystemVolume by appSettings.useSystemVolume.collectAsState()
     val showLyrics by appSettings.showLyrics.collectAsState()
     val groupByAlbumArtist by appSettings.groupByAlbumArtist.collectAsState()
+    val defaultScreen by appSettings.defaultScreen.collectAsState()
+    
+    var showDefaultScreenDialog by remember { mutableStateOf(false) }
 
     CollapsibleHeaderScreen(
         title = "Tuner",
@@ -160,6 +169,12 @@ fun TunerSettingsScreen(
             SettingGroup(
                 title = "User Interface",
                 items = listOf(
+                    SettingItem(
+                        Icons.Default.Home,
+                        "Default Landing Screen",
+                        if (defaultScreen == "library") "Library" else "Home",
+                        onClick = { showDefaultScreenDialog = true }
+                    ),
                     SettingItem(
                         Icons.Default.TouchApp, 
                         "Haptic Feedback", 
@@ -356,6 +371,176 @@ fun TunerSettingsScreen(
                 }
                 Spacer(modifier = Modifier.height(24.dp))
 //                Spacer(modifier = Modifier.height(24.dp)) // Space at the bottom
+            }
+        }
+        
+        // Default screen selection bottom sheet
+        if (showDefaultScreenDialog) {
+            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            
+            ModalBottomSheet(
+                onDismissRequest = { showDefaultScreenDialog = false },
+                sheetState = sheetState,
+                dragHandle = { 
+                    BottomSheetDefaults.DragHandle(
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                },
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 16.dp)
+                ) {
+                    // Header
+                    Row(
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Home,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "Default Landing Screen",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Text(
+                        text = "Choose which screen to show when the app starts",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    // Home option
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .clickable {
+                                HapticUtils.performHapticFeedback(context, hapticFeedback, HapticFeedbackType.TextHandleMove)
+                                appSettings.setDefaultScreen("home")
+                                showDefaultScreenDialog = false
+                            },
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (defaultScreen == "home") 
+                                MaterialTheme.colorScheme.primaryContainer 
+                            else 
+                                MaterialTheme.colorScheme.surfaceContainerHigh
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = defaultScreen == "home",
+                                onClick = {
+                                    HapticUtils.performHapticFeedback(context, hapticFeedback, HapticFeedbackType.TextHandleMove)
+                                    appSettings.setDefaultScreen("home")
+                                    showDefaultScreenDialog = false
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Home",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (defaultScreen == "home") 
+                                        MaterialTheme.colorScheme.onPrimaryContainer 
+                                    else 
+                                        MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Discover new music and recommendations",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (defaultScreen == "home") 
+                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                    else 
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // Library option
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .clickable {
+                                HapticUtils.performHapticFeedback(context, hapticFeedback, HapticFeedbackType.TextHandleMove)
+                                appSettings.setDefaultScreen("library")
+                                showDefaultScreenDialog = false
+                            },
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (defaultScreen == "library") 
+                                MaterialTheme.colorScheme.primaryContainer 
+                            else 
+                                MaterialTheme.colorScheme.surfaceContainerHigh
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = defaultScreen == "library",
+                                onClick = {
+                                    HapticUtils.performHapticFeedback(context, hapticFeedback, HapticFeedbackType.TextHandleMove)
+                                    appSettings.setDefaultScreen("library")
+                                    showDefaultScreenDialog = false
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Library",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (defaultScreen == "library") 
+                                        MaterialTheme.colorScheme.onPrimaryContainer 
+                                    else 
+                                        MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Quick access to your music collection",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (defaultScreen == "library") 
+                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                    else 
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
             }
         }
     }

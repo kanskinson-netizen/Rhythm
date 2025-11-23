@@ -329,8 +329,14 @@ fun PlayerScreen(
     // Chip visibility state
     var showChips by remember { mutableStateOf(false) }
     
-    // Collect chip order from settings
+    // Collect chip order and hidden chips from settings
     val chipOrder by appSettings.playerChipOrder.collectAsState()
+    val hiddenChips by appSettings.hiddenPlayerChips.collectAsState()
+    
+    // Filter out hidden chips
+    val visibleChips = remember(chipOrder, hiddenChips) {
+        chipOrder.filter { !hiddenChips.contains(it) }
+    }
     
     // File picker launcher for loading lyrics directly
     val loadLyricsLauncher = rememberLauncherForActivityResult(
@@ -2455,9 +2461,9 @@ fun PlayerScreen(
                                         )
                                     }
 
-                                    // Dynamic reorderable chips based on chipOrder
+                                    // Dynamic reorderable chips based on visible chips
                                     items(
-                                        items = chipOrder,
+                                        items = visibleChips,
                                         key = { it }
                                     ) { chipId ->
                                         when (chipId) {

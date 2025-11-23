@@ -235,19 +235,22 @@ fun LibraryScreen(
     val context = LocalContext.current
     val appSettings = remember { AppSettings.getInstance(context) }
     val tabOrder by appSettings.libraryTabOrder.collectAsState()
+    val hiddenTabs by appSettings.hiddenLibraryTabs.collectAsState()
     
-    // Map tab IDs to display names
-    val tabs = remember(tabOrder) {
-        tabOrder.map { tabId ->
-            when (tabId) {
-                "SONGS" -> "Songs"
-                "PLAYLISTS" -> "Playlists"
-                "ALBUMS" -> "Albums"
-                "ARTISTS" -> "Artists"
-                "EXPLORER" -> "Explorer"
-                else -> tabId
+    // Map tab IDs to display names, filtering out hidden tabs
+    val tabs = remember(tabOrder, hiddenTabs) {
+        tabOrder
+            .filter { !hiddenTabs.contains(it) }
+            .map { tabId ->
+                when (tabId) {
+                    "SONGS" -> "Songs"
+                    "PLAYLISTS" -> "Playlists"
+                    "ALBUMS" -> "Albums"
+                    "ARTISTS" -> "Artists"
+                    "EXPLORER" -> "Explorer"
+                    else -> tabId
+                }
             }
-        }
     }
     
     // Find initial tab index based on the reordered tabs

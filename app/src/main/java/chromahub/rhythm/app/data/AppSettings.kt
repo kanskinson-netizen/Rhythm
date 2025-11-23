@@ -90,6 +90,8 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_ARTIST_COLLABORATION_MODE = "artist_collaboration_mode"
         private const val KEY_LIBRARY_TAB_ORDER = "library_tab_order"
         private const val KEY_PLAYER_CHIP_ORDER = "player_chip_order"
+        private const val KEY_HIDDEN_LIBRARY_TABS = "hidden_library_tabs"
+        private const val KEY_HIDDEN_PLAYER_CHIPS = "hidden_player_chips"
         private const val KEY_GROUP_BY_ALBUM_ARTIST = "group_by_album_artist" // New setting for album artist grouping
         
         // Audio Device Settings
@@ -176,6 +178,7 @@ class AppSettings private constructor(context: Context) {
         
         // UI Settings
         private const val KEY_USE_TUNER_SETTINGS = "use_tuner_settings"
+        private const val KEY_DEFAULT_SCREEN = "default_screen"
         
         // Blacklisted Songs
         private const val KEY_BLACKLISTED_SONGS = "blacklisted_songs"
@@ -386,6 +389,30 @@ class AppSettings private constructor(context: Context) {
             ?: defaultChipOrder
     )
     val playerChipOrder: StateFlow<List<String>> = _playerChipOrder.asStateFlow()
+    
+    // Default Landing Screen
+    private val _defaultScreen = MutableStateFlow(prefs.getString(KEY_DEFAULT_SCREEN, "home") ?: "home")
+    val defaultScreen: StateFlow<String> = _defaultScreen.asStateFlow()
+    
+    // Hidden Library Tabs
+    private val _hiddenLibraryTabs = MutableStateFlow(
+        prefs.getString(KEY_HIDDEN_LIBRARY_TABS, null)
+            ?.split(",")
+            ?.filter { it.isNotBlank() }
+            ?.toSet()
+            ?: emptySet()
+    )
+    val hiddenLibraryTabs: StateFlow<Set<String>> = _hiddenLibraryTabs.asStateFlow()
+    
+    // Hidden Player Chips
+    private val _hiddenPlayerChips = MutableStateFlow(
+        prefs.getString(KEY_HIDDEN_PLAYER_CHIPS, null)
+            ?.split(",")
+            ?.filter { it.isNotBlank() }
+            ?.toSet()
+            ?: emptySet()
+    )
+    val hiddenPlayerChips: StateFlow<Set<String>> = _hiddenPlayerChips.asStateFlow()
     
     // Group By Album Artist
     private val _groupByAlbumArtist = MutableStateFlow(prefs.getBoolean(KEY_GROUP_BY_ALBUM_ARTIST, true)) // Default true for better organization
@@ -984,6 +1011,23 @@ class AppSettings private constructor(context: Context) {
     fun resetPlayerChipOrder() {
         prefs.edit().remove(KEY_PLAYER_CHIP_ORDER).apply()
         _playerChipOrder.value = defaultChipOrder
+    }
+    
+    fun setDefaultScreen(screen: String) {
+        prefs.edit().putString(KEY_DEFAULT_SCREEN, screen).apply()
+        _defaultScreen.value = screen
+    }
+    
+    fun setHiddenLibraryTabs(hiddenTabs: Set<String>) {
+        val hiddenString = hiddenTabs.joinToString(",")
+        prefs.edit().putString(KEY_HIDDEN_LIBRARY_TABS, hiddenString).apply()
+        _hiddenLibraryTabs.value = hiddenTabs
+    }
+    
+    fun setHiddenPlayerChips(hiddenChips: Set<String>) {
+        val hiddenString = hiddenChips.joinToString(",")
+        prefs.edit().putString(KEY_HIDDEN_PLAYER_CHIPS, hiddenString).apply()
+        _hiddenPlayerChips.value = hiddenChips
     }
     
     fun setGroupByAlbumArtist(enable: Boolean) {

@@ -25,6 +25,8 @@ import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.BottomSheetDefaults
@@ -34,6 +36,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -68,7 +71,9 @@ fun PlayerChipOrderBottomSheet(
 ) {
     val context = LocalContext.current
     val chipOrder by appSettings.playerChipOrder.collectAsState()
+    val hiddenChips by appSettings.hiddenPlayerChips.collectAsState()
     var reorderableList by remember { mutableStateOf(chipOrder.toList()) }
+    var hiddenChipsSet by remember { mutableStateOf(hiddenChips) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     
@@ -127,7 +132,7 @@ fun PlayerChipOrderBottomSheet(
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Text(
-                    text = "Reorder chips to customize your player experience. Changes are applied instantly.",
+                    text = "Reorder chips and toggle visibility to customize your player experience.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -193,12 +198,43 @@ fun PlayerChipOrderBottomSheet(
                                 text = name,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
                             )
                         }
                         
-                        // Reorder buttons
+                        // Visibility and reorder buttons
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            // Visibility toggle button
+                            val isHidden = hiddenChipsSet.contains(chip)
+                            val visibleChipsCount = reorderableList.count { !hiddenChipsSet.contains(it) }
+                            
+                            IconButton(
+                                onClick = {
+                                    // Prevent hiding the last visible chip
+                                    if (!isHidden && visibleChipsCount <= 1) {
+                                        Toast.makeText(context, "At least one chip must be visible", Toast.LENGTH_SHORT).show()
+                                        return@IconButton
+                                    }
+                                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                                    hiddenChipsSet = if (isHidden) {
+                                        hiddenChipsSet - chip
+                                    } else {
+                                        hiddenChipsSet + chip
+                                    }
+                                    // Save changes instantly
+                                    appSettings.setHiddenPlayerChips(hiddenChipsSet)
+                                },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isHidden) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (isHidden) "Show chip" else "Hide chip",
+                                    tint = if (isHidden) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            
                             // Move up button
                             FilledIconButton(
                                 onClick = {
@@ -210,6 +246,7 @@ fun PlayerChipOrderBottomSheet(
                                         reorderableList = newList
                                         // Save changes instantly
                                         appSettings.setPlayerChipOrder(reorderableList)
+                                        appSettings.setHiddenPlayerChips(hiddenChipsSet)
                                     }
                                 },
                                 enabled = index > 0,
@@ -239,6 +276,7 @@ fun PlayerChipOrderBottomSheet(
                                         reorderableList = newList
                                         // Save changes instantly
                                         appSettings.setPlayerChipOrder(reorderableList)
+                                        appSettings.setHiddenPlayerChips(hiddenChipsSet)
                                     }
                                 },
                                 enabled = index < reorderableList.size - 1,
@@ -274,9 +312,11 @@ fun PlayerChipOrderBottomSheet(
                         onClick = {
                             HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
                             reorderableList = listOf("FAVORITE", "SPEED", "EQUALIZER", "SLEEP_TIMER", "LYRICS", "ALBUM", "ARTIST")
+                            hiddenChipsSet = emptySet()
                             // Save changes instantly
                             appSettings.setPlayerChipOrder(reorderableList)
-                            Toast.makeText(context, "Reset to default order", Toast.LENGTH_SHORT).show()
+                            appSettings.setHiddenPlayerChips(hiddenChipsSet)
+                            Toast.makeText(context, "Reset to default order and visibility", Toast.LENGTH_SHORT).show()
                         },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)

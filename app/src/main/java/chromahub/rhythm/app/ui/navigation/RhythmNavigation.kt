@@ -261,6 +261,13 @@ fun RhythmNavigation(
     val festiveThemeEmojiDecorationsIntensity by appSettings.festiveThemeEmojiDecorationsIntensity.collectAsState()
     val festiveThemeApplyToSplash by appSettings.festiveThemeApplyToSplash.collectAsState()
     val festiveThemeApplyToMainUI by appSettings.festiveThemeApplyToMainUI.collectAsState()
+    
+    // Default landing screen
+    val defaultScreen by appSettings.defaultScreen.collectAsState()
+    val startDestination = when (defaultScreen) {
+        "library" -> Screen.Library.route
+        else -> Screen.Home.route
+    }
 
     // Determine active festive theme
     val activeFestiveTheme = remember(festiveThemeEnabled, festiveThemeAutoDetect, festiveThemeSelected) {
@@ -720,7 +727,7 @@ fun RhythmNavigation(
                 // Main content
                 NavHost(
                     navController = navController,
-                    startDestination = Screen.Home.route,
+                    startDestination = startDestination,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(LocalMiniPlayerPadding.current)
@@ -809,7 +816,7 @@ fun RhythmNavigation(
                                 }
                             },
                             onViewAllAlbums = {
-                                navController.navigate(Screen.Library.createRoute(LibraryTab.PLAYLISTS)) {
+                                navController.navigate(Screen.Library.createRoute(LibraryTab.ALBUMS)) {
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
@@ -818,7 +825,13 @@ fun RhythmNavigation(
                                 }
                             },
                             onViewAllArtists = {
-                                navController.navigate("${Screen.Library.route}?tab=artists")
+                                navController.navigate(Screen.Library.createRoute(LibraryTab.ARTISTS)) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
                             },
                             onSkipNext = onSkipNext,
                             onSearchClick = {

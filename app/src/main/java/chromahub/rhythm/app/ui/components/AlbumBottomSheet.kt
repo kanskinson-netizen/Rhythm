@@ -255,7 +255,7 @@ fun AlbumBottomSheet(
                     Column(
                         modifier = Modifier
                             .align(Alignment.BottomStart)
-                            .padding(20.dp)
+                            .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 20.dp)
                     ) {
                         Text(
                             text = album.title,
@@ -275,26 +275,13 @@ fun AlbumBottomSheet(
                             fontWeight = FontWeight.Medium
                         )
                         
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
                         
                         Row(
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-//                            Surface(
-//                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
-//                                shape = RoundedCornerShape(12.dp)
-//                            ) {
-//                                Text(
-//                                    text = "${album.songs.size} songs",
-//                                    style = MaterialTheme.typography.bodyLarge,
-//                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-//                                    fontWeight = FontWeight.Medium,
-//                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-//                                )
-//                            }
-                            
                             if (album.year > 0) {
-                                Spacer(modifier = Modifier.width(8.dp))
                                 Surface(
                                     color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f),
                                     shape = RoundedCornerShape(12.dp)
@@ -307,6 +294,14 @@ fun AlbumBottomSheet(
                                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                                     )
                                 }
+                            }
+                            
+                            // Audio quality badges for the first song in album
+                            if (album.songs.isNotEmpty()) {
+                                AudioQualityBadges(
+                                    song = album.songs.first(),
+                                    modifier = Modifier
+                                )
                             }
                         }
                         
