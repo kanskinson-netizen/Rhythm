@@ -161,6 +161,7 @@ import chromahub.rhythm.app.data.Playlist
 import chromahub.rhythm.app.data.Song
 import chromahub.rhythm.app.data.AlbumViewType
 import chromahub.rhythm.app.data.ArtistViewType
+import chromahub.rhythm.app.data.PlaylistViewType
 import chromahub.rhythm.app.data.AppSettings
 import chromahub.rhythm.app.ui.screens.AddToPlaylistBottomSheet
 import chromahub.rhythm.app.ui.components.CreatePlaylistDialog
@@ -680,6 +681,44 @@ fun LibraryScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                         }
                         
+                        "PLAYLISTS" -> {
+                            // Enhanced Playlist view toggle
+                            val playlistViewType by appSettings.playlistViewType.collectAsState()
+                            
+                            // Animation for button press
+                            val buttonScale by animateFloatAsState(
+                                targetValue = 1f,
+                                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                                label = "playlistToggleScale"
+                            )
+                            
+                            FilledTonalIconButton(
+                                onClick = {
+                                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+                                    val newViewType = if (playlistViewType == PlaylistViewType.LIST) PlaylistViewType.GRID else PlaylistViewType.LIST
+                                    appSettings.setPlaylistViewType(newViewType)
+                                },
+                                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                                ),
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .graphicsLayer {
+                                        scaleX = buttonScale
+                                        scaleY = buttonScale
+                                    }
+                            ) {
+                                Icon(
+                                    imageVector = if (playlistViewType == PlaylistViewType.LIST) Icons.Default.GridView else Icons.AutoMirrored.Rounded.ViewList,
+                                    contentDescription = if (playlistViewType == PlaylistViewType.LIST) "Switch to Grid View" else "Switch to List View",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        
 
                     }
                     
@@ -1055,7 +1094,8 @@ fun LibraryScreen(
                             haptics = haptics,
                             onCreatePlaylist = { showCreatePlaylistDialog = true },
                             onImportPlaylist = { showImportDialog = true },
-                            onExportPlaylists = { showBulkExportDialog = true }
+                            onExportPlaylists = { showBulkExportDialog = true },
+                            appSettings = appSettings
                         )
                         "ALBUMS" -> SingleCardAlbumsContent(
                             albums = albums,
@@ -1854,14 +1894,103 @@ fun SingleCardPlaylistsContent(
     haptics: androidx.compose.ui.hapticfeedback.HapticFeedback,
     onCreatePlaylist: (() -> Unit)? = null,
     onImportPlaylist: (() -> Unit)? = null,
-    onExportPlaylists: (() -> Unit)? = null
+    onExportPlaylists: (() -> Unit)? = null,
+    appSettings: AppSettings
 ) {
+    val playlistViewType by appSettings.playlistViewType.collectAsState()
+
     if (playlists.isEmpty()) {
         EmptyState(
             message = "No playlists yet\nCreate your first playlist using the + button",
             icon = RhythmIcons.Music.Playlist
         )
     } else {
+        if (playlistViewType == PlaylistViewType.GRID) {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = 16.dp // Simple spacing - Scaffold handles rest
+                ),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Sticky Section Header
+                item(span = { GridItemSpan(2) }) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp, vertical = 8.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(20.dp)
+                        ) {
+                            Surface(
+                                modifier = Modifier.size(48.dp),
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary,
+                                shadowElevation = 0.dp
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = RhythmIcons.PlaylistFilled,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(16.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Your Playlists",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Text(
+                                    text = "${playlists.size} ${if (playlists.size == 1) "playlist" else "playlists"}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                )
+                            }
+
+                            Surface(
+                                modifier = Modifier
+                                    .height(2.dp)
+                                    .width(60.dp),
+                                shape = RoundedCornerShape(1.dp),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f)
+                            ) {}
+                        }
+                    }
+                }
+                
+                // Playlist Grid Items
+                items(
+                    items = playlists,
+                    key = { it.id }
+                ) { playlist ->
+                    AnimateIn {
+                        PlaylistGridItem(
+                            playlist = playlist,
+                            onClick = { onPlaylistClick(playlist) },
+                            haptics = haptics
+                        )
+                    }
+                }
+            }
+        } else {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
@@ -1943,6 +2072,7 @@ fun SingleCardPlaylistsContent(
                     )
                 }
             }
+        }
         }
     }
 }
@@ -3865,6 +3995,118 @@ fun AlbumsGrid(
                     onPlayClick = { onAlbumPlay(album) }, // Play button plays album
                     haptics = haptics // Pass haptics
                 )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PlaylistGridItem(
+    playlist: Playlist,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    haptics: androidx.compose.ui.hapticfeedback.HapticFeedback
+) {
+    val context = LocalContext.current
+    
+    Card(
+        onClick = {
+            HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+            onClick()
+        },
+        modifier = modifier
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 0.dp,
+            hoveredElevation = 0.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            // Playlist artwork - maintain square ratio
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f),
+                shape = RoundedCornerShape(16.dp),
+                tonalElevation = 0.dp,
+                color = MaterialTheme.colorScheme.secondaryContainer
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.secondaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (playlist.songs.isNotEmpty()) {
+                        PlaylistArtCollage(
+                            songs = playlist.songs,
+                            playlistName = playlist.name
+                        )
+                    } else {
+                        Icon(
+                            imageVector = RhythmIcons.Player.Queue,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.size(52.dp)
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(14.dp))
+            
+            // Playlist name
+            Text(
+                text = playlist.name,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(horizontal = 2.dp)
+            )
+            
+            Spacer(modifier = Modifier.height(6.dp))
+            
+            // Song count pill
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(horizontal = 2.dp)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(50), // Pill shape
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Icon(
+                            imageVector = RhythmIcons.MusicNote,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.size(10.dp)
+                        )
+                        Text(
+                            text = "${playlist.songs.size}",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
             }
         }
     }

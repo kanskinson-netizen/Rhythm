@@ -40,6 +40,13 @@ enum class ArtistViewType {
 }
 
 /**
+ * Enum for playlist view types in the library
+ */
+enum class PlaylistViewType {
+    LIST, GRID
+}
+
+/**
  * Singleton class to manage all app settings using SharedPreferences
  */
 class AppSettings private constructor(context: Context) {
@@ -86,6 +93,7 @@ class AppSettings private constructor(context: Context) {
         // Library Settings
         private const val KEY_ALBUM_VIEW_TYPE = "album_view_type"
         private const val KEY_ARTIST_VIEW_TYPE = "artist_view_type"
+        private const val KEY_PLAYLIST_VIEW_TYPE = "playlist_view_type"
         private const val KEY_ALBUM_SORT_ORDER = "album_sort_order"
         private const val KEY_ARTIST_COLLABORATION_MODE = "artist_collaboration_mode"
         private const val KEY_LIBRARY_TAB_ORDER = "library_tab_order"
@@ -359,6 +367,11 @@ class AppSettings private constructor(context: Context) {
         ArtistViewType.valueOf(prefs.getString(KEY_ARTIST_VIEW_TYPE, ArtistViewType.GRID.name) ?: ArtistViewType.GRID.name)
     )
     val artistViewType: StateFlow<ArtistViewType> = _artistViewType.asStateFlow()
+    
+    private val _playlistViewType = MutableStateFlow(
+        PlaylistViewType.valueOf(prefs.getString(KEY_PLAYLIST_VIEW_TYPE, PlaylistViewType.LIST.name) ?: PlaylistViewType.LIST.name)
+    )
+    val playlistViewType: StateFlow<PlaylistViewType> = _playlistViewType.asStateFlow()
     
     // Album Sort Order
     private val _albumSortOrder = MutableStateFlow(prefs.getString(KEY_ALBUM_SORT_ORDER, "TRACK_NUMBER") ?: "TRACK_NUMBER")
@@ -979,6 +992,11 @@ class AppSettings private constructor(context: Context) {
     fun setArtistViewType(viewType: ArtistViewType) {
         prefs.edit().putString(KEY_ARTIST_VIEW_TYPE, viewType.name).apply()
         _artistViewType.value = viewType
+    }
+    
+    fun setPlaylistViewType(viewType: PlaylistViewType) {
+        prefs.edit().putString(KEY_PLAYLIST_VIEW_TYPE, viewType.name).apply()
+        _playlistViewType.value = viewType
     }
     
     fun setAlbumSortOrder(sortOrder: String) {

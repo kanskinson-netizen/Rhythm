@@ -1923,24 +1923,12 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
         
-        mediaController?.let { controller ->
+        // Build media items on a background thread to avoid blocking the main thread
+        viewModelScope.launch(Dispatchers.Default) {
             try {
-                // Stop playback first to prevent issues
-                controller.stop()
-                
-                // Clear existing queue
-                controller.clearMediaItems()
-                
-                // Set shuffle mode BEFORE adding items if specified
-                if (enableShuffle != null) {
-                    controller.shuffleModeEnabled = enableShuffle
-                    _isShuffleEnabled.value = enableShuffle
-                    Log.d(TAG, "Set shuffle mode to $enableShuffle before building queue")
-                }
-                
-                // Create media items from songs and add them to controller
-                songs.forEach { song ->
-                    val mediaItem = MediaItem.Builder()
+                // Create all media items on background thread
+                val mediaItems = songs.map { song ->
+                    MediaItem.Builder()
                         .setMediaId(song.id)
                         .setUri(song.uri)
                         .setMediaMetadata(
@@ -1952,61 +1940,74 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                                 .build()
                         )
                         .build()
-                    
-                    controller.addMediaItem(mediaItem)
                 }
                 
-                // Set the queue in the view model immediately for UI responsiveness
-                _currentQueue.value = Queue(songs, 0)
-                
-                // Prepare and start playback from the first song
-                controller.prepare()
-                controller.seekToDefaultPosition(0)
-                controller.play()
-                
-                // Update current song and state
-                val firstSong = songs.firstOrNull()
-                _currentSong.value = firstSong
-                _isPlaying.value = true
-                
-                // Add first song to recently played
-                firstSong?.let { updateRecentlyPlayed(it) }
-                
-                // Update favorite status
-                _isFavorite.value = firstSong?.let { song -> 
-                    _favoriteSongs.value.contains(song.id) 
-                } ?: false
-                
-                startProgressUpdates()
-                
-                Log.d(TAG, "Successfully started playback of queue with ${songs.size} songs")
-                
-                // Debug queue state
-                debugQueueState()
-                
-                // Double-check queue sync after a short delay to ensure consistency
-                viewModelScope.launch {
-                    delay(500) // Wait for MediaController to be ready
-                    if (controller.mediaItemCount != songs.size) {
-                        Log.w(TAG, "Queue size mismatch after playback start - syncing")
-                        syncQueueWithMediaController()
+                // Switch to main thread to interact with MediaController
+                withContext(Dispatchers.Main) {
+                    mediaController?.let { controller ->
+                        // Stop playback first to prevent issues
+                        controller.stop()
+                        
+                        // Clear existing queue
+                        controller.clearMediaItems()
+                        
+                        // Set shuffle mode BEFORE adding items if specified
+                        if (enableShuffle != null) {
+                            controller.shuffleModeEnabled = enableShuffle
+                            _isShuffleEnabled.value = enableShuffle
+                            Log.d(TAG, "Set shuffle mode to $enableShuffle before building queue")
+                        }
+                        
+                        // Add all media items at once
+                        controller.addMediaItems(mediaItems)
+                        
+                        // Set the queue in the view model immediately for UI responsiveness
+                        _currentQueue.value = Queue(songs, 0)
+                        
+                        // Prepare and start playback from the first song
+                        controller.prepare()
+                        controller.seekToDefaultPosition(0)
+                        controller.play()
+                        
+                        // Update current song and state
+                        val firstSong = songs.firstOrNull()
+                        _currentSong.value = firstSong
+                        _isPlaying.value = true
+                        
+                        // Add first song to recently played
+                        firstSong?.let { updateRecentlyPlayed(it) }
+                        
+                        // Update favorite status
+                        _isFavorite.value = firstSong?.let { song -> 
+                            _favoriteSongs.value.contains(song.id) 
+                        } ?: false
+                        
+                        startProgressUpdates()
+                        
+                        Log.d(TAG, "Successfully started playback of queue with ${songs.size} songs")
+                        
+                        // Debug queue state
                         debugQueueState()
+                        
+                        // Double-check queue sync after a short delay to ensure consistency
+                        viewModelScope.launch {
+                            delay(500) // Wait for MediaController to be ready
+                            if (controller.mediaItemCount != songs.size) {
+                                Log.w(TAG, "Queue size mismatch after playback start - syncing")
+                                syncQueueWithMediaController()
+                                debugQueueState()
+                            }
+                        }
                     }
                 }
                 
             } catch (e: Exception) {
                 Log.e(TAG, "Error playing queue", e)
                 // Reset queue state on error
-                _currentQueue.value = Queue(emptyList(), -1)
-                _queueOperationError.value = "Error playing queue: ${e.message}"
+                withContext(Dispatchers.Main) {
+                    _currentQueue.value = Queue(emptyList(), -1)
+                }
             }
-        } ?: run {
-            Log.e(TAG, "Cannot play queue - media controller is null")
-            // Try to reconnect to the media service if controller is null
-            connectToMediaService()
-            
-            // Store the songs to play once we have a controller
-            pendingQueueToPlay = songs
         }
     }
 

@@ -1,6 +1,8 @@
 package chromahub.rhythm.app.ui.screens
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -182,7 +184,7 @@ fun HomeScreen(
     updaterViewModel: AppUpdaterViewModel = viewModel()
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val scope = rememberCoroutineScope()
+    val coroutineScope = rememberCoroutineScope()
     val musicViewModel = viewModel<chromahub.rhythm.app.viewmodel.MusicViewModel>()
     val haptics = LocalHapticFeedback.current
     val context = LocalContext.current
@@ -278,7 +280,7 @@ fun HomeScreen(
             },
             onAddSongToPlaylist = { song ->
                 selectedSongForPlaylist = song
-                scope.launch {
+                coroutineScope.launch {
                     artistSheetState.hide()
                 }.invokeOnCompletion {
                     if (!artistSheetState.isVisible) {
@@ -302,7 +304,7 @@ fun HomeScreen(
                 if (songsToPlay.isNotEmpty()) {
                     musicViewModel.playQueue(songsToPlay)
                 }
-                scope.launch {
+                coroutineScope.launch {
                     albumSheetState.hide()
                 }.invokeOnCompletion {
                     if (!albumSheetState.isVisible) {
@@ -314,7 +316,7 @@ fun HomeScreen(
                 if (songsToPlay.isNotEmpty()) {
                     musicViewModel.playShuffled(songsToPlay)
                 }
-                scope.launch {
+                coroutineScope.launch {
                     albumSheetState.hide()
                 }.invokeOnCompletion {
                     if (!albumSheetState.isVisible) {
@@ -325,7 +327,7 @@ fun HomeScreen(
             onAddToQueue = onAddToQueue,
             onAddSongToPlaylist = { song ->
                 selectedSongForPlaylist = song
-                scope.launch {
+                coroutineScope.launch {
                     albumSheetState.hide()
                 }.invokeOnCompletion {
                     if (!albumSheetState.isVisible) {
@@ -350,7 +352,7 @@ fun HomeScreen(
             onDismissRequest = { showAddToPlaylistSheet = false },
             onAddToPlaylist = { playlist ->
                 onAddSongToPlaylist(selectedSongForPlaylist!!, playlist.id)
-                scope.launch {
+                coroutineScope.launch {
                     addToPlaylistSheetState.hide()
                 }.invokeOnCompletion {
                     if (!addToPlaylistSheetState.isVisible) {
@@ -359,7 +361,7 @@ fun HomeScreen(
                 }
             },
             onCreateNewPlaylist = {
-                scope.launch {
+                coroutineScope.launch {
                     addToPlaylistSheetState.hide()
                 }.invokeOnCompletion {
                     if (!addToPlaylistSheetState.isVisible) {
@@ -437,7 +439,7 @@ fun HomeScreen(
             onNavigateToPlaylist = onNavigateToPlaylist,
             updaterViewModel = updaterViewModel,
             musicViewModel = musicViewModel,
-            coroutineScope = scope
+            coroutineScope = coroutineScope
         )
     }
 }
@@ -787,18 +789,26 @@ private fun ModernScrollableContent(
                         subtitle = "Your latest additions",
                         onPlayAll = {
                             if (recentlyAddedAlbums.isNotEmpty()) {
-                                val allSongs = recentlyAddedAlbums.flatMap { album ->
-                                    album.songs
+                                coroutineScope.launch(Dispatchers.Default) {
+                                    val allSongs = recentlyAddedAlbums.flatMap { album ->
+                                        album.songs
+                                    }
+                                    withContext(Dispatchers.Main) {
+                                        musicViewModel.playQueue(allSongs)
+                                    }
                                 }
-                                musicViewModel.playQueue(allSongs)
                             }
                         },
                         onShufflePlay = {
                             if (recentlyAddedAlbums.isNotEmpty()) {
-                                val allSongs = recentlyAddedAlbums.flatMap { album ->
-                                    album.songs
+                                coroutineScope.launch(Dispatchers.Default) {
+                                    val allSongs = recentlyAddedAlbums.flatMap { album ->
+                                        album.songs
+                                    }
+                                    withContext(Dispatchers.Main) {
+                                        musicViewModel.playShuffled(allSongs)
+                                    }
                                 }
-                                musicViewModel.playShuffled(allSongs)
                             }
                         }
                     )
