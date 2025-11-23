@@ -30,6 +30,8 @@ import androidx.media3.session.MediaNotification
 import androidx.media3.session.DefaultMediaNotificationProvider
 import chromahub.rhythm.app.MainActivity
 import chromahub.rhythm.app.data.AppSettings
+import chromahub.rhythm.app.data.Song
+import chromahub.rhythm.app.widget.WidgetUpdater
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -153,6 +155,11 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         const val ACTION_SET_BASS_BOOST = "chromahub.rhythm.app.action.SET_BASS_BOOST"
         const val ACTION_SET_VIRTUALIZER = "chromahub.rhythm.app.action.SET_VIRTUALIZER"
         const val ACTION_APPLY_EQUALIZER_PRESET = "chromahub.rhythm.app.action.APPLY_EQUALIZER_PRESET"
+        
+        // Widget control actions
+        const val ACTION_PLAY_PAUSE = "chromahub.rhythm.app.action.PLAY_PAUSE"
+        const val ACTION_SKIP_NEXT = "chromahub.rhythm.app.action.SKIP_NEXT"
+        const val ACTION_SKIP_PREVIOUS = "chromahub.rhythm.app.action.SKIP_PREVIOUS"
         
         // Broadcast actions for status updates
         const val BROADCAST_SLEEP_TIMER_STATUS = "chromahub.rhythm.app.broadcast.SLEEP_TIMER_STATUS"
@@ -750,6 +757,22 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                     applyEqualizerPreset(levels)
                 }
             }
+            ACTION_PLAY_PAUSE -> {
+                Log.d(TAG, "Widget play/pause action")
+                if (player.isPlaying) {
+                    player.pause()
+                } else {
+                    player.play()
+                }
+            }
+            ACTION_SKIP_NEXT -> {
+                Log.d(TAG, "Widget skip next action")
+                player.seekToNext()
+            }
+            ACTION_SKIP_PREVIOUS -> {
+                Log.d(TAG, "Widget skip previous action")
+                player.seekToPrevious()
+            }
         }
         
         // We make sure to call the super implementation
@@ -1050,6 +1073,37 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         Log.d(TAG, "Media item transitioned: ${mediaItem?.mediaMetadata?.title}")
         // Update custom layout when song changes to reflect correct favorite state
         scheduleCustomLayoutUpdate(50) // Shorter delay for song transitions
+        
+        // Update widget with new song info
+        updateWidgetFromMediaItem(mediaItem)
+    }
+    
+    override fun onIsPlayingChanged(isPlaying: Boolean) {
+        super.onIsPlayingChanged(isPlaying)
+        Log.d(TAG, "Is playing changed: $isPlaying")
+        // Update widget when play/pause state changes
+        updateWidgetFromMediaItem(player.currentMediaItem)
+    }
+    
+    private fun updateWidgetFromMediaItem(mediaItem: MediaItem?) {
+        if (mediaItem != null) {
+            val song = Song(
+                id = mediaItem.mediaId,
+                title = mediaItem.mediaMetadata.title?.toString() ?: "Unknown",
+                artist = mediaItem.mediaMetadata.artist?.toString() ?: "Unknown",
+                album = mediaItem.mediaMetadata.albumTitle?.toString() ?: "",
+                uri = mediaItem.requestMetadata.mediaUri ?: Uri.EMPTY,
+                artworkUri = mediaItem.mediaMetadata.artworkUri,
+                duration = 0L,
+                trackNumber = 0,
+                year = 0,
+                genre = "",
+                albumId = ""
+            )
+            WidgetUpdater.updateWidget(this, song, player.isPlaying)
+        } else {
+            WidgetUpdater.updateWidget(this, null, false)
+        }
     }
 
     // Sleep Timer functionality

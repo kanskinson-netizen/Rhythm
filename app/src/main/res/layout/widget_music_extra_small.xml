@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:padding="8dp">
+
+    <!-- App Icon Branding -->
+    <ImageView
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:src="@drawable/rhythm_splash_logo"
+        android:contentDescription="@string/app_name"
+        android:layout_gravity="top|end"
+        android:layout_marginEnd="4dp"
+        android:layout_marginTop="4dp" />
+
+    <!-- Content -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- Album Art -->
+        <ImageView
+            android:id="@+id/widget_album_art"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/album_art"
+            android:background="@drawable/album_art_background" />
+
+        <!-- Song Info -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="6dp">
+
+            <TextView
+                android:id="@+id/widget_song_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/no_song_playing"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="?android:textColorPrimary"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/widget_artist_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/unknown_artist"
+                android:textSize="9sp"
+                android:textColor="?android:textColorSecondary"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <!-- Play/Pause Button -->
+        <ImageButton
+            android:id="@+id/widget_play_pause"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_play_arrow"
+            android:background="@drawable/widget_button_background"
+            android:contentDescription="@string/play_pause"
+            android:scaleType="centerInside"
+            android:padding="6dp" />
+    </LinearLayout>
+
+</FrameLayout>

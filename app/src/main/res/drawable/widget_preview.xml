@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="250dp"
+    android:height="120dp"
+    android:viewportWidth="250"
+    android:viewportHeight="120">
+    
+    <!-- Widget background -->
+    <path
+        android:fillColor="#F5F5F5"
+        android:pathData="M10,0 L240,0 Q250,0 250,10 L250,110 Q250,120 240,120 L10,120 Q0,120 0,110 L0,10 Q0,0 10,0 Z"/>
+    
+    <!-- Album art placeholder -->
+    <path
+        android:fillColor="#E0E0E0"
+        android:pathData="M16,16 L88,16 Q92,16 92,20 L92,100 Q92,104 88,104 L16,104 Q12,104 12,100 L12,20 Q12,16 16,16 Z"/>
+    
+    <!-- Music note icon -->
+    <path
+        android:fillColor="#9E9E9E"
+        android:pathData="M52,40 L52,72 Q52,80 44,80 Q36,80 36,72 Q36,64 44,64 Q48,64 52,68 L52,40 L68,40 L68,48 L52,48 Z"/>
+    
+    <!-- Song title -->
+    <path
+        android:fillColor="#212121"
+        android:pathData="M105,35 L220,35 L220,42 L105,42 Z"/>
+    
+    <!-- Artist name -->
+    <path
+        android:fillColor="#757575"
+        android:pathData="M105,50 L190,50 L190,56 L105,56 Z"/>
+    
+    <!-- Previous button -->
+    <path
+        android:fillColor="#E8E8E8"
+        android:pathData="M140,80 Q155,80 155,90 Q155,100 140,100 Q125,100 125,90 Q125,80 140,80 Z"/>
+    <path
+        android:fillColor="#424242"
+        android:pathData="M135,86 L135,94 L142,90 Z M143,86 L145,86 L145,94 L143,94 Z"/>
+    
+    <!-- Play button -->
+    <path
+        android:fillColor="#6750A4"
+        android:pathData="M180,78 Q197,78 197,90 Q197,102 180,102 Q163,102 163,90 Q163,78 180,78 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M175,84 L175,96 L187,90 Z"/>
+    
+    <!-- Next button -->
+    <path
+        android:fillColor="#E8E8E8"
+        android:pathData="M220,80 Q235,80 235,90 Q235,100 220,100 Q205,100 205,90 Q205,80 220,80 Z"/>
+    <path
+        android:fillColor="#424242"
+        android:pathData="M215,86 L215,94 L222,90 Z M223,86 L225,86 L225,94 L223,94 Z"/>
+</vector>

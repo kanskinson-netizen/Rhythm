@@ -71,6 +71,36 @@
             android:exported="true">
         </receiver>
         
+        <!-- Music Widget Receiver (Legacy RemoteViews) -->
+        <receiver
+            android:name=".widget.MusicWidgetProvider"
+            android:exported="true"
+            android:label="Rhythm Music (Legacy)">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="chromahub.rhythm.app.widget.PLAY_PAUSE" />
+                <action android:name="chromahub.rhythm.app.widget.SKIP_NEXT" />
+                <action android:name="chromahub.rhythm.app.widget.SKIP_PREVIOUS" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info" />
+        </receiver>
+        
+        <!-- Rhythm Music Widget (Modern Glance with Material 3) -->
+        <receiver
+            android:name=".widget.glance.RhythmWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_name_glance"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_glance" />
+        </receiver>
+        
         <service
             android:name=".service.MediaPlaybackService"
             android:exported="true"

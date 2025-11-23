@@ -110,6 +110,10 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
     implementation("androidx.palette:palette-ktx:1.0.0")
     
+    // Glance for modern widgets
+    implementation("androidx.glance:glance-appwidget:1.1.1")
+    implementation("androidx.glance:glance-material3:1.1.1")
+    
     // Physics-based animations
     implementation("androidx.compose.animation:animation:1.9.5")
     //noinspection GradleDependency

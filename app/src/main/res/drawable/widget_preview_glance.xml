@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="250dp"
+    android:height="250dp"
+    android:viewportWidth="250"
+    android:viewportHeight="250">
+    
+    <!-- Widget background with Material 3 squircle -->
+    <path
+        android:fillColor="#F3EDF7"
+        android:pathData="M20,0 L230,0 Q250,0 250,20 L250,230 Q250,250 230,250 L20,250 Q0,250 0,230 L0,20 Q0,0 20,0 Z"/>
+    
+    <!-- Album art placeholder with squircle -->
+    <path
+        android:fillColor="#E8DEF8"
+        android:pathData="M30,30 L220,30 Q230,30 230,40 L230,140 Q230,150 220,150 L30,150 Q20,150 20,140 L20,40 Q20,30 30,30 Z"/>
+    
+    <!-- Music note icon on album art -->
+    <path
+        android:fillColor="#6750A4"
+        android:pathData="M125,60 L125,100 Q125,110 115,110 Q105,110 105,100 Q105,90 115,90 Q120,90 125,95 L125,60 L145,60 L145,70 L125,70 Z"/>
+    
+    <!-- Song title -->
+    <path
+        android:fillColor="#1C1B1F"
+        android:pathData="M40,170 L210,170 L210,178 L40,178 Z"/>
+    
+    <!-- Artist name -->
+    <path
+        android:fillColor="#49454F"
+        android:pathData="M40,188 L180,188 L180,194 L40,194 Z"/>
+    
+    <!-- Previous button - circular secondary container -->
+    <path
+        android:fillColor="#E8DEF8"
+        android:pathData="M70,220 Q90,220 90,230 Q90,240 70,240 Q50,240 50,230 Q50,220 70,220 Z"/>
+    <path
+        android:fillColor="#21005D"
+        android:pathData="M65,226 L65,234 L72,230 Z M73,226 L75,226 L75,234 L73,234 Z"/>
+    
+    <!-- Play button - circular primary -->
+    <path
+        android:fillColor="#6750A4"
+        android:pathData="M125,215 Q145,215 145,230 Q145,245 125,245 Q105,245 105,230 Q105,215 125,215 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M120,223 L120,237 L133,230 Z"/>
+    
+    <!-- Next button - circular secondary container -->
+    <path
+        android:fillColor="#E8DEF8"
+        android:pathData="M180,220 Q200,220 200,230 Q200,240 180,240 Q160,240 160,230 Q160,220 180,220 Z"/>
+    <path
+        android:fillColor="#21005D"
+        android:pathData="M175,226 L175,234 L182,230 Z M183,226 L185,226 L185,234 L183,234 Z"/>
+</vector>
