@@ -3908,12 +3908,15 @@ fun ExperimentalFeaturesScreen(onBackClick: () -> Unit) {
     val hapticFeedbackEnabled by appSettings.hapticFeedbackEnabled.collectAsState()
     val groupByAlbumArtist by appSettings.groupByAlbumArtist.collectAsState()
     val showLyrics by appSettings.showLyrics.collectAsState()
+    val haptic = LocalHapticFeedback.current
 
     CollapsibleHeaderScreen(
         title = "Experimental Features",
         showBackButton = true,
         onBackClick = onBackClick
     ) { modifier ->
+        var showLyricsSourceDialog by remember { mutableStateOf(false) }
+        
         val settingGroups = listOf(
             SettingGroup(
                 title = "Library Organization",
@@ -3927,7 +3930,30 @@ fun ExperimentalFeaturesScreen(onBackClick: () -> Unit) {
                     )
                 )
             ),
+            SettingGroup(
+                title = "Lyrics",
+                items = listOf(
+                    SettingItem(
+                        Icons.Default.Lyrics,
+                        "Lyrics Source Priority",
+                        "Configure embedded vs online lyrics",
+                        onClick = { 
+                            HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                            showLyricsSourceDialog = true 
+                        }
+                    )
+                )
+            )
         )
+        
+        if (showLyricsSourceDialog) {
+            LyricsSourceDialog(
+                onDismiss = { showLyricsSourceDialog = false },
+                appSettings = appSettings,
+                context = context,
+                haptic = haptic
+            )
+        }
 
         LazyColumn(
             modifier = modifier
@@ -3987,6 +4013,172 @@ fun ExperimentalFeaturesScreen(onBackClick: () -> Unit) {
                             text = "More experimental features coming soon in future updates",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LyricsSourceDialog(
+    onDismiss: () -> Unit,
+    appSettings: AppSettings,
+    context: Context,
+    haptic: HapticFeedback
+) {
+    val lyricsSourcePreference by appSettings.lyricsSourcePreference.collectAsState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        dragHandle = {
+            BottomSheetDefaults.DragHandle(
+                color = MaterialTheme.colorScheme.primary
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceContainer
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 24.dp)
+        ) {
+            // Header
+            Text(
+                text = "Lyrics Source Priority",
+                style = MaterialTheme.typography.displayMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            Text(
+                text = "Choose where to look for lyrics first",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+            
+            // Options
+            val sourceOptions = listOf(
+                chromahub.rhythm.app.data.LyricsSourcePreference.EMBEDDED_FIRST to Triple(
+                    "Embedded First",
+                    "Try audio file metadata → Online APIs → .lrc files",
+                    Icons.Default.MusicNote
+                ),
+                chromahub.rhythm.app.data.LyricsSourcePreference.API_FIRST to Triple(
+                    "API First",
+                    "Try online services → Audio metadata → .lrc files",
+                    Icons.Default.CloudDownload
+                ),
+                chromahub.rhythm.app.data.LyricsSourcePreference.LOCAL_FIRST to Triple(
+                    "Local .lrc First",
+                    "Try .lrc files → Audio metadata → Online APIs",
+                    Icons.Default.Folder
+                )
+            )
+            
+            sourceOptions.forEach { (preference, info) ->
+                val (title, description, icon) = info
+                val isSelected = lyricsSourcePreference == preference
+                
+                Card(
+                    onClick = {
+                        HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                        appSettings.setLyricsSourcePreference(preference)
+                    },
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isSelected)
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            MaterialTheme.colorScheme.surfaceContainerHigh
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = if (isSelected) 
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            else
+                                MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(32.dp)
+                        )
+                        
+                        Spacer(modifier = Modifier.width(16.dp))
+                        
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isSelected)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                else
+                                    MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (isSelected)
+                                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        
+                        if (isSelected) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = "Selected",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Info card
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "Embedded lyrics are extracted from ID3v2 USLT tags in your audio files. For best results, use properly tagged MP3/FLAC files.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
                         )
                     }
                 }

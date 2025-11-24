@@ -294,30 +294,6 @@ fun TunerSettingsScreen(
                         group.items.forEachIndexed { index, item ->
                             SettingRow(item = item)
                             
-                            // Show Lyrics Source setting when Show Lyrics is enabled
-                            if (group.title == "Audio & Playback" && item.title == "Show Lyrics") {
-                                AnimatedVisibility(
-                                    visible = showLyrics,
-                                    enter = fadeIn(animationSpec = tween(300)) + expandVertically(animationSpec = tween(300)),
-                                    exit = fadeOut(animationSpec = tween(200)) + shrinkVertically(animationSpec = tween(200))
-                                ) {
-                                    Column {
-                                        HorizontalDivider(
-                                            modifier = Modifier.padding(horizontal = 20.dp),
-                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-                                        )
-                                        SettingRow(
-                                            item = SettingItem(
-                                                Icons.Default.Lyrics,
-                                                "Lyrics Source",
-                                                "Configure embedded vs online lyrics",
-                                                onClick = { onNavigateTo(SettingsRoutes.LYRICS_SOURCE) }
-                                            )
-                                        )
-                                    }
-                                }
-                            }
-                            
                             if (index < group.items.lastIndex) {
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = 20.dp),

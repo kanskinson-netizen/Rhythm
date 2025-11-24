@@ -1136,222 +1136,534 @@ class MusicRepository(context: Context) {
             updatedArtists
         }
     /**
-     * Extracts embedded lyrics from audio file metadata
+     * Extracts embedded lyrics from audio file metadata - REDONE FROM SCRATCH
      * 
-     * This method attempts multiple strategies to extract lyrics:
-     * 1. MediaMetadataRetriever with common metadata keys
-     * 2. Direct file reading for ID3v2 USLT (Unsynchronized Lyrics) frames
-     * 
-     * Note: Android's MediaMetadataRetriever has limited lyrics support.
-     * ID3v2.3/v2.4 tags with USLT frames are the most reliable format.
+     * Improved extraction with:
+     * 1. Better ID3v2.3/v2.4 USLT frame parsing
+     * 2. Proper synchsafe integer handling
+     * 3. Multiple charset support (ISO-8859-1, UTF-16, UTF-8)
+     * 4. Safety checks to prevent hangs and crashes
+     * 5. Support for both synced LRC and plain text lyrics
+     * 6. Fallback to MediaMetadataRetriever for FLAC/other formats
      */
     private fun getEmbeddedLyrics(songUri: Uri): LyricsData? {
-        try {
-            // Try MediaMetadataRetriever first (fastest)
-            val retrieverLyrics = extractLyricsViaRetriever(songUri)
-            if (retrieverLyrics != null) return retrieverLyrics
+        return try {
+            Log.d(TAG, "Extracting embedded lyrics from: $songUri")
             
-            // Try direct file reading for ID3 tags with timeout to prevent hanging
-            val id3Lyrics = try {
-                // Use a timeout to prevent infinite loading
-                val result = kotlin.runCatching {
-                    extractLyricsFromID3(songUri)
-                }
-                result.getOrNull()
-            } catch (e: Exception) {
-                Log.w(TAG, "ID3 extraction failed: ${e.message}")
-                null
+            // Primary method: Direct ID3v2 tag parsing (for MP3)
+            val id3Lyrics = extractLyricsFromID3v2(songUri)
+            if (id3Lyrics != null) {
+                Log.d(TAG, "Found lyrics via ID3v2 parsing")
+                return id3Lyrics
             }
             
-            if (id3Lyrics != null) return id3Lyrics
+            // Fallback: MediaMetadataRetriever (for FLAC, M4A, etc.)
+            val retrieverLyrics = extractLyricsViaRetriever(songUri)
+            if (retrieverLyrics != null) {
+                Log.d(TAG, "Found lyrics via MediaMetadataRetriever")
+                return retrieverLyrics
+            }
             
-            return null
+            Log.d(TAG, "No embedded lyrics found")
+            null
         } catch (e: Exception) {
-            Log.w(TAG, "Error extracting embedded lyrics: ${e.message}")
-            return null
+            Log.w(TAG, "Embedded lyrics extraction failed: ${e.message}")
+            null
         }
     }
     
     /**
-     * Attempts to extract lyrics using MediaMetadataRetriever
+     * Extract lyrics using MediaMetadataRetriever (works for FLAC, M4A, etc.)
+     * For FLAC: Checks Vorbis comments (LYRICS/UNSYNCEDLYRICS tags)
      */
     private fun extractLyricsViaRetriever(songUri: Uri): LyricsData? {
-        var retriever: android.media.MediaMetadataRetriever? = null
-        try {
-            retriever = android.media.MediaMetadataRetriever()
-            retriever.setDataSource(context, songUri)
+        return try {
+            val retriever = android.media.MediaMetadataRetriever()
+            retriever.use {
+                context.contentResolver.openFileDescriptor(songUri, "r")?.use { pfd ->
+                    it.setDataSource(pfd.fileDescriptor)
+                    
+                    // Try different metadata keys that might contain lyrics
+                    // FLAC uses custom Vorbis comments, but Android exposes some through standard keys
+                    val possibleKeys = listOf(
+                        android.media.MediaMetadataRetriever.METADATA_KEY_WRITER,  // Sometimes contains lyrics
+                        android.media.MediaMetadataRetriever.METADATA_KEY_COMPOSER, // Fallback
+                    )
+                    
+                    for (key in possibleKeys) {
+                        val value = it.extractMetadata(key)
+                        if (value != null && value.isNotBlank() && value.length > 50) { // Likely lyrics if > 50 chars
+                            Log.d(TAG, "Found potential lyrics in metadata key $key (${value.length} chars)")
+                            val parsed = parseLyricsData(value)
+                            if (parsed != null) return@use parsed
+                        }
+                    }
+                    
+                    // For FLAC files, try direct Vorbis comment parsing
+                    val filePath = getFilePathFromUri(songUri)
+                    if (filePath?.endsWith(".flac", ignoreCase = true) == true) {
+                        return@use extractLyricsFromFLAC(filePath)
+                    }
+                    
+                    // For M4A files, try direct iTunes metadata parsing
+                    if (filePath?.endsWith(".m4a", ignoreCase = true) == true) {
+                        return@use extractLyricsFromM4A(filePath)
+                    }
+                    
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "MediaMetadataRetriever failed: ${e.message}")
+            null
+        }
+    }
+    
+    /**
+     * Extract lyrics from FLAC Vorbis comments
+     */
+    private fun extractLyricsFromFLAC(filePath: String): LyricsData? {
+        return try {
+            val file = java.io.File(filePath)
+            if (!file.exists() || !file.canRead()) return null
             
-            // Try common metadata keys that might contain lyrics
-            // Note: Standard key codes documented in MediaMetadataRetriever
-            val potentialLyricsKeys = listOf(
-                // Some devices/implementations may use these keys for lyrics
-                android.media.MediaMetadataRetriever.METADATA_KEY_WRITER, 
-                android.media.MediaMetadataRetriever.METADATA_KEY_COMPOSER,
-                // Try some numeric codes (vendor-specific, may work on some devices)
-                1000, 1001, 1002, 1003
+            java.io.RandomAccessFile(file, "r").use { raf ->
+                // Check FLAC signature
+                val signature = ByteArray(4)
+                if (raf.read(signature) != 4) return@use null
+                if (String(signature, Charsets.ISO_8859_1) != "fLaC") {
+                    Log.d(TAG, "Not a valid FLAC file")
+                    return@use null
+                }
+                
+                // Read metadata blocks
+                var lastBlock = false
+                while (!lastBlock && raf.filePointer < file.length()) {
+                    val blockHeader = raf.read()
+                    if (blockHeader == -1) break
+                    
+                    lastBlock = (blockHeader and 0x80) != 0
+                    val blockType = blockHeader and 0x7F
+                    
+                    // Read block length (24-bit big-endian)
+                    val length = ((raf.read() and 0xFF) shl 16) or
+                               ((raf.read() and 0xFF) shl 8) or
+                               (raf.read() and 0xFF)
+                    
+                    if (length <= 0 || length > 16_777_215) break // Max 16MB block
+                    
+                    // Block type 4 = VORBIS_COMMENT
+                    if (blockType == 4) {
+                        val commentData = ByteArray(length)
+                        if (raf.read(commentData) != length) break
+                        
+                        val lyrics = parseVorbisComments(commentData)
+                        if (lyrics != null) {
+                            Log.d(TAG, "Found lyrics in FLAC Vorbis comments")
+                            return@use lyrics
+                        }
+                    } else {
+                        // Skip this block
+                        raf.seek(raf.filePointer + length)
+                    }
+                }
+                
+                Log.d(TAG, "No LYRICS tag found in FLAC Vorbis comments")
+                null
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "FLAC lyrics extraction failed: ${e.message}")
+            null
+        }
+    }
+    
+    /**
+     * Parse Vorbis comments to extract LYRICS or UNSYNCEDLYRICS tags
+     */
+    private fun parseVorbisComments(data: ByteArray): LyricsData? {
+        try {
+            var pos = 0
+            
+            // Read vendor string length (little-endian 32-bit)
+            if (pos + 4 > data.size) return null
+            val vendorLength = (data[pos].toInt() and 0xFF) or
+                             ((data[pos + 1].toInt() and 0xFF) shl 8) or
+                             ((data[pos + 2].toInt() and 0xFF) shl 16) or
+                             ((data[pos + 3].toInt() and 0xFF) shl 24)
+            pos += 4
+            
+            // Skip vendor string
+            if (vendorLength < 0 || pos + vendorLength > data.size) return null
+            pos += vendorLength
+            
+            // Read number of comments
+            if (pos + 4 > data.size) return null
+            val commentCount = (data[pos].toInt() and 0xFF) or
+                             ((data[pos + 1].toInt() and 0xFF) shl 8) or
+                             ((data[pos + 2].toInt() and 0xFF) shl 16) or
+                             ((data[pos + 3].toInt() and 0xFF) shl 24)
+            pos += 4
+            
+            if (commentCount < 0 || commentCount > 10000) return null // Safety limit
+            
+            // Parse each comment
+            for (i in 0 until commentCount) {
+                if (pos + 4 > data.size) break
+                
+                val commentLength = (data[pos].toInt() and 0xFF) or
+                                  ((data[pos + 1].toInt() and 0xFF) shl 8) or
+                                  ((data[pos + 2].toInt() and 0xFF) shl 16) or
+                                  ((data[pos + 3].toInt() and 0xFF) shl 24)
+                pos += 4
+                
+                if (commentLength < 0 || pos + commentLength > data.size) break
+                
+                val commentBytes = data.copyOfRange(pos, pos + commentLength)
+                val comment = String(commentBytes, Charsets.UTF_8)
+                pos += commentLength
+                
+                // Check if this is a lyrics tag
+                val parts = comment.split("=", limit = 2)
+                if (parts.size == 2) {
+                    val key = parts[0].uppercase()
+                    val value = parts[1]
+                    
+                    if ((key == "LYRICS" || key == "UNSYNCEDLYRICS") && value.isNotBlank()) {
+                        Log.d(TAG, "Found $key tag in Vorbis comments (${value.length} chars)")
+                        return parseLyricsData(value)
+                    }
+                }
+            }
+            
+            return null
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to parse Vorbis comments: ${e.message}")
+            return null
+        }
+    }
+    
+    /**
+     * Extract lyrics from M4A iTunes metadata (©lyr atom)
+     */
+    private fun extractLyricsFromM4A(filePath: String): LyricsData? {
+        return try {
+            val file = java.io.File(filePath)
+            if (!file.exists() || !file.canRead()) return null
+            
+            java.io.RandomAccessFile(file, "r").use { raf ->
+                // M4A files use MP4/QuickTime container format with atoms
+                // We need to find the 'moov' atom, then 'udta', then 'meta', then 'ilst', then '©lyr'
+                
+                val lyricsAtom = findM4AAtom(raf, "©lyr")
+                if (lyricsAtom != null) {
+                    Log.d(TAG, "Found ©lyr atom in M4A file")
+                    return@use parseLyricsData(lyricsAtom)
+                }
+                
+                Log.d(TAG, "No ©lyr atom found in M4A file")
+                null
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "M4A lyrics extraction failed: ${e.message}")
+            null
+        }
+    }
+    
+    /**
+     * Find and extract a specific atom from M4A file
+     */
+    private fun findM4AAtom(raf: java.io.RandomAccessFile, targetAtom: String): String? {
+        try {
+            // Recursively search for atoms
+            return searchM4AAtoms(raf, 0, raf.length(), targetAtom, 0)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to search M4A atoms: ${e.message}")
+            return null
+        }
+    }
+    
+    /**
+     * Recursively search through M4A atom hierarchy
+     */
+    private fun searchM4AAtoms(
+        raf: java.io.RandomAccessFile,
+        offset: Long,
+        endOffset: Long,
+        targetAtom: String,
+        depth: Int
+    ): String? {
+        if (depth > 10) return null // Prevent infinite recursion
+        
+        var pos = offset
+        while (pos < endOffset - 8) {
+            raf.seek(pos)
+            
+            // Read atom size (big-endian 32-bit)
+            val sizeBytes = ByteArray(4)
+            if (raf.read(sizeBytes) != 4) break
+            var atomSize = ((sizeBytes[0].toInt() and 0xFF) shl 24) or
+                          ((sizeBytes[1].toInt() and 0xFF) shl 16) or
+                          ((sizeBytes[2].toInt() and 0xFF) shl 8) or
+                          (sizeBytes[3].toInt() and 0xFF)
+            
+            // Read atom type (4 ASCII chars)
+            val typeBytes = ByteArray(4)
+            if (raf.read(typeBytes) != 4) break
+            val atomType = String(typeBytes, Charsets.ISO_8859_1)
+            
+            // Handle extended size (size = 1 means 64-bit size follows)
+            if (atomSize == 1) {
+                val extSizeBytes = ByteArray(8)
+                if (raf.read(extSizeBytes) != 8) break
+                atomSize = 0 // Skip large atoms for safety
+            }
+            
+            if (atomSize <= 0 || atomSize > 100_000_000) break // Max 100MB per atom
+            
+            // Check if this is our target atom
+            if (atomType == targetAtom) {
+                // For ©lyr, data is usually in a nested 'data' atom
+                val dataAtom = searchM4AAtoms(raf, pos + 8, pos + atomSize, "data", depth + 1)
+                if (dataAtom != null) return dataAtom
+                
+                // If no 'data' atom, try reading directly
+                if (atomSize > 16 && atomSize < 1_000_000) {
+                    val dataBytes = ByteArray(atomSize - 8)
+                    raf.seek(pos + 8)
+                    raf.read(dataBytes)
+                    val text = String(dataBytes, Charsets.UTF_8).trim('\u0000')
+                    if (text.isNotBlank()) return text
+                }
+            }
+            
+            // Check if this is a 'data' atom (contains actual text)
+            if (atomType == "data" && atomSize > 16 && atomSize < 1_000_000) {
+                // Skip 8 bytes (version + flags + reserved)
+                raf.seek(pos + 16)
+                val dataBytes = ByteArray(atomSize - 16)
+                if (raf.read(dataBytes) == dataBytes.size) {
+                    val text = String(dataBytes, Charsets.UTF_8).trim('\u0000')
+                    if (text.isNotBlank()) return text
+                }
+            }
+            
+            // Recurse into container atoms
+            if (atomType == "moov" || atomType == "udta" || atomType == "meta" || 
+                atomType == "ilst" || atomType.startsWith("©")) {
+                val result = searchM4AAtoms(raf, pos + 8, pos + atomSize, targetAtom, depth + 1)
+                if (result != null) return result
+            }
+            
+            // Move to next atom
+            pos += atomSize
+            if (atomSize < 8) break // Prevent infinite loop on malformed files
+        }
+        
+        return null
+    }
+    
+    /**
+     * NEW: Extract lyrics from ID3v2 tags with improved parsing
+     * Supports ID3v2.3 and ID3v2.4 with synchsafe integers
+     */
+    private fun extractLyricsFromID3v2(songUri: Uri): LyricsData? {
+        val filePath = getFilePathFromUri(songUri)
+        
+        if (filePath == null) {
+            Log.d(TAG, "Could not resolve file path from URI")
+            return null
+        }
+        
+        val file = java.io.File(filePath)
+        
+        if (!file.exists()) {
+            Log.d(TAG, "File does not exist: $filePath")
+            return null
+        }
+        
+        if (!file.canRead()) {
+            Log.d(TAG, "Cannot read file: $filePath")
+            return null
+        }
+        
+        // Check if file is MP3 (ID3 tags only work for MP3)
+        if (!filePath.endsWith(".mp3", ignoreCase = true)) {
+            Log.d(TAG, "Not an MP3 file, skipping ID3v2 parsing: $filePath")
+            return null
+        }
+        
+        Log.d(TAG, "Parsing ID3v2 tags from: $filePath")
+        
+        return java.io.RandomAccessFile(file, "r").use { raf ->
+            // Read and validate ID3v2 header
+            val header = ByteArray(10)
+            if (raf.read(header) != 10) return@use null
+            
+            // Check ID3v2 signature
+            if (header[0] != 'I'.code.toByte() || 
+                header[1] != 'D'.code.toByte() || 
+                header[2] != '3'.code.toByte()) {
+                return@use null
+            }
+            
+            val majorVersion = header[3].toInt() and 0xFF
+            val minorVersion = header[4].toInt() and 0xFF
+            val flags = header[5].toInt() and 0xFF
+            
+            Log.d(TAG, "ID3v2.$majorVersion.$minorVersion detected, flags: $flags")
+            
+            // Only support v2.3 and v2.4
+            if (majorVersion < 3 || majorVersion > 4) {
+                Log.d(TAG, "Unsupported ID3 version: $majorVersion")
+                return@use null
+            }
+            
+            // Parse synchsafe integer for tag size
+            val tagSize = decodeSynchsafe(
+                header[6].toInt() and 0xFF,
+                header[7].toInt() and 0xFF,
+                header[8].toInt() and 0xFF,
+                header[9].toInt() and 0xFF
             )
             
-            for (key in potentialLyricsKeys) {
-                try {
-                    val metadata = retriever.extractMetadata(key)
-                    if (!metadata.isNullOrBlank() && looksLikeLyrics(metadata)) {
-                        Log.d(TAG, "Found embedded lyrics via retriever key: $key")
-                        return parseLyricsData(metadata)
-                    }
-                } catch (e: Exception) {
-                    // Key not supported, continue
-                    continue
-                }
+            // Validate tag size (max 10MB)
+            if (tagSize <= 0 || tagSize > 10_485_760) {
+                Log.w(TAG, "Invalid tag size: $tagSize")
+                return@use null
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "MediaMetadataRetriever extraction failed: ${e.message}")
-        } finally {
-            try {
-                retriever?.release()
-            } catch (e: Exception) {
-                Log.w(TAG, "Error releasing MediaMetadataRetriever: ${e.message}")
+            
+            // Read tag data
+            val tagData = ByteArray(tagSize)
+            val bytesRead = raf.read(tagData)
+            if (bytesRead != tagSize) {
+                Log.w(TAG, "Failed to read complete tag data")
+                return@use null
             }
+            
+            // Parse frames and find USLT
+            parseID3v2Frames(tagData, majorVersion)
         }
-        return null
     }
     
     /**
-     * Attempts to extract lyrics by reading ID3v2 tags directly from file
-     * Specifically looks for USLT (Unsynchronized Lyrics) frames
+     * NEW: Decode synchsafe integer (ID3v2 size encoding)
      */
-    private fun extractLyricsFromID3(songUri: Uri): LyricsData? {
-        try {
-            // Get file path from URI
-            val filePath = getFilePathFromUri(songUri) ?: return null
-            val file = java.io.File(filePath)
-            
-            if (!file.exists() || !file.canRead()) {
-                Log.d(TAG, "Cannot read file for ID3 extraction: $filePath")
-                return null
-            }
-            
-            // Read ID3v2 tag
-            java.io.RandomAccessFile(file, "r").use { raf ->
-                // Check for ID3v2 header
-                val header = ByteArray(10)
-                raf.read(header)
-                
-                if (header[0] == 'I'.code.toByte() && 
-                    header[1] == 'D'.code.toByte() && 
-                    header[2] == '3'.code.toByte()) {
-                    
-                    // ID3v2 tag found
-                    val version = header[3].toInt()
-                    Log.d(TAG, "Found ID3v2.$version tag")
-                    
-                    // Calculate tag size (synchsafe integer)
-                    val tagSize = ((header[6].toInt() and 0x7F) shl 21) or
-                                 ((header[7].toInt() and 0x7F) shl 14) or
-                                 ((header[8].toInt() and 0x7F) shl 7) or
-                                 (header[9].toInt() and 0x7F)
-                    
-                    // Read tag data
-                    val tagData = ByteArray(tagSize)
-                    raf.read(tagData)
-                    
-                    // Search for USLT frame
-                    val lyrics = findUSLTFrame(tagData)
-                    if (lyrics != null) {
-                        Log.d(TAG, "Found USLT lyrics in ID3 tag (length: ${lyrics.length})")
-                        return parseLyricsData(lyrics)
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.w(TAG, "ID3 tag extraction failed: ${e.message}")
-        }
-        return null
+    private fun decodeSynchsafe(b1: Int, b2: Int, b3: Int, b4: Int): Int {
+        return ((b1 and 0x7F) shl 21) or
+               ((b2 and 0x7F) shl 14) or
+               ((b3 and 0x7F) shl 7) or
+               (b4 and 0x7F)
     }
     
     /**
-     * Searches for USLT (Unsynchronized Lyrics) frame in ID3v2 tag data with safety checks
+     * NEW: Parse ID3v2 frames and extract USLT (lyrics) frame
      */
-    private fun findUSLTFrame(tagData: ByteArray): String? {
+    private fun parseID3v2Frames(tagData: ByteArray, version: Int): LyricsData? {
         var pos = 0
-        var searchAttempts = 0
-        val maxSearchAttempts = 10000 // Prevent infinite loops
+        var frameCount = 0
+        val maxFrames = 1000 // Safety limit
         
-        while (pos < tagData.size - 10 && searchAttempts < maxSearchAttempts) {
-            searchAttempts++
-            try {
-                // Check for USLT frame header
-                if (tagData[pos] == 'U'.code.toByte() &&
-                    tagData[pos + 1] == 'S'.code.toByte() &&
-                    tagData[pos + 2] == 'L'.code.toByte() &&
-                    tagData[pos + 3] == 'T'.code.toByte()) {
-                    
-                    // Frame size (4 bytes after frame ID)
-                    val frameSize = ((tagData[pos + 4].toInt() and 0xFF) shl 24) or
-                                   ((tagData[pos + 5].toInt() and 0xFF) shl 16) or
-                                   ((tagData[pos + 6].toInt() and 0xFF) shl 8) or
-                                   (tagData[pos + 7].toInt() and 0xFF)
-                    
-                    // Validate frame size to prevent out of bounds
-                    if (frameSize > 0 && frameSize < tagData.size - pos && frameSize < 1048576) { // Max 1MB
-                        // Get encoding byte (byte after flags, position 10)
-                        val encoding = tagData[pos + 10].toInt()
-                        
-                        // Skip frame header (10 bytes) + encoding (1 byte) + language (3 bytes) + descriptor
-                        var dataPos = pos + 14
-                        
-                        // Skip descriptor (null-terminated string) with bounds check
-                        var descriptorSkips = 0
-                        while (dataPos < pos + frameSize && 
-                               dataPos < tagData.size && 
-                               tagData[dataPos] != 0.toByte() &&
-                               descriptorSkips < 256) { // Limit descriptor length
-                            dataPos++
-                            descriptorSkips++
-                        }
-                        dataPos++ // Skip null terminator
-                        
-                        // Extract lyrics text with bounds check
-                        val endPos = (pos + 10 + frameSize).coerceAtMost(tagData.size)
-                        val lyricsLength = endPos - dataPos
-                        if (lyricsLength > 0 && lyricsLength < 524288 && dataPos < tagData.size) { // Max 512KB lyrics
-                            val lyricsBytes = tagData.copyOfRange(dataPos, endPos)
-                            
-                            // Decode using proper charset based on encoding byte
-                            val charset = when (encoding) {
-                                0 -> Charsets.ISO_8859_1  // ISO-8859-1 (Latin-1)
-                                1 -> Charsets.UTF_16      // UTF-16 with BOM
-                                2 -> Charsets.UTF_16BE    // UTF-16BE without BOM
-                                3 -> Charsets.UTF_8       // UTF-8
-                                else -> Charsets.UTF_8    // Default to UTF-8
-                            }
-                            
-                            val lyrics = try {
-                                String(lyricsBytes, charset).trim()
-                            } catch (e: Exception) {
-                                // Fallback to UTF-8 if decoding fails
-                                String(lyricsBytes, Charsets.UTF_8).trim()
-                            }
-                            
-                            if (lyrics.isNotBlank()) {
-                                return lyrics
-                            }
-                        }
-                    }
-                }
-                pos++
-            } catch (e: Exception) {
-                // Log and continue searching
-                if (searchAttempts % 1000 == 0) {
-                    Log.w(TAG, "ID3 search exception at position $pos: ${e.message}")
-                }
-                pos++
+        while (pos < tagData.size - 10 && frameCount < maxFrames) {
+            frameCount++
+            
+            // Check for padding (null bytes indicate end of frames)
+            if (tagData[pos] == 0.toByte()) break
+            
+            // Read frame header
+            val frameId = String(tagData.copyOfRange(pos, pos + 4), Charsets.ISO_8859_1)
+            
+            // Calculate frame size (different for v2.3 and v2.4)
+            val frameSize = if (version == 4) {
+                // v2.4 uses synchsafe integers
+                decodeSynchsafe(
+                    tagData[pos + 4].toInt() and 0xFF,
+                    tagData[pos + 5].toInt() and 0xFF,
+                    tagData[pos + 6].toInt() and 0xFF,
+                    tagData[pos + 7].toInt() and 0xFF
+                )
+            } else {
+                // v2.3 uses regular 32-bit integer
+                ((tagData[pos + 4].toInt() and 0xFF) shl 24) or
+                ((tagData[pos + 5].toInt() and 0xFF) shl 16) or
+                ((tagData[pos + 6].toInt() and 0xFF) shl 8) or
+                (tagData[pos + 7].toInt() and 0xFF)
             }
+            
+            // Validate frame size
+            if (frameSize <= 0 || frameSize > tagData.size - pos - 10 || frameSize > 2_097_152) {
+                Log.w(TAG, "Invalid frame size: $frameSize for $frameId")
+                break
+            }
+            
+            // Check if this is a USLT frame
+            if (frameId == "USLT") {
+                val lyricsData = parseUSLTFrame(tagData, pos + 10, frameSize)
+                if (lyricsData != null) {
+                    Log.d(TAG, "Successfully extracted USLT lyrics")
+                    return lyricsData
+                }
+            }
+            
+            // Move to next frame
+            pos += 10 + frameSize
         }
         
-        if (searchAttempts >= maxSearchAttempts) {
-            Log.w(TAG, "ID3 USLT search aborted after $maxSearchAttempts attempts")
-        }
         return null
+    }
+    
+    /**
+     * NEW: Parse USLT frame content
+     */
+    private fun parseUSLTFrame(data: ByteArray, offset: Int, size: Int): LyricsData? {
+        try {
+            if (size < 4) return null
+            
+            // USLT frame structure:
+            // - Text encoding (1 byte)
+            // - Language (3 bytes, ISO-639-2)
+            // - Content descriptor (null-terminated string)
+            // - Lyrics text (rest of frame)
+            
+            val encoding = data[offset].toInt() and 0xFF
+            // Skip language (3 bytes)
+            var pos = offset + 4
+            
+            // Skip content descriptor (null-terminated)
+            val terminator = if (encoding == 1 || encoding == 2) 2 else 1 // UTF-16 uses 2-byte null
+            var nullCount = 0
+            while (pos < offset + size && nullCount < terminator) {
+                if (data[pos] == 0.toByte()) nullCount++
+                pos++
+                if (pos - offset > 256) break // Safety: max 256 bytes for descriptor
+            }
+            
+            // Extract lyrics text
+            val lyricsEnd = offset + size
+            if (pos >= lyricsEnd) return null
+            
+            val lyricsBytes = data.copyOfRange(pos, lyricsEnd)
+            
+            // Decode based on encoding
+            val charset = when (encoding) {
+                0 -> Charsets.ISO_8859_1
+                1 -> Charsets.UTF_16  // UTF-16 with BOM
+                2 -> Charsets.UTF_16BE
+                3 -> Charsets.UTF_8
+                else -> Charsets.UTF_8
+            }
+            
+            val lyricsText = String(lyricsBytes, charset)
+                .trim()
+                .replace("\u0000", "") // Remove null characters
+            
+            if (lyricsText.isBlank()) return null
+            
+            return parseLyricsData(lyricsText)
+            
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to parse USLT frame: ${e.message}")
+            return null
+        }
     }
     
     /**
