@@ -168,17 +168,9 @@ fun OnboardingScreen(
     val haptic = LocalHapticFeedback.current
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     
-    // Collect playlists for playlist management bottom sheet
-    val playlists by musicViewModel.playlists.collectAsState()
-    
     // Bottom sheet states
-    var showThemeBottomSheet by remember { mutableStateOf(false) }
-    var showMediaScanBottomSheet by remember { mutableStateOf(false) }
     var showLibraryTabOrderBottomSheet by remember { mutableStateOf(false) }
     var showBackupRestoreBottomSheet by remember { mutableStateOf(false) }
-    var showPlaylistManagementBottomSheet by remember { mutableStateOf(false) }
-    // Note: CacheManagement bottom sheet requires musicViewModel parameter
-    // var showCacheManagementBottomSheet by remember { mutableStateOf(false) }
     
     // Responsive sizing
     val isTablet = configuration.screenWidthDp >= 600
@@ -304,24 +296,21 @@ fun OnboardingScreen(
                                     onNextStep = onNextStep,
                                     onSkip = onNextStep,
                                     themeViewModel = themeViewModel,
-                                    appSettings = appSettings,
-                                    onOpenBottomSheet = { showThemeBottomSheet = true }
+                                    appSettings = appSettings
                                 )
                             }
                             OnboardingStep.LIBRARY_SETUP -> {
                                 EnhancedLibrarySetupContent(
                                     onNextStep = onNextStep,
                                     appSettings = appSettings,
-                                    onOpenTabOrderBottomSheet = { showLibraryTabOrderBottomSheet = true },
-                                    onOpenPlaylistManagementBottomSheet = { showPlaylistManagementBottomSheet = true }
+                                    onOpenTabOrderBottomSheet = { showLibraryTabOrderBottomSheet = true }
                                 )
                             }
                             OnboardingStep.MEDIA_SCAN -> {
                                 EnhancedMediaScanContent(
                                     onNextStep = onNextStep,
                                     onSkip = onNextStep,
-                                    appSettings = appSettings,
-                                    onOpenBottomSheet = { showMediaScanBottomSheet = true }
+                                    appSettings = appSettings
                                 )
                             }
                             OnboardingStep.UPDATER -> {
@@ -578,20 +567,6 @@ fun OnboardingScreen(
         }
     
     // Bottom sheets for advanced configuration
-    if (showThemeBottomSheet) {
-        ThemeCustomizationBottomSheet(
-            onDismiss = { showThemeBottomSheet = false },
-            appSettings = appSettings
-        )
-    }
-    
-    if (showMediaScanBottomSheet) {
-        MediaScanBottomSheet(
-            onDismiss = { showMediaScanBottomSheet = false },
-            appSettings = appSettings
-        )
-    }
-    
     if (showLibraryTabOrderBottomSheet) {
         LibraryTabOrderBottomSheet(
             onDismiss = { showLibraryTabOrderBottomSheet = false },
@@ -606,27 +581,6 @@ fun OnboardingScreen(
             appSettings = appSettings
         )
     }
-    
-    if (showPlaylistManagementBottomSheet) {
-        PlaylistManagementBottomSheet(
-            onDismiss = { showPlaylistManagementBottomSheet = false },
-            playlists = playlists,
-            musicViewModel = musicViewModel,
-            onCreatePlaylist = { /* Handle in main app after onboarding */ },
-            onDeletePlaylist = { /* Handle in main app after onboarding */ }
-        )
-    }
-    
-    // Note: CacheManagement bottom sheet requires musicViewModel parameter
-    /*
-    if (showCacheManagementBottomSheet) {
-        CacheManagementBottomSheet(
-            onDismiss = { showCacheManagementBottomSheet = false },
-            appSettings = appSettings,
-            musicViewModel = musicViewModel
-        )
-    }
-    */
 }
 
 /**
@@ -1537,6 +1491,30 @@ private fun BackupFeatureTipItem(
 }
 
 @Composable
+private fun LibraryTipItem(
+    icon: ImageVector,
+    text: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(vertical = 6.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    }
+}
+
+@Composable
 fun EnhancedAudioPlaybackContent(
     onNextStep: () -> Unit,
     appSettings: AppSettings
@@ -1586,7 +1564,7 @@ fun EnhancedAudioPlaybackContent(
         )
         
         Text(
-            text = "Customize your audio experience with haptic feedback, volume controls, lyrics display, and equalizer settings.",
+            text = "Customize your audio experience with haptic feedback, default screen, volume controls, queue behavior, shuffle settings, lyrics display, and equalizer settings.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 32.dp)
@@ -1605,6 +1583,18 @@ fun EnhancedAudioPlaybackContent(
                 description = "Enable subtle vibrations on interactions for a more tactile experience.",
                 isEnabled = hapticFeedbackEnabled,
                 onToggle = { appSettings.setHapticFeedbackEnabled(it) }
+            )
+            
+            // Default Landing Screen dropdown
+            SettingsDropdownItem(
+                title = "Default Landing Screen",
+                description = "Choose which screen opens when you launch Rhythm",
+                selectedOption = if (appSettings.defaultScreen.collectAsState().value == "library") "Library" else "Home",
+                icon = Icons.Filled.Home,
+                options = listOf("Home", "Library"),
+                onOptionSelected = { selectedOption ->
+                    appSettings.setDefaultScreen(selectedOption.lowercase())
+                }
             )
 
             // System volume control toggle
@@ -1643,6 +1633,24 @@ fun EnhancedAudioPlaybackContent(
                 description = "Keep your repeat mode setting across app restarts.",
                 isEnabled = appSettings.repeatModePersistence.collectAsState().value,
                 onToggle = { appSettings.setRepeatModePersistence(it) }
+            )
+            
+            // Shuffle Mode Persistence toggle
+            EnhancedThemeOption(
+                icon = Icons.Filled.Shuffle,
+                title = "Remember Shuffle Mode",
+                description = "Keep your shuffle on/off state across app restarts.",
+                isEnabled = appSettings.shuffleModePersistence.collectAsState().value,
+                onToggle = { appSettings.setShuffleModePersistence(it) }
+            )
+            
+            // ExoPlayer Shuffle toggle
+            EnhancedThemeOption(
+                icon = Icons.Filled.Shuffle,
+                title = "Use ExoPlayer Shuffle",
+                description = "Let the media player handle shuffle (recommended: OFF for manual shuffle).",
+                isEnabled = appSettings.shuffleUsesExoplayer.collectAsState().value,
+                onToggle = { appSettings.setShuffleUsesExoplayer(it) }
             )
 
             
@@ -1709,37 +1717,43 @@ fun EnhancedAudioPlaybackContent(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Equalizer info card
+        // Equalizer and Sleep Timer info card
         Card(
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.padding(20.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Filled.GraphicEq,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Equalizer Available",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(24.dp)
                     )
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "Fine-tune audio frequencies in Settings > Equalizer",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                        text = "Additional Audio Features",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
+                
+                LibraryTipItem(
+                    icon = Icons.Filled.GraphicEq,
+                    text = "Equalizer: Fine-tune audio frequencies in Tuner > Equalizer"
+                )
+                LibraryTipItem(
+                    icon = Icons.Filled.AccessTime,
+                    text = "Sleep Timer: Auto-stop playback after set time (access from Now Playing screen)"
+                )
             }
         }
         
@@ -1751,8 +1765,7 @@ fun EnhancedAudioPlaybackContent(
 fun EnhancedLibrarySetupContent(
     onNextStep: () -> Unit,
     appSettings: AppSettings,
-    onOpenTabOrderBottomSheet: () -> Unit = {},
-    onOpenPlaylistManagementBottomSheet: () -> Unit = {}
+    onOpenTabOrderBottomSheet: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val albumViewType by appSettings.albumViewType.collectAsState()
@@ -1805,6 +1818,8 @@ fun EnhancedLibrarySetupContent(
         )
 
         // Vertically centered content area
+        // Temporarily hidden - these settings are available in Tuner settings
+        /*
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)
@@ -1862,6 +1877,7 @@ fun EnhancedLibrarySetupContent(
                 }
             )
         } // End vertically centered content
+        */
         
         Spacer(modifier = Modifier.height(16.dp))
         
@@ -1877,6 +1893,8 @@ fun EnhancedLibrarySetupContent(
                 usePrimaryStyle = true
             )
 
+            // Playlist Management - Hidden, info only
+            /*
             LibraryFeatureCard(
                 icon = Icons.Filled.Queue,
                 title = "Playlist Management",
@@ -1884,6 +1902,53 @@ fun EnhancedLibrarySetupContent(
                 onClick = onOpenPlaylistManagementBottomSheet,
                 usePrimaryStyle = true
             )
+            */
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // How it Works info card
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+            ),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "How Library Organization Works",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                }
+                
+                LibraryTipItem(
+                    icon = Icons.Filled.Reorder,
+                    text = "Customize tab order in Library for quick access to your favorites"
+                )
+                LibraryTipItem(
+                    icon = Icons.Filled.Queue,
+                    text = "Create and manage playlists directly from the Library screen"
+                )
+                LibraryTipItem(
+                    icon = Icons.Filled.Tune,
+                    text = "Advanced display and sorting options available in Tuner > Theme Customization"
+                )
+            }
         }
         
 
@@ -1967,8 +2032,7 @@ fun EnhancedThemingContent(
     onNextStep: () -> Unit,
     themeViewModel: ThemeViewModel,
     appSettings: AppSettings,
-    onSkip: () -> Unit = {},
-    onOpenBottomSheet: () -> Unit = {}
+    onSkip: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val useSystemTheme by themeViewModel.useSystemTheme.collectAsState()
@@ -2191,7 +2255,8 @@ fun EnhancedThemingContent(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Advanced theming info card
+        // Advanced theming info card - Hidden, replaced with Tuner guide
+        /*
         Card(
             onClick = onOpenBottomSheet,
             colors = CardDefaults.cardColors(
@@ -2228,6 +2293,51 @@ fun EnhancedThemingContent(
                     contentDescription = "Open theme customization",
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+        */
+        
+        // Guide to Tuner settings
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+            ),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "More Customization in Tuner",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                }
+                
+                LibraryTipItem(
+                    icon = Icons.Filled.Palette,
+                    text = "Custom color schemes and album art color extraction"
+                )
+                LibraryTipItem(
+                    icon = Icons.Filled.FontDownload,
+                    text = "Font customization and typography settings"
+                )
+                LibraryTipItem(
+                    icon = Icons.Filled.AutoAwesome,
+                    text = "Advanced theme options available in Tuner > Theme Customization"
                 )
             }
         }
@@ -3081,6 +3191,8 @@ fun SettingsDropdownItem(
                                     option.contains("Hour") -> Icons.Filled.AccessTime
                                     option.contains("Stable") -> Icons.Filled.Public
                                     option.contains("Beta") -> Icons.Filled.BugReport
+                                    option == "Home" -> Icons.Filled.Home
+                                    option == "Library" -> Icons.Filled.LibraryMusic
                                     option == "API" -> Icons.Filled.Cloud
                                     option == "Embedded" -> Icons.Filled.LibraryMusic
                                     option == "Local" -> Icons.Filled.Folder
@@ -3241,8 +3353,7 @@ fun OnboardingProgressIndicator(
 fun EnhancedMediaScanContent(
     onNextStep: () -> Unit,
     appSettings: AppSettings,
-    onSkip: () -> Unit = {},
-    onOpenBottomSheet: () -> Unit = {}
+    onSkip: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -3295,7 +3406,8 @@ fun EnhancedMediaScanContent(
             modifier = Modifier.padding(bottom = 32.dp)
         )
         
-        // Media scan configuration card
+        // Media scan configuration card - Temporarily hidden
+        /*
         Card(
             onClick = onOpenBottomSheet,
             colors = CardDefaults.cardColors(
@@ -3337,47 +3449,12 @@ fun EnhancedMediaScanContent(
         }
         
         Spacer(modifier = Modifier.height(16.dp))
+        */
         
-        // Cache management info card
+        // Media scanning settings info card
         Card(
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
-            ),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Storage,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Storage Management",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                    )
-                    Text(
-                        text = "Manage cache size and storage in Settings > Cache Management",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                    )
-                }
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // Media scan tips card
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -3389,34 +3466,116 @@ fun EnhancedMediaScanContent(
                     modifier = Modifier.padding(bottom = 12.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Info,
+                        imageVector = Icons.Filled.Tune,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onTertiaryContainer,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "How It Works",
+                        text = "Media Scanning Settings",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onTertiaryContainer
                     )
                 }
                 
-                MediaScanTipItem(
+                LibraryTipItem(
                     icon = Icons.Filled.Block,
-                    text = "Blacklist hides unwanted audio (ringtones, notifications)"
+                    text = "Blacklist Mode: Hide specific songs and folders (ringtones, notifications)"
                 )
-                MediaScanTipItem(
+                LibraryTipItem(
                     icon = Icons.Filled.CheckCircle,
-                    text = "Whitelist shows only specific folders for a curated library"
+                    text = "Whitelist Mode: Show only songs from selected folders"
                 )
-                MediaScanTipItem(
-                    icon = Icons.Filled.Folder,
-                    text = "Folder filters apply to all songs within that folder"
+                LibraryTipItem(
+                    icon = Icons.Filled.Settings,
+                    text = "Configure scanning in Tuner > Media Scan"
                 )
             }
         }
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        // Cache management info card
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+            ),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Storage,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Storage Management",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Text(
+                        text = "Manage cache size and storage in Tuner > Cache Management",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        }
+        
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//        // Media scan tips card
+//        Card(
+//            colors = CardDefaults.cardColors(
+//                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+//            ),
+//            modifier = Modifier.fillMaxWidth()
+//        ) {
+//            Column(
+//                modifier = Modifier.padding(20.dp)
+//            ) {
+//                Row(
+//                    verticalAlignment = Alignment.CenterVertically,
+//                    modifier = Modifier.padding(bottom = 12.dp)
+//                ) {
+//                    Icon(
+//                        imageVector = Icons.Filled.Info,
+//                        contentDescription = null,
+//                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+//                        modifier = Modifier.size(24.dp)
+//                    )
+//                    Spacer(modifier = Modifier.width(12.dp))
+//                    Text(
+//                        text = "How It Works",
+//                        style = MaterialTheme.typography.titleMedium,
+//                        fontWeight = FontWeight.Bold,
+//                        color = MaterialTheme.colorScheme.onPrimaryContainer
+//                    )
+//                }
+//
+//                MediaScanTipItem(
+//                    icon = Icons.Filled.Block,
+//                    text = "Blacklist hides unwanted audio (ringtones, notifications)"
+//                )
+//                MediaScanTipItem(
+//                    icon = Icons.Filled.CheckCircle,
+//                    text = "Whitelist shows only specific folders for a curated library"
+//                )
+//                MediaScanTipItem(
+//                    icon = Icons.Filled.Folder,
+//                    text = "Folder filters apply to all songs within that folder"
+//                )
+//            }
+//        }
         
         /*Spacer(modifier = Modifier.height(24.dp))
         
@@ -3464,14 +3623,14 @@ private fun MediaScanTipItem(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f),
+            tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
             modifier = Modifier.size(18.dp)
         )
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onTertiaryContainer
+            color = MaterialTheme.colorScheme.onPrimaryContainer
         )
     }
 }

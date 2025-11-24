@@ -172,7 +172,6 @@ import chromahub.rhythm.app.ui.components.PlaylistImportDialog
 import chromahub.rhythm.app.ui.components.PlaylistOperationProgressDialog
 import chromahub.rhythm.app.ui.components.PlaylistOperationResultDialog
 import chromahub.rhythm.app.ui.screens.SongInfoBottomSheet
-import chromahub.rhythm.app.ui.screens.PlaylistManagementBottomSheet
 import chromahub.rhythm.app.util.ImageUtils
 import chromahub.rhythm.app.util.M3ImageUtils
 import chromahub.rhythm.app.util.HapticUtils
@@ -314,7 +313,6 @@ fun LibraryScreen(
 
     // FAB menu state
     var showPlaylistFabMenu by remember { mutableStateOf(false) }
-    var showPlaylistManagementSheet by remember { mutableStateOf(false) }
 
     // Function to close FAB menu from other places
     val closeFabMenu = {
@@ -352,10 +350,11 @@ fun LibraryScreen(
         }
     } else null
 
-    // Lambda to pass to PlaylistFabMenu for manage
+    // Lambda to pass to PlaylistFabMenu for manage - navigates to Tuner > Playlists
     val onManagePlaylists: (() -> Unit) = {
         HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
-        showPlaylistManagementSheet = true
+        // Navigation to Tuner Playlists should be handled by parent (RhythmNavigation)
+        // This is a placeholder that should be replaced with actual navigation
     }
 
     // Sync tabs with pager - only animate when tab button is clicked
@@ -546,18 +545,7 @@ fun LibraryScreen(
         )
     }
 
-    // Playlist Management bottom sheet
-    if (showPlaylistManagementSheet) {
-        PlaylistManagementBottomSheet(
-            onDismiss = { showPlaylistManagementSheet = false },
-            playlists = playlists,
-            musicViewModel = musicViewModel,
-            onCreatePlaylist = { showCreatePlaylistDialog = true },
-            onDeletePlaylist = { playlist ->
-//                musicViewModel.deletePlaylist(playlist)
-            }
-        )
-    }
+    // Playlist Management now handled in Tuner > Playlists settings
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),

@@ -262,10 +262,14 @@ Rhythm features a 9-step guided setup to personalize your music experience:
 - Configure backup frequency and location
 
 #### 4. **🎵 Audio & Playback Settings**
-- Configure audio output preferences
-- Set up gapless playback options
-- Choose volume control behavior
-- Configure audio focus handling
+- **Haptic Feedback**: Enable tactile vibrations for interactions
+- **Default Landing Screen**: Choose Home or Library as your starting screen
+- **System Volume Control**: Use device volume buttons for playback
+- **Queue Behavior**: Auto-add to queue, clear queue on new song
+- **Playback Persistence**: Remember repeat and shuffle modes across restarts
+- **ExoPlayer Shuffle**: Choose media player or manual shuffle handling
+- **Lyrics Display**: Enable synchronized lyrics and choose source priority
+- Configure audio focus handling and equalizer access
 
 #### 5. **🎨 Theming & Appearance**
 - Select light/dark theme or system default
@@ -274,15 +278,15 @@ Rhythm features a 9-step guided setup to personalize your music experience:
 - Set up custom color schemes
 
 #### 6. **📚 Library Organization**
-- Configure how your music library is organized
-- Set sorting preferences (by artist, album, date, etc.)
-- Choose grid or list view layouts
-- Configure metadata display options
+- **Library Tab Management**: Reorder Songs, Playlists, Albums, Artists, and Explorer tabs
+- **Playlist Management**: Create, import, export, and organize playlists
+- Configure advanced library settings in Tuner > Theme Customization
+- Additional display and sorting options available in app settings
 
 #### 7. **🔍 Media Scanning**
-- Choose between blacklist or whitelist filtering
-- Set up folders to include/exclude from scanning
-- Configure automatic media scanning
+- **Scanning Tips**: Understanding blacklist vs whitelist filtering modes
+- **Storage Management**: Information about cache management
+- Configure detailed filtering in Tuner > Media Scan after setup
 - Review scan results and library statistics
 
 #### 8. **⬆️ Update Preferences**

@@ -426,7 +426,7 @@ fun PlaylistImportDialog(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let { selectedUri ->
-            // Pass a dummy onResult and onRestartRequired for now, will be replaced by actual implementation in PlaylistManagementBottomSheet
+            // Pass a dummy onResult and onRestartRequired for now
             onImport(selectedUri, { /* no-op */ }, { /* no-op */ })
         }
         onDismiss()

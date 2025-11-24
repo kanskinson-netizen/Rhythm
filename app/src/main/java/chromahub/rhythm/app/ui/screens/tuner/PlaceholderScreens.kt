@@ -5070,6 +5070,123 @@ fun BackupRestoreSettingsScreen(onBackClick: () -> Unit) {
             item { Spacer(modifier = Modifier.height(8.dp)) }
         }
     }
+    
+    // Success/Error Dialogs
+    if (showBackupSuccess) {
+        AlertDialog(
+            onDismissRequest = { showBackupSuccess = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
+            title = { Text("Backup Created Successfully") },
+            text = { 
+                Text("Your complete Rhythm backup has been created including:\n\n" +
+                     "• All app settings and preferences\n" +
+                     "• Your playlists and favorite songs\n" +
+                     "• Blacklisted/whitelisted songs and folders\n" +
+                     "• Pinned folders and library customization\n" +
+                     "• Theme settings (colors, fonts, album art colors)\n" +
+                     "• Audio preferences and API settings\n" +
+                     "• Recently played history and statistics\n\n" +
+                     "The backup has been saved and copied to your clipboard for easy sharing.")
+            },
+            confirmButton = {
+                Button(onClick = { 
+                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                    showBackupSuccess = false 
+                }) {
+                    Icon(
+                        imageVector = Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("OK")
+                }
+            },
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
+
+    if (showRestoreSuccess) {
+        AlertDialog(
+            onDismissRequest = { showRestoreSuccess = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
+            title = { Text("Restore Completed Successfully") },
+            text = { 
+                Text("Your Rhythm data has been restored successfully including:\n\n" +
+                     "• All app settings and preferences\n" +
+                     "• Your playlists and favorite songs\n" +
+                     "• Blacklisted songs and folders\n" +
+                     "• Theme and audio preferences\n\n" +
+                     "Please restart the app for all changes to take full effect.")
+            },
+            confirmButton = {
+                Button(onClick = { 
+                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                    showRestoreSuccess = false
+                    
+                    // Restart the app
+                    val packageManager = context.packageManager
+                    val intent = packageManager.getLaunchIntentForPackage(context.packageName)
+                    val componentName = intent?.component
+                    val mainIntent = Intent.makeRestartActivityTask(componentName)
+                    context.startActivity(mainIntent)
+                    (context as? Activity)?.finish()
+                    Runtime.getRuntime().exit(0)
+                }) {
+                    Icon(
+                        imageVector = Icons.Rounded.RestartAlt,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Restart Now")
+                }
+            },
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
+
+    if (showError) {
+        AlertDialog(
+            onDismissRequest = { showError = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.Error,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = { Text("Error") },
+            text = { Text(errorMessage) },
+            confirmButton = {
+                Button(onClick = { 
+                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                    showError = false 
+                }) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("OK")
+                }
+            },
+            shape = RoundedCornerShape(24.dp)
+        )
+    }
 }
 
 // Library Tab Order Screen (merged from LibraryTabOrderBottomSheet)

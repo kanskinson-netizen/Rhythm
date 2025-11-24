@@ -278,7 +278,7 @@ fun SplashScreen(
                 Box(
                     contentAlignment = Alignment.Center
                 ) {
-                    // App name revealing with expand animation (like TabButton in ThemeCustomizationBottomSheet)
+                    // App name revealing with expand animation
                     // Rendered first so it appears BEHIND the logo in z-order
                     if (showAppName) {
                         Row(
