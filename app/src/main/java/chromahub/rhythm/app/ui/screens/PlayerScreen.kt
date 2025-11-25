@@ -170,7 +170,7 @@ import java.util.Locale
 import kotlin.math.abs
 import chromahub.rhythm.app.ui.components.M3CircularLoader
 import android.view.animation.OvershootInterpolator
-import chromahub.rhythm.app.ui.screens.EqualizerBottomSheetNew
+import chromahub.rhythm.app.ui.screens.tuner.EqualizerSettingsScreen
 import chromahub.rhythm.app.ui.screens.SleepTimerBottomSheetNew
 import chromahub.rhythm.app.ui.components.SyncedLyricsView
 import androidx.compose.foundation.layout.WindowInsets
@@ -3204,10 +3204,19 @@ fun PlayerScreen(
     
     // Bottom sheets
     if (showEqualizerBottomSheet) {
-        EqualizerBottomSheetNew(
-            musicViewModel = musicViewModel,
-            onDismiss = { showEqualizerBottomSheet = false }
-        )
+        // Use full-screen dialog for equalizer settings
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { showEqualizerBottomSheet = false },
+            properties = androidx.compose.ui.window.DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            EqualizerSettingsScreen(
+                onBackClick = { showEqualizerBottomSheet = false }
+            )
+        }
     }
     
     if (showPlaybackSpeedDialog) {

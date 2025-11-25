@@ -5306,6 +5306,12 @@ fun SingleCardExplorerContent(
             .mapNotNull { it.song }
     }
 
+    // Handle back gesture to navigate up directory levels
+    BackHandler(enabled = currentPath != null) {
+        HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+        currentPath = getParentPath(currentPath!!)
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),

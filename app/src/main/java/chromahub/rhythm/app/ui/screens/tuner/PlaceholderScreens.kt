@@ -8349,7 +8349,7 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                         else
                             MaterialTheme.colorScheme.surfaceContainer
                     ),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(40.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -8367,14 +8367,9 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Equalizer",
+                                text = if (isEqualizerEnabled) "Active" else "Disabled",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = if (isEqualizerEnabled) "Active" else "Disabled",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Switch(
