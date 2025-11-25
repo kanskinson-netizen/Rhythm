@@ -1216,6 +1216,13 @@ class MusicRepository(context: Context) {
                         return@use extractLyricsFromM4A(filePath)
                     }
                     
+                    // For OGG files, try direct Vorbis comment parsing
+                    if (filePath?.endsWith(".ogg", ignoreCase = true) == true || 
+                        filePath?.endsWith(".oga", ignoreCase = true) == true) {
+                        Log.d(TAG, "===== Detected OGG/Vorbis file, trying OGG extraction =====")
+                        return@use extractLyricsFromOGG(filePath)
+                    }
+                    
                     Log.d(TAG, "===== No specific format handler matched =====")
                     null
                 }
@@ -1348,6 +1355,132 @@ class MusicRepository(context: Context) {
             Log.w(TAG, "Failed to parse Vorbis comments: ${e.message}")
             return null
         }
+    }
+    
+    /**
+     * Extract lyrics from OGG/Vorbis files
+     * OGG uses the same Vorbis comment format as FLAC
+     */
+    private fun extractLyricsFromOGG(filePath: String): LyricsData? {
+        return try {
+            val file = java.io.File(filePath)
+            if (!file.exists() || !file.canRead()) return null
+            
+            java.io.RandomAccessFile(file, "r").use { raf ->
+                // Check OGG signature
+                val signature = ByteArray(4)
+                if (raf.read(signature) != 4) return@use null
+                if (String(signature, Charsets.ISO_8859_1) != "OggS") {
+                    Log.d(TAG, "Not a valid OGG file")
+                    return@use null
+                }
+                
+                // OGG files are organized into pages
+                // Vorbis comments are typically in the second page (after the identification header)
+                var foundCommentHeader = false
+                var attemptCount = 0
+                val maxAttempts = 100 // Prevent infinite loops
+                
+                // Reset to beginning
+                raf.seek(0)
+                
+                while (raf.filePointer < file.length() && attemptCount < maxAttempts) {
+                    attemptCount++
+                    
+                    // Read OGG page header
+                    val pageSignature = ByteArray(4)
+                    if (raf.read(pageSignature) != 4) break
+                    if (String(pageSignature, Charsets.ISO_8859_1) != "OggS") {
+                        // Try to resync - search for next OggS
+                        val nextOggS = findNextOggSPage(raf)
+                        if (nextOggS == -1L) break
+                        raf.seek(nextOggS)
+                        continue
+                    }
+                    
+                    // Skip version (1 byte) and header type (1 byte)
+                    raf.skipBytes(2)
+                    
+                    // Skip granule position (8 bytes), serial number (4 bytes), 
+                    // sequence number (4 bytes), checksum (4 bytes)
+                    raf.skipBytes(20)
+                    
+                    // Read number of page segments
+                    val numSegments = raf.read()
+                    if (numSegments == -1 || numSegments < 0) break
+                    
+                    // Read segment table
+                    val segmentTable = ByteArray(numSegments)
+                    if (raf.read(segmentTable) != numSegments) break
+                    
+                    // Calculate total page payload size
+                    val pageSize = segmentTable.sumOf { (it.toInt() and 0xFF) }
+                    
+                    // Read the page data
+                    if (pageSize > 0 && pageSize < 1_000_000) { // Safety limit: 1MB max page
+                        val pageData = ByteArray(pageSize)
+                        if (raf.read(pageData) != pageSize) break
+                        
+                        // Check if this is a Vorbis comment header
+                        // Vorbis comment header starts with packet type 0x03 followed by "vorbis"
+                        if (pageData.size >= 7 && 
+                            pageData[0] == 0x03.toByte() &&
+                            String(pageData.copyOfRange(1, 7), Charsets.ISO_8859_1) == "vorbis") {
+                            
+                            Log.d(TAG, "Found Vorbis comment header in OGG file")
+                            foundCommentHeader = true
+                            
+                            // Parse the Vorbis comments (skip the 7-byte header)
+                            val commentData = pageData.copyOfRange(7, pageData.size)
+                            val lyrics = parseVorbisComments(commentData)
+                            if (lyrics != null) {
+                                Log.d(TAG, "Found lyrics in OGG Vorbis comments")
+                                return@use lyrics
+                            }
+                        }
+                    } else {
+                        // Skip invalid or too-large page
+                        if (pageSize > 0) {
+                            raf.seek(raf.filePointer + pageSize)
+                        }
+                    }
+                    
+                    // If we found the comment header but no lyrics, we can stop
+                    if (foundCommentHeader) break
+                }
+                
+                Log.d(TAG, "No LYRICS tag found in OGG Vorbis comments (checked $attemptCount pages)")
+                null
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "OGG lyrics extraction failed: ${e.message}")
+            e.printStackTrace()
+            null
+        }
+    }
+    
+    /**
+     * Helper function to find the next OggS page signature in the file
+     */
+    private fun findNextOggSPage(raf: java.io.RandomAccessFile): Long {
+        val buffer = ByteArray(4096)
+        var bytesRead: Int
+        val targetPattern = "OggS".toByteArray(Charsets.ISO_8859_1)
+        
+        while (raf.filePointer < raf.length()) {
+            bytesRead = raf.read(buffer)
+            if (bytesRead == -1) return -1
+            
+            for (i in 0 until bytesRead - 3) {
+                if (buffer[i] == targetPattern[0] &&
+                    buffer[i + 1] == targetPattern[1] &&
+                    buffer[i + 2] == targetPattern[2] &&
+                    buffer[i + 3] == targetPattern[3]) {
+                    return raf.filePointer - bytesRead + i
+                }
+            }
+        }
+        return -1
     }
     
     /**
