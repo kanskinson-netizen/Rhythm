@@ -37,6 +37,10 @@ import java.net.URL
 import chromahub.rhythm.app.data.LyricsData
 import java.lang.ref.WeakReference
 import chromahub.rhythm.app.util.AudioFormatDetector
+import chromahub.rhythm.app.util.LyricsParser
+import chromahub.rhythm.app.util.EnhancedLyricLine
+import chromahub.rhythm.app.util.EnhancedWord
+import chromahub.rhythm.app.util.AppleMusicLyricsParser
 import android.content.SharedPreferences
 
 class MusicRepository(context: Context) {
@@ -2071,6 +2075,36 @@ class MusicRepository(context: Context) {
             }
             
             if (hasLyricsContent) {
+                // Check for Enhanced LRC format with word-level timestamps <mm:ss.xx>
+                val hasWordTimestamps = LyricsParser.hasWordTimestamps(cleanedLyrics)
+                
+                if (hasWordTimestamps) {
+                    Log.d(TAG, "Detected Enhanced LRC format with word-level timestamps")
+                    
+                    // Parse Enhanced LRC and convert to word-by-word format
+                    val enhancedLines = LyricsParser.parseEnhancedLRC(cleanedLyrics)
+                    
+                    if (enhancedLines.isNotEmpty()) {
+                        // Convert to Apple Music word-by-word format (JSON)
+                        val wordByWordJson = convertEnhancedLRCToWordByWord(enhancedLines)
+                        
+                        // Also extract plain text and line-synced LRC
+                        val plainText = enhancedLines.joinToString("\n") { line: EnhancedLyricLine ->
+                            line.words.joinToString(" ") { word: EnhancedWord -> word.text }
+                        }
+                        
+                        val syncedLrc = enhancedLines.joinToString("\n") { line: EnhancedLyricLine ->
+                            val timestamp = formatLRCTimestamp(line.lineTimestamp)
+                            val text = line.words.joinToString(" ") { word: EnhancedWord -> word.text }
+                            "[$timestamp]$text"
+                        }
+                        
+                        Log.d(TAG, "Successfully converted Enhanced LRC to word-by-word format (${enhancedLines.size} lines)")
+                        return LyricsData(plainText, syncedLrc, wordByWordJson)
+                    }
+                }
+                
+                // Standard LRC format (line-by-line only)
                 LyricsData(null, cleanedLyrics, null)
             } else {
                 // Empty synced lyrics
@@ -2092,6 +2126,78 @@ class MusicRepository(context: Context) {
             } else {
                 null
             }
+        }
+    }
+    
+    /**
+     * Convert Enhanced LRC format to Apple Music word-by-word JSON format
+     */
+    private fun convertEnhancedLRCToWordByWord(enhancedLines: List<EnhancedLyricLine>): String {
+        val appleMusicLines = enhancedLines.map { line: EnhancedLyricLine ->
+            val words = line.words.map { word: EnhancedWord ->
+                mapOf(
+                    "text" to word.text,
+                    "part" to false, // Not syllables, just words
+                    "timestamp" to word.timestamp,
+                    "endtime" to word.endtime
+                )
+            }
+            
+            mapOf(
+                "text" to words,
+                "background" to false,
+                "timestamp" to line.lineTimestamp,
+                "endtime" to line.lineEndtime
+            )
+        }
+        
+        return com.google.gson.Gson().toJson(appleMusicLines)
+    }
+    
+    /**
+     * Format timestamp to LRC format [mm:ss.xx]
+     */
+    private fun formatLRCTimestamp(milliseconds: Long): String {
+        val totalSeconds = milliseconds / 1000
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+        val millis = (milliseconds % 1000) / 10
+        return String.format("%02d:%02d.%02d", minutes, seconds, millis)
+    }
+    
+    // TODO: Implement export functionality for Enhanced LRC format
+    /**
+     * Export word-by-word lyrics to Enhanced LRC format
+     * @param lyricsData Lyrics data containing word-by-word JSON
+     * @return Enhanced LRC formatted string, or null if not available
+     */
+    fun exportToEnhancedLRC(lyricsData: LyricsData): String? {
+        // TODO: Parse word-by-word JSON and convert to Enhanced LRC
+        val wordByWordJson = lyricsData.wordByWordLyrics ?: return null
+        
+        try {
+            val parsedLines = AppleMusicLyricsParser.parseWordByWordLyrics(wordByWordJson)
+            if (parsedLines.isEmpty()) return null
+            
+            // Convert to Enhanced LRC format using LyricsParser utility
+            val enhancedLines = parsedLines.map { line ->
+                EnhancedLyricLine(
+                    words = line.words.map { word ->
+                        EnhancedWord(
+                            text = word.text,
+                            timestamp = word.timestamp,
+                            endtime = word.endtime
+                        )
+                    },
+                    lineTimestamp = line.lineTimestamp,
+                    lineEndtime = line.lineEndtime
+                )
+            }
+            
+            return LyricsParser.toEnhancedLRC(enhancedLines)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error exporting to Enhanced LRC: ${e.message}", e)
+            return null
         }
     }
     
@@ -2509,6 +2615,36 @@ class MusicRepository(context: Context) {
             // Pattern to match LRC timestamps [mm:ss.xx] or [mm:ss]
             val timestampPattern = Regex("\\[(\\d{2}):(\\d{2})(?:\\.(\\d{2,3}))?\\](.*)") 
             
+            // Check for Enhanced LRC format with word-level timestamps
+            val hasWordTimestamps = LyricsParser.hasWordTimestamps(lrcContent)
+            
+            if (hasWordTimestamps) {
+                Log.d(TAG, "Detected Enhanced LRC format in .lrc file with word-level timestamps")
+                
+                // Parse Enhanced LRC and convert to word-by-word format
+                val enhancedLines = LyricsParser.parseEnhancedLRC(lrcContent)
+                
+                if (enhancedLines.isNotEmpty()) {
+                    // Convert to Apple Music word-by-word format (JSON)
+                    val wordByWordJson = convertEnhancedLRCToWordByWord(enhancedLines)
+                    
+                    // Also extract plain text and line-synced LRC
+                    val plainText = enhancedLines.joinToString("\n") { line: EnhancedLyricLine ->
+                        line.words.joinToString(" ") { word: EnhancedWord -> word.text }
+                    }
+                    
+                    val syncedLrc = enhancedLines.joinToString("\n") { line: EnhancedLyricLine ->
+                        val timestamp = formatLRCTimestamp(line.lineTimestamp)
+                        val text = line.words.joinToString(" ") { word: EnhancedWord -> word.text }
+                        "[$timestamp]$text"
+                    }
+                    
+                    Log.d(TAG, "Successfully converted Enhanced LRC from .lrc file to word-by-word format (${enhancedLines.size} lines)")
+                    return LyricsData(plainText, syncedLrc, wordByWordJson)
+                }
+            }
+            
+            // Standard LRC format (line-by-line only)
             for (line in lines) {
                 val trimmedLine = line.trim()
                 if (trimmedLine.isEmpty()) continue
