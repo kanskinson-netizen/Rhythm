@@ -30,7 +30,7 @@
     <string name="settings_custom_notifications">Aangepaste meldingen</string>
     <string name="settings_custom_notifications_desc">Gebruik de eigen meldingstijl van de app in plaats van de systeemmelding</string>
 
-    <string name="settings_queue_playback">Wachtrij & Afspelen</string>
+    <string name="settings_queue_playback">Wachtrij &amp; Afspelen</string>
     <string name="settings_queue_behavior">Gedrag wachtrij</string>
     <string name="settings_use_exoplayer_shuffle">ExoPlayer Shuffle gebruiken</string>
     <string name="settings_use_exoplayer_shuffle_desc">Laat de mediaspeler de shuffle regelen (aanbevolen: UIT voor handmatige shuffle)</string>
@@ -135,25 +135,28 @@
     <string name="settings_about_build">Build</string>
     <string name="settings_about_target_sdk">Doel-SDK</string>
     <string name="settings_about_architecture">Architectuur</string>
-    <string name="settings_about_architecture_value">ARM64 & ARM32</string>
+    <string name="settings_about_architecture_value">ARM64 &amp; ARM32</string>
     <string name="settings_about_built_with">Gebouwd met moderne Android-technologieën en Material Design 3</string>
     <string name="settings_about_credits">Credits</string>
     <string name="settings_about_developer_name">Anjishnu Nandi</string>
-    <string name="settings_about_developer_role">Hoofdontwikkelaar & Projectarchitect</string>
+    <string name="settings_about_developer_role">Hoofdontwikkelaar &amp; Projectarchitect</string>
     <string name="settings_about_team">Team ChromaHub</string>
     <string name="settings_about_team_desc">Gepassioneerde ontwikkelaars die innovatieve ervaringen creëren</string>
+    <string name="settings_about_team_chromahub">Team ChromaHub</string>
     <string name="settings_about_special_thanks">Speciale dank</string>
     <string name="settings_about_community">Community</string>
     <string name="settings_about_community_desc">Speciale dank aan onze geweldige communityleden die hebben bijgedragen aan het verbeteren van Rhythm door middel van testen, feedback, suggesties en samenwerking.</string>
     <string name="settings_about_contributor_izzy_name">Izzy</string>
     <string name="settings_about_contributor_izzy_role">Beheert updates op IzzyOnDroid</string>
     <string name="settings_about_contributor_christian_name">Christian</string>
-    <string name="settings_about_contributor_christian_role">Collab & Project Booming\'s Lead Dev</string>
+    <string name="settings_about_contributor_christian_role">Collab &amp; Project Booming\'s Lead Dev</string>
     <string name="settings_about_contributor_alex_name">Alex</string>
     <string name="settings_about_contributor_alex_role">Spotify Canvas API-integratie</string>
     <string name="settings_about_want_featured">Wil je hier vermeld worden?</string>
     <string name="settings_about_contribute">Draag bij aan Rhythm door te testen, feedback te geven of code te schrijven en word lid van onze geweldige community!</string>
     <string name="settings_about_open_source_libraries">Open Source-bibliotheken</string>
+    <string name="settings_about_open_source_libs">Open Source-bibliotheken</string>
+    <string name="settings_about_view_dependencies">Bekijk afhankelijkheden</string>
     <string name="settings_about_view_licenses">Bekijk alle afhankelijkheden en licenties</string>
     <string name="settings_about_actions">Acties</string>
     <string name="settings_about_check_updates">Controleren op updates</string>
@@ -185,7 +188,7 @@
     <string name="home_artists">Artiesten</string>
     <string name="home_explore_musicians">Ontdek je favoriete muzikanten</string>
     <string name="home_no_artists">Geen artiesten gevonden</string>
-    <string name="home_no_artists_desc">Voeg muziek toe aan je bibliotheek om je artiesten te zien</string>
+    <string name="home_no_artists_desc">Voeg muziek toe om hier je artiesten te zien</string>
     <string name="home_new_releases">Nieuwe releases</string>
     <string name="home_fresh_music">Nieuwe muziek, speciaal voor jou</string>
     <string name="home_no_new_releases">Geen nieuwe releases</string>
@@ -235,7 +238,7 @@
     <string name="home_stat_songs_played">Nummers afgespeeld</string>
     <string name="home_stat_artists">Artiesten</string>
 
-    <string name="home_mood_title">Stemming & Momenten</string>
+    <string name="home_mood_title">Stemming &amp; Momenten</string>
     <string name="home_mood_subtitle">Muziek voor elk gevoel</string>
     <string name="home_mood_energize">Energie</string>
     <string name="home_mood_energize_desc">Boost je energie</string>
@@ -294,6 +297,7 @@
     <string name="player_queue">Wachtrij</string>
     <string name="player_playback_speed">Afspeelsnelheid</string>
     <string name="player_playback_speed_desc">Pas de afspeelsnelheid van de audio aan.</string>
+    <string name="playback_speed">Afspeelsnelheid</string>
 
     <string name="search_filter_results">Resultaten filteren</string>
     <string name="search_results">Zoekresultaten</string>
@@ -367,6 +371,8 @@
     <string name="updates_download_update">Update downloaden</string>
     <string name="updates_install_update">Update installeren</string>
     <string name="updates_cancel_download">Download annuleren</string>
+    <string name="cancel_download">Download annuleren</string>
+    <string name="download_update">Update downloaden</string>
     <string name="updates_auto_check_disabled">Automatische updatecontrole is uitgeschakeld. Je kunt nog steeds handmatig controleren.</string>
     <string name="updates_disabled_desc">App-updates zijn uitgeschakeld in instellingen</string>
     <string name="updates_smart_polling">Smart Polling actief</string>
@@ -388,14 +394,14 @@
     <string name="onboarding_backup_desc">Houd je afspeellijsten, instellingen en voorkeuren veilig met automatische back-ups. Herstel alles bij het wisselen van apparaat of na herinstallatie - verlies nooit je muziekcollectie.</string>
     <string name="onboarding_auto_backup">Auto-back-up</string>
     <string name="onboarding_auto_backup_desc">Wekelijks automatisch instellingen back-uppen</string>
-    <string name="onboarding_backup_center">Back-up & Herstel Centrum</string>
+    <string name="onboarding_backup_center">Back-up &amp; Herstel Centrum</string>
     <string name="onboarding_backup_center_desc">Maak back-ups of herstel van bestaande back-upbestanden</string>
-    <string name="onboarding_manual_backup_info">Je kunt op elk moment handmatig back-ups maken in Instellingen > Back-up & Herstel</string>
+    <string name="onboarding_manual_backup_info">Je kunt op elk moment handmatig back-ups maken in Instellingen > Back-up &amp; Herstel</string>
     <string name="onboarding_what_backed_up">Wat wordt er geback-upt?</string>
     <string name="onboarding_backed_up_1">Alle instellingen, afspeellijsten, thema\'s en bibliotheekaanpassingen</string>
     <string name="onboarding_backed_up_2">Herstel vanuit bestanden of klembord met één tik</string>
     <string name="onboarding_backed_up_3">Back-ups worden lokaal op je apparaat opgeslagen voor privacy</string>
-    <string name="onboarding_audio_title">Audio- & Afspeelervaring</string>
+    <string name="onboarding_audio_title">Audio- &amp; Afspeelervaring</string>
     <string name="onboarding_audio_desc">Pas je audio-ervaring aan met haptische feedback, standaardscherm, volumeregelaars, wachtrijgedrag, shuffle-instellingen, songtekstweergave en equalizer-instellingen.</string>
     <string name="onboarding_lyrics_sources">API: Online songteksten • Ingesloten: Metadata songteksten • Lokaal: .lrc-bestanden</string>
     <string name="onboarding_additional_features">Extra audiofuncties</string>
@@ -455,6 +461,10 @@
     <string name="cache_calculating">Cachegrootte berekenen…</string>
     <string name="cache_total_size">Totale cachegrootte:</string>
     <string name="cache_limit">Cachelimiet:</string>
+    <string name="cache_max_size">Maximale cachegrootte</string>
+    <string name="cache_max_size_desc">Stel de maximale grootte in voor gecachete gegevens</string>
+    <string name="cache_about">Over cache</string>
+    <string name="cache_size_limit">Cachegroottelimiet</string>
     <string name="cache_clear_on_exit">Cache wissen bij afsluiten</string>
     <string name="cache_clear_on_exit_desc">Automatisch cachegegevens wissen wanneer app sluit</string>
 
@@ -479,7 +489,7 @@
 
     <string name="playlist_no_songs_yet">Nog geen nummers</string>
 
-    <string name="backup_title">Back-up & Herstel</string>
+    <string name="backup_title">Back-up &amp; Herstel</string>
     <string name="backup_desc">Bescherm je persoonlijke instellingen, afspeellijsten en voorkeuren. Maak handmatig back-ups of schakel automatische wekelijkse back-ups in voor gemoedsrust.</string>
     <string name="backup_auto_weekly">Wekelijks automatisch instellingen back-uppen</string>
     <string name="backup_choose_save_location">Kies waar je back-upbestand wordt opgeslagen</string>

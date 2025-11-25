@@ -135,26 +135,29 @@
     <string name="settings_about_build">Build</string>
     <string name="settings_about_target_sdk">SDK Cible</string>
     <string name="settings_about_architecture">Architecture</string>
-    <string name="settings_about_architecture_value">ARM64 & ARM32</string>
+    <string name="settings_about_architecture_value">ARM64 &amp; ARM32</string>
     <string name="settings_about_built_with">Conçu avec les technologies Android modernes et Material Design 3</string>
     <string name="settings_about_credits">Crédits</string>
     <string name="settings_about_developer_name">Anjishnu Nandi</string>
-    <string name="settings_about_developer_role">Développeur principal & Architecte projet</string>
+    <string name="settings_about_developer_role">Développeur principal &amp; Architecte projet</string>
     <string name="settings_about_team">Équipe ChromaHub</string>
     <string name="settings_about_team_desc">Des développeurs passionnés créant des expériences innovantes</string>
+    <string name="settings_about_team_chromahub">Équipe ChromaHub</string>
     <string name="settings_about_special_thanks">Remerciements</string>
     <string name="settings_about_community">Communauté</string>
     <string name="settings_about_community_desc">Merci à nos incroyables membres de la communauté qui ont contribué à améliorer Rhythm par leurs tests, retours et suggestions.</string>
     <string name="settings_about_contributor_izzy_name">Izzy</string>
     <string name="settings_about_contributor_izzy_role">Gère les mises à jour sur IzzyOnDroid</string>
     <string name="settings_about_contributor_christian_name">Christian</string>
-    <string name="settings_about_contributor_christian_role">Collab & Dev principal du projet Booming</string>
+    <string name="settings_about_contributor_christian_role">Collab &amp; Dev principal du projet Booming</string>
     <string name="settings_about_contributor_alex_name">Alex</string>
     <string name="settings_about_contributor_alex_role">Intégration API Spotify Canvas</string>
     <string name="settings_about_want_featured">Vous voulez apparaître ici ?</string>
     <string name="settings_about_contribute">Contribuez à Rhythm via des tests, retours ou du code et rejoignez notre communauté !</string>
     <string name="settings_about_open_source_libraries">Bibliothèques Open Source</string>
-    <string name="settings_about_view_licenses">Voir dépendances et licences</string>
+    <string name="settings_about_open_source_libs">Bibliothèques Open Source</string>
+    <string name="settings_about_view_dependencies">Voir les dépendances</string>
+    <string name="settings_about_view_licenses">Voir toutes les dépendances et licences</string>
     <string name="settings_about_actions">Actions</string>
     <string name="settings_about_check_updates">Vérifier les mises à jour</string>
     <string name="settings_about_visit_website">Visiter le site web</string>
@@ -235,7 +238,7 @@
     <string name="home_stat_songs_played">Titres lus</string>
     <string name="home_stat_artists">Artistes</string>
 
-    <string name="home_mood_title">Humeur & Moments</string>
+    <string name="home_mood_title">Humeur &amp; Moments</string>
     <string name="home_mood_subtitle">De la musique pour chaque émotion</string>
     <string name="home_mood_energize">Énergie</string>
     <string name="home_mood_energize_desc">Boostez votre énergie</string>
@@ -294,6 +297,7 @@
     <string name="player_queue">File</string>
     <string name="player_playback_speed">Vitesse de lecture</string>
     <string name="player_playback_speed_desc">Ajuster la vitesse de lecture audio.</string>
+    <string name="playback_speed">Vitesse de lecture</string>
 
     <string name="search_filter_results">Filtrer les résultats</string>
     <string name="search_results">Résultats de recherche</string>
@@ -367,6 +371,8 @@
     <string name="updates_download_update">Télécharger la mise à jour</string>
     <string name="updates_install_update">Installer la mise à jour</string>
     <string name="updates_cancel_download">Annuler le téléchargement</string>
+    <string name="cancel_download">Annuler le téléchargement</string>
+    <string name="download_update">Télécharger la mise à jour</string>
     <string name="updates_auto_check_disabled">La vérification automatique est désactivée. Vous pouvez toujours vérifier manuellement.</string>
     <string name="updates_disabled_desc">Les mises à jour de l\'appli ont été désactivées dans les paramètres</string>
     <string name="updates_smart_polling">Smart Polling actif</string>
@@ -388,14 +394,14 @@
     <string name="onboarding_backup_desc">Gardez vos playlists, paramètres et préférences en sécurité avec les sauvegardes automatiques. Restaurez tout lors d\'un changement d\'appareil ou d\'une réinstallation - ne perdez jamais votre collection.</string>
     <string name="onboarding_auto_backup">Sauvegarde auto</string>
     <string name="onboarding_auto_backup_desc">Sauvegarder automatiquement les paramètres chaque semaine</string>
-    <string name="onboarding_backup_center">Centre de Sauvegarde & Restauration</string>
+    <string name="onboarding_backup_center">Centre de Sauvegarde &amp; Restauration</string>
     <string name="onboarding_backup_center_desc">Créer des sauvegardes ou restaurer depuis un fichier existant</string>
-    <string name="onboarding_manual_backup_info">Vous pouvez créer des sauvegardes manuelles à tout moment dans Paramètres > Sauvegarde & Restauration</string>
+    <string name="onboarding_manual_backup_info">Vous pouvez créer des sauvegardes manuelles à tout moment dans Paramètres > Sauvegarde &amp; Restauration</string>
     <string name="onboarding_what_backed_up">Qu\'est-ce qui est sauvegardé ?</string>
     <string name="onboarding_backed_up_1">Tous les paramètres, playlists, thèmes et personnalisations de bibliothèque</string>
     <string name="onboarding_backed_up_2">Restauration depuis fichiers ou presse-papier en un clic</string>
     <string name="onboarding_backed_up_3">Sauvegardes stockées localement sur votre appareil pour la confidentialité</string>
-    <string name="onboarding_audio_title">Expérience Audio & Lecture</string>
+    <string name="onboarding_audio_title">Expérience Audio &amp; Lecture</string>
     <string name="onboarding_audio_desc">Personnalisez votre expérience audio avec le retour haptique, l\'écran par défaut, le volume, la file d\'attente, l\'aléatoire, les paroles et l\'égaliseur.</string>
     <string name="onboarding_lyrics_sources">API : Paroles en ligne • Intégré : Paroles métadonnées • Local : Fichiers .lrc</string>
     <string name="onboarding_additional_features">Fonctionnalités Audio Supplémentaires</string>
@@ -455,6 +461,10 @@
     <string name="cache_calculating">Calcul de la taille du cache…</string>
     <string name="cache_total_size">Taille totale du cache :</string>
     <string name="cache_limit">Limite du cache :</string>
+    <string name="cache_max_size">Taille maximale du cache</string>
+    <string name="cache_max_size_desc">Définir la taille maximale des données en cache</string>
+    <string name="cache_about">À propos du cache</string>
+    <string name="cache_size_limit">Limite de taille du cache</string>
     <string name="cache_clear_on_exit">Vider le cache en quittant</string>
     <string name="cache_clear_on_exit_desc">Effacer automatiquement les données en cache à la fermeture</string>
 
@@ -479,7 +489,7 @@
 
     <string name="playlist_no_songs_yet">Aucun titre pour l\'instant</string>
 
-    <string name="backup_title">Sauvegarde & Restauration</string>
+    <string name="backup_title">Sauvegarde &amp; Restauration</string>
     <string name="backup_desc">Protégez vos paramètres et playlists. Créez des sauvegardes manuelles ou activez la sauvegarde hebdo automatique.</string>
     <string name="backup_auto_weekly">Sauvegarder auto les paramètres chaque semaine</string>
     <string name="backup_choose_save_location">Choisir où enregistrer le fichier de sauvegarde</string>
