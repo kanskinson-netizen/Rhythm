@@ -5133,6 +5133,23 @@ fun SingleCardExplorerContent(
         setOf("mp3", "flac", "m4a", "aac", "ogg", "wav", "wma", "aiff", "opus")
     }
 
+    // Pre-compute song path map for fast lookups (computed once, reused for all directory loads)
+    val songPathMap = remember(songs) {
+        val map = mutableMapOf<String, Song>()
+        songs.forEach { song ->
+            try {
+                val path = getFilePathFromUri(song.uri, context)
+                if (path != null) {
+                    map[path.replace("//", "/")] = song
+                }
+            } catch (e: Exception) {
+                // Skip problematic songs
+            }
+        }
+        android.util.Log.d("LibraryScreen", "Pre-computed path map with ${map.size} songs")
+        map
+    }
+
     // Directory items state - loaded asynchronously to prevent ANR
     var currentItems by remember { mutableStateOf<List<ExplorerItem>>(emptyList()) }
     
@@ -5182,13 +5199,10 @@ fun SingleCardExplorerContent(
                 isLoadingDirectory = true
                 try {
                     val items = withContext(Dispatchers.IO) {
-                        getDirectoryContentsOptimized(currentPath!!, audioExtensions, songs, context)
+                        getDirectoryContentsOptimized(currentPath!!, songPathMap, context)
                     }
-                    // Filter: keep files and folders that have audio content (only show folders with tracks)
-                    val filteredItems = items.filter { 
-                        it.type != ExplorerItemType.FOLDER || it.itemCount > 0
-                    }
-                    val sortedItems = filteredItems.sortedWith(
+                    // Show all items immediately for fast navigation
+                    val sortedItems = items.sortedWith(
                         compareBy<ExplorerItem> { it.type != ExplorerItemType.FOLDER }
                             .thenBy { it.name.lowercase() }
                     )
@@ -5239,25 +5253,13 @@ fun SingleCardExplorerContent(
                 debounceJob = launch {
                     try {
                         val items = withContext(Dispatchers.IO) {
-                            getDirectoryContentsOptimized(currentPath!!, audioExtensions, songs, context)
+                            getDirectoryContentsOptimized(currentPath!!, songPathMap, context)
                         }
                         
-                        // OPTIMIZED: Check for nested audio in parallel using coroutines
-                        val filteredItems = withContext(Dispatchers.IO) {
-                            items.filter { item ->
-                                when {
-                                    // Always keep files
-                                    item.type != ExplorerItemType.FOLDER -> true
-                                    // Keep folders with direct audio count > 0
-                                    item.itemCount > 0 -> true
-                                    // For folders with 0 direct count, check if they have nested audio
-                                    // Use the optimized check that queries songs list instead of filesystem
-                                    else -> hasAudioContentRecursive(item.path, songs, context, maxDepth = 3)
-                                }
-                            }
-                        }
-                        
-                        val sortedItems = filteredItems.sortedWith(
+                        // PERFORMANCE: Show all folders immediately without filtering
+                        // This matches behavior of other FOSS music players for instant results
+                        // Users can still see folder contents when they navigate into them
+                        val sortedItems = items.sortedWith(
                             compareBy<ExplorerItem> { it.type != ExplorerItemType.FOLDER }
                                 .thenBy { it.name.lowercase() }
                         )
@@ -6256,7 +6258,7 @@ fun getAudioFileCountSongsInDirectory(
 }
 
 // Fast MediaStore-only implementation - no filesystem operations
-fun getDirectoryContentsOptimized(directoryPath: String, audioExtensions: Set<String>, songs: List<Song>, context: android.content.Context): List<ExplorerItem> {
+fun getDirectoryContentsOptimized(directoryPath: String, songPathMap: Map<String, Song>, context: android.content.Context): List<ExplorerItem> {
     val startTime = System.currentTimeMillis()
     android.util.Log.d("LibraryScreen", "Loading directory: $directoryPath")
     
@@ -6266,53 +6268,42 @@ fun getDirectoryContentsOptimized(directoryPath: String, audioExtensions: Set<St
     // Build maps for fast lookups - group songs by their immediate parent directory
     val songsByDirectory = mutableMapOf<String, MutableList<Song>>()
     val subdirectories = mutableSetOf<String>()
+    val subdirectorySongCounts = mutableMapOf<String, Int>()
     
-    // Process all songs and extract directory structure
-    songs.forEach { song ->
+    // Process pre-computed song paths - MUCH faster than parsing URIs repeatedly
+    songPathMap.forEach { (normalizedSongPath, song) ->
         try {
-            val songPath = getFilePathFromUri(song.uri, context)
-            if (songPath != null) {
-                val normalizedSongPath = songPath.replace("//", "/")
-                val parentDir = File(normalizedSongPath).parent?.replace("//", "/") ?: return@forEach
-                
-                // Check if this song is in the current directory or a subdirectory
-                if (parentDir == normalizedDirPath) {
-                    // Song is directly in this directory
-                    songsByDirectory.getOrPut(normalizedDirPath) { mutableListOf() }.add(song)
-                } else if (parentDir.startsWith("$normalizedDirPath/")) {
-                    // Song is in a subdirectory - extract immediate child directory
-                    val relativePath = parentDir.removePrefix("$normalizedDirPath/")
-                    val firstSlash = relativePath.indexOf('/')
-                    val immediateChild = if (firstSlash > 0) {
-                        relativePath.substring(0, firstSlash)
-                    } else {
-                        relativePath
-                    }
-                    
-                    val childPath = "$normalizedDirPath/$immediateChild"
-                    subdirectories.add(childPath)
-                    
-                    // Count this song for the subdirectory
-                    songsByDirectory.getOrPut(childPath) { mutableListOf() }
+            val parentDir = File(normalizedSongPath).parent?.replace("//", "/") ?: return@forEach
+            
+            // Check if this song is in the current directory or a subdirectory
+            if (parentDir == normalizedDirPath) {
+                // Song is directly in this directory
+                songsByDirectory.getOrPut(normalizedDirPath) { mutableListOf() }.add(song)
+            } else if (parentDir.startsWith("$normalizedDirPath/")) {
+                // Song is in a subdirectory - extract immediate child directory
+                val relativePath = parentDir.removePrefix("$normalizedDirPath/")
+                val firstSlash = relativePath.indexOf('/')
+                val immediateChild = if (firstSlash > 0) {
+                    relativePath.substring(0, firstSlash)
+                } else {
+                    relativePath
                 }
+                
+                val childPath = "$normalizedDirPath/$immediateChild"
+                subdirectories.add(childPath)
+                
+                // Increment count for this subdirectory (including nested songs)
+                subdirectorySongCounts[childPath] = (subdirectorySongCounts[childPath] ?: 0) + 1
             }
         } catch (e: Exception) {
             // Skip problematic songs
         }
     }
     
-    // Add subdirectories
+    // Add subdirectories with pre-computed counts
     subdirectories.sorted().forEach { subdirPath ->
         val subdirName = File(subdirPath).name
-        // Count all songs in this directory and its subdirectories
-        val songCount = songs.count { song ->
-            try {
-                val songPath = getFilePathFromUri(song.uri, context)
-                songPath != null && songPath.replace("//", "/").startsWith("$subdirPath/")
-            } catch (e: Exception) {
-                false
-            }
-        }
+        val songCount = subdirectorySongCounts[subdirPath] ?: 0
         
         items.add(ExplorerItem(
             name = subdirName,
@@ -6328,7 +6319,7 @@ fun getDirectoryContentsOptimized(directoryPath: String, audioExtensions: Set<St
     songsByDirectory[normalizedDirPath]?.sortedBy { it.title.lowercase() }?.forEach { song ->
         items.add(ExplorerItem(
             name = song.title,
-            path = getFilePathFromUri(song.uri, context) ?: "",
+            path = songPathMap.entries.find { it.value == song }?.key ?: "",
             isDirectory = false,
             itemCount = 1,
             type = ExplorerItemType.FILE,
