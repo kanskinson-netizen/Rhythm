@@ -2787,12 +2787,19 @@ private fun GenreBrowseSection(
     // Get genre detection state from ViewModel
     val isGenreDetectionComplete by musicViewModel.isGenreDetectionComplete.collectAsState()
     
-    // Extract unique genres from songs - recompute when songs change OR detection completes
-    val genres = remember(songs, isGenreDetectionComplete) {
+    // Extract unique genres from songs - recompute when songs change
+    val genres = remember(songs) {
         songs.mapNotNull { song ->
             song.genre?.takeIf { it.isNotBlank() && it.lowercase() != "unknown" }
         }.distinct().sorted()
     }
+    
+    // Determine actual loading state: show loading only if detection not complete AND no genres exist
+    // Once detection completes, always show results (genres or empty state)
+    val isActuallyLoading = !isGenreDetectionComplete && genres.isEmpty()
+    
+    // Log for debugging
+    android.util.Log.d("GenreBrowse", "State: isComplete=$isGenreDetectionComplete, genres=${genres.size}, loading=$isActuallyLoading")
     
     // Always show the card, but vary the content based on state
     Card(
@@ -2825,8 +2832,8 @@ private fun GenreBrowseSection(
             
             // Show appropriate content based on state
             when {
-                !isGenreDetectionComplete -> {
-                    // Loading state
+                isActuallyLoading -> {
+                    // Loading state - only show when actively detecting AND no genres yet
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,

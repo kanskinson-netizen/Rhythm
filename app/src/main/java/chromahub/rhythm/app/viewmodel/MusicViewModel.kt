@@ -687,14 +687,25 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             try {
                 delay(2000) // Wait 2 seconds after app load before starting genre detection
-                if (!appSettings.genreDetectionCompleted.value) {
+                
+                // Check if songs actually have genres, not just if detection completed before
+                val songsWithGenres = songs.value.count { 
+                    !it.genre.isNullOrBlank() && it.genre.lowercase() != "unknown" 
+                }
+                val hasGenresInSongs = songsWithGenres > 0
+                
+                if (!appSettings.genreDetectionCompleted.value || !hasGenresInSongs) {
+                    // Run detection if never completed OR if songs don't have genres
+                    Log.d(TAG, "Starting genre detection (completed: ${appSettings.genreDetectionCompleted.value}, songsWithGenres: $songsWithGenres/${songs.value.size})")
                     detectGenresInBackground()
                 } else {
-                    Log.d(TAG, "Genre detection already completed, skipping")
+                    Log.d(TAG, "Genre detection already completed and songs have genres ($songsWithGenres/${songs.value.size}), skipping")
                     _isGenreDetectionComplete.value = true
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error starting background genre detection", e)
+                // Mark as complete on error to prevent infinite loading
+                _isGenreDetectionComplete.value = true
             }
         }
         
@@ -730,12 +741,16 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     Log.d(TAG, "Genre detection progress: $current/$total")
                 },
                 onComplete = { updatedSongs ->
-                    // Update the songs state with the new genre information
+                    // Update the songs state with the new genre information FIRST
                     _songs.value = updatedSongs
-                    _isGenreDetectionComplete.value = true
-                    _isGenreDetectionRunning.value = false
-                    appSettings.setGenreDetectionCompleted(true)
-                    Log.d(TAG, "Background genre detection completed, updated ${updatedSongs.count { it.genre != null }} songs with genres")
+                    // Then mark detection as complete AFTER songs are updated to prevent race condition
+                    viewModelScope.launch {
+                        delay(100) // Small delay to ensure songs state propagates
+                        _isGenreDetectionComplete.value = true
+                        _isGenreDetectionRunning.value = false
+                        appSettings.setGenreDetectionCompleted(true)
+                        Log.d(TAG, "Background genre detection completed, updated ${updatedSongs.count { it.genre != null }} songs with genres")
+                    }
                 }
             )
         } catch (e: Exception) {
