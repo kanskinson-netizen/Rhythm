@@ -1,583 +1,592 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Rhythm</string>
-
+    
     <string name="media3_notification_channel_name">Rhythm Music</string>
-    <string name="media3_notification_channel_description">Controlli riproduzione multimediale</string>
-
+    <string name="media3_notification_channel_description">Controlli riproduzione media</string>
+    
     <string name="widget_description">Widget Rhythm Music - Controlla la riproduzione con layout reattivi che supportano griglie da 2x1 a 5x5</string>
     <string name="widget_description_glance">Rhythm Music - Controlla la riproduzione con 9 layout reattivi, design Material 3 e aggiornamenti di stato in tempo reale</string>
     <string name="widget_name_glance">Rhythm Music</string>
     <string name="no_song_playing">Nessun brano in riproduzione</string>
     <string name="unknown_artist">Artista sconosciuto</string>
     <string name="unknown_album">Album sconosciuto</string>
-    <string name="album_art">Copertina album</string>
+    <string name="album_art">Copertina Album</string>
     <string name="play_pause">Riproduci/Pausa</string>
-    <string name="skip_next">Successivo</string>
-    <string name="skip_previous">Precedente</string>
-
+    <string name="skip_next">Brano Successivo</string>
+    <string name="skip_previous">Brano Precedente</string>
+    
     <string name="cd_navigate">Naviga</string>
     <string name="cd_configure">Configura</string>
     <string name="cd_delete_playlist">Elimina playlist</string>
     <string name="cd_remove">Rimuovi</string>
     <string name="cd_rhythm_logo">Logo Rhythm</string>
-    <string name="cd_view_github_profile">Visualizza profilo GitHub</string>
-    <string name="cd_report_bug">Segnala un bug</string>
+    <string name="cd_view_github_profile">Vedi profilo GitHub</string>
+    <string name="cd_report_bug">Segnala Bug</string>
     <string name="cd_telegram_support">Supporto Telegram</string>
-
+    
     <string name="settings_notifications">Notifiche</string>
-    <string name="settings_notification_style">Stile notifica</string>
-    <string name="settings_custom_notifications">Notifiche personalizzate</string>
-    <string name="settings_custom_notifications_desc">Usa lo stile di notifica personalizzato dell\'app invece della notifica di sistema</string>
-
+    <string name="settings_notification_style">Stile Notifica</string>
+    <string name="settings_custom_notifications">Notifiche Personalizzate</string>
+    <string name="settings_custom_notifications_desc">Usa lo stile di notifica personalizzato dell\'app invece della notifica media di sistema</string>
+    
     <string name="settings_queue_playback">Coda e Riproduzione</string>
-    <string name="settings_queue_behavior">Comportamento coda</string>
+    <string name="settings_queue_behavior">Comportamento Coda</string>
     <string name="settings_use_exoplayer_shuffle">Usa Shuffle ExoPlayer</string>
-    <string name="settings_use_exoplayer_shuffle_desc">Lascia che il lettore gestisca la riproduzione casuale (consigliato: OFF per shuffle manuale)</string>
-    <string name="settings_auto_queue">Coda automatica</string>
+    <string name="settings_use_exoplayer_shuffle_desc">Lascia che il lettore gestisca lo shuffle (consigliato: OFF per shuffle manuale)</string>
+    <string name="settings_auto_queue">Coda Automatica</string>
     <string name="settings_auto_queue_desc">Aggiungi automaticamente brani correlati alla coda durante la riproduzione</string>
-    <string name="settings_clear_queue_on_new_song">Svuota coda con nuovo brano</string>
-    <string name="settings_clear_queue_on_new_song_desc">Svuota la coda corrente quando si riproduce direttamente un nuovo brano</string>
-    <string name="settings_playback_persistence">Persistenza riproduzione</string>
-    <string name="settings_remember_repeat_mode">Ricorda modalità ripetizione</string>
-    <string name="settings_remember_repeat_mode_desc">Salva la modalità di ripetizione (Off/Tutti/Uno) al riavvio dell\'app</string>
-    <string name="settings_remember_shuffle_mode">Ricorda modalità casuale</string>
-    <string name="settings_remember_shuffle_mode_desc">Salva lo stato on/off della riproduzione casuale al riavvio dell\'app</string>
-
+    <string name="settings_clear_queue_on_new_song">Pulisci Coda su Nuovo Brano</string>
+    <string name="settings_clear_queue_on_new_song_desc">Pulisci la coda attuale quando riproduci direttamente un nuovo brano</string>
+    <string name="settings_playback_persistence">Persistenza Riproduzione</string>
+    <string name="settings_remember_repeat_mode">Ricorda Modalità Ripeti</string>
+    <string name="settings_remember_repeat_mode_desc">Salva la modalità ripetizione (Off/Tutti/Uno) tra i riavvii dell\'app</string>
+    <string name="settings_remember_shuffle_mode">Ricorda Modalità Shuffle</string>
+    <string name="settings_remember_shuffle_mode_desc">Salva lo stato on/off dello shuffle tra i riavvii dell\'app</string>
+    
     <string name="settings_playlists">Playlist</string>
     <string name="settings_playlists_overview">Panoramica</string>
     <string name="settings_playlists_management">Gestione</string>
-    <string name="settings_create_new_playlist">Crea nuova playlist</string>
+    <string name="settings_create_new_playlist">Crea Nuova Playlist</string>
     <string name="settings_create_new_playlist_desc">Aggiungi una nuova playlist personalizzata</string>
-    <string name="settings_import_playlists">Importa playlist</string>
+    <string name="settings_import_playlists">Importa Playlist</string>
     <string name="settings_import_playlists_desc">Importa da file JSON, M3U o PLS</string>
-    <string name="settings_export_all_playlists">Esporta tutte le playlist</string>
-    <string name="settings_export_all_playlists_desc">Backup di tutte le playlist su file</string>
-    <string name="settings_cleanup_empty_playlists">Pulisci playlist vuote</string>
-    <string name="settings_cleanup_empty_playlists_desc">Rimuovi %1$d playlist vuote %2$s</string>
-    <string name="settings_default_playlists">Playlist predefinite</string>
-    <string name="settings_no_default_playlists">Nessuna playlist predefinita</string>
+    <string name="settings_export_all_playlists">Esporta Tutte le Playlist</string>
+    <string name="settings_export_all_playlists_desc">Esegui il backup di tutte le playlist su file</string>
+    <string name="settings_cleanup_empty_playlists">Pulisci Playlist Vuote</string>
+    <string name="settings_cleanup_empty_playlists_desc">Rimuovi %1$d playlist vuote</string>
+    <string name="settings_default_playlists">Playlist Predefinite</string>
+    <string name="settings_no_default_playlists">Nessuna Playlist Predefinita</string>
     <string name="settings_no_default_playlists_desc">Le playlist predefinite vengono create automaticamente</string>
-    <string name="settings_my_playlists">Le mie playlist</string>
-    <string name="settings_no_custom_playlists">Nessuna playlist personalizzata</string>
+    <string name="settings_my_playlists">Le Mie Playlist</string>
+    <string name="settings_no_custom_playlists">Nessuna Playlist Personalizzata</string>
     <string name="settings_no_custom_playlists_desc">Crea la tua prima playlist per iniziare</string>
     <string name="settings_total">Totale</string>
-    <string name="settings_custom">Personalizzato</string>
-    <string name="settings_default">Predefinito</string>
-
+    <string name="settings_custom">Personalizzate</string>
+    <string name="settings_default">Predefinite</string>
+    
     <string name="operation_exporting_playlists">Esportazione playlist in corso…</string>
     <string name="operation_exporting_playlists_location">Esportazione playlist nella posizione selezionata…</string>
     <string name="operation_importing_playlist">Importazione playlist in corso…</string>
-
-    <string name="dialog_cleanup_empty_playlists_title">Pulire le playlist vuote?</string>
-    <string name="dialog_cleanup_empty_playlists_message">Questo eliminerà permanentemente %1$d playlist vuote %2$s. Questa azione non può essere annullata.</string>
-    <string name="dialog_delete_playlist_title">Eliminare la playlist?</string>
+    
+    <string name="dialog_cleanup_empty_playlists_title">Pulire Playlist Vuote?</string>
+    <string name="dialog_cleanup_empty_playlists_message">Questo eliminerà permanentemente %1$d playlist vuote. Questa azione non può essere annullata.</string>
+    <string name="dialog_delete_playlist_title">Eliminare Playlist?</string>
     <string name="dialog_delete_playlist_message">Sei sicuro di voler eliminare \"%1$s\"? Questa azione non può essere annullata.</string>
     <string name="dialog_delete">Elimina</string>
     <string name="dialog_cancel">Annulla</string>
     <string name="dialog_save">Salva</string>
-
-    <string name="settings_media_scan">Scansione media</string>
-    <string name="settings_mode_selection">Selezione modalità</string>
+    
+    <string name="settings_media_scan">Scansione Media</string>
+    <string name="settings_mode_selection">Selezione Modalità</string>
     <string name="settings_blacklist_mode">Modalità Blacklist</string>
     <string name="settings_blacklist_mode_desc">Nascondi brani e cartelle specifici dalla tua libreria</string>
     <string name="settings_whitelist_mode">Modalità Whitelist</string>
-    <string name="settings_whitelist_mode_desc">Mostra solo i brani delle cartelle selezionate</string>
-    <string name="settings_song_management">Gestione brani</string>
-    <string name="settings_manage_songs">Gestisci brani</string>
-    <string name="settings_manage_songs_desc">%1$d %2$s brani</string>
+    <string name="settings_whitelist_mode_desc">Mostra solo brani dalle cartelle selezionate</string>
+    <string name="settings_song_management">Gestione Brani</string>
+    <string name="settings_manage_songs">Gestisci Brani</string>
+    <string name="settings_manage_songs_desc">%1$d brani %2$s</string>
     <string name="settings_blocked">bloccati</string>
     <string name="settings_whitelisted">in whitelist</string>
-    <string name="settings_clear_all_songs">Cancella tutti i brani</string>
-    <string name="settings_clear_all_songs_desc">Rimuovi tutti i %1$s brani</string>
-    <string name="settings_folder_management">Gestione cartelle</string>
-    <string name="settings_manage_folders">Gestisci cartelle</string>
-    <string name="settings_manage_folders_desc">%1$d %2$s cartelle</string>
-    <string name="settings_add_folder">Aggiungi cartella</string>
+    <string name="settings_clear_all_songs">Pulisci Tutti i Brani</string>
+    <string name="settings_clear_all_songs_desc">Rimuovi tutti i brani %1$s</string>
+    <string name="settings_folder_management">Gestione Cartelle</string>
+    <string name="settings_manage_folders">Gestisci Cartelle</string>
+    <string name="settings_manage_folders_desc">%1$d cartelle %2$s</string>
+    <string name="settings_add_folder">Aggiungi Cartella</string>
     <string name="settings_add_folder_desc">Seleziona una cartella da %1$s</string>
     <string name="settings_block">bloccare</string>
-    <string name="settings_whitelist">autorizzare</string>
-    <string name="settings_clear_all_folders">Cancella tutte le cartelle</string>
-    <string name="settings_clear_all_folders_desc">Rimuovi tutte le %1$s cartelle</string>
-    <string name="settings_quick_tips">Suggerimenti rapidi</string>
-    <string name="settings_quick_tip_blacklist">La modalità Blacklist nasconde brani e cartelle specifici dalla libreria</string>
+    <string name="settings_whitelist">whitelistare</string>
+    <string name="settings_clear_all_folders">Pulisci Tutte le Cartelle</string>
+    <string name="settings_clear_all_folders_desc">Rimuovi tutte le cartelle %1$s</string>
+    <string name="settings_quick_tips">Suggerimenti Rapidi</string>
+    <string name="settings_quick_tip_blacklist">La modalità Blacklist nasconde brani e cartelle specifici dalla tua libreria</string>
     <string name="settings_quick_tip_whitelist">La modalità Whitelist mostra solo i brani delle cartelle selezionate</string>
-    <string name="settings_quick_tip_folder">Usa la gestione cartelle per organizzare la tua raccolta musicale</string>
+    <string name="settings_quick_tip_folder">Usa la gestione cartelle per organizzare la tua collezione musicale</string>
     <string name="settings_blocked_songs">Brani bloccati</string>
-    <string name="settings_whitelisted_songs">Brani consentiti</string>
-    <string name="settings_blocked_folders">Cartelle bloccate</string>
-    <string name="settings_whitelisted_folders">Cartelle consentite</string>
-    <string name="settings_total_songs">Totale brani</string>
-    <string name="settings_clear_all_button">Cancella tutti i brani (%1$s)</string>
-    <string name="settings_add_folder_button">Aggiungi cartella</string>
-    <string name="settings_clear_all_button_short">Cancella tutto</string>
+    <string name="settings_whitelisted_songs">Brani in whitelist</string>
+    <string name="settings_blocked_folders">Cartelle Bloccate</string>
+    <string name="settings_whitelisted_folders">Cartelle in Whitelist</string>
+    <string name="settings_total_songs">Brani Totali</string>
+    <string name="settings_clear_all_button">Pulisci Tutti i Brani %1$s</string>
+    <string name="settings_add_folder_button">Aggiungi Cartella</string>
+    <string name="settings_clear_all_button_short">Pulisci Tutto</string>
     <string name="settings_root">Root</string>
-
+    
     <string name="settings_spotify_canvas">Spotify Canvas</string>
     <string name="settings_spotify_api_config">Configurazione API Spotify</string>
     <string name="settings_spotify_api_config_desc">Inserisci le tue credenziali API Spotify per abilitare la ricerca tracce e i video Canvas.</string>
-    <string name="settings_spotify_default_keys_warning">Attualmente stai utilizzando le chiavi Spotify predefinite dell\'app. Per la piena funzionalità ed evitare limiti di utilizzo, inserisci il tuo Client ID e Secret.</string>
+    <string name="settings_spotify_default_keys_warning">Attualmente stai utilizzando le chiavi Spotify predefinite dell\'app. Per la piena funzionalità ed evitare limiti di velocità, inserisci il tuo Client ID e Secret.</string>
     <string name="settings_spotify_client_id">Client ID</string>
     <string name="settings_spotify_client_id_placeholder">Il tuo Client ID Spotify</string>
     <string name="settings_spotify_client_secret">Client Secret</string>
     <string name="settings_spotify_client_secret_placeholder">Il tuo Client Secret Spotify</string>
-    <string name="settings_spotify_test_connection">Testa connessione</string>
+    <string name="settings_spotify_test_connection">Test Connessione</string>
     <string name="settings_spotify_testing">Test in corso…</string>
     <string name="settings_spotify_error">Errore: %1$s</string>
-    <string name="settings_spotify_instructions">Per ottenere le tue credenziali API Spotify:\n• Vai su developer.spotify.com\n• Crea una nuova app\n• Copia Client ID e Client Secret</string>
-
+    <string name="settings_spotify_instructions">Per ottenere le tue credenziali API Spotify:\n• Vai su developer.spotify.com\n• Crea una nuova app\n• Copia il Client ID e il Client Secret</string>
+    
     <string name="settings_about">Informazioni</string>
-    <string name="settings_about_music_player">Lettore musicale</string>
+    <string name="settings_about_music_player">Lettore Musicale</string>
     <string name="settings_about_version">v%1$s</string>
     <string name="settings_about_description">Un lettore musicale moderno e ricco di funzionalità per Android</string>
-    <string name="settings_about_project_details">Dettagli progetto</string>
+    <string name="settings_about_project_details">Dettagli Progetto</string>
     <string name="settings_about_version_label">Versione</string>
     <string name="settings_about_build">Build</string>
     <string name="settings_about_target_sdk">Target SDK</string>
     <string name="settings_about_architecture">Architettura</string>
-    <string name="settings_about_architecture_value">ARM64 e ARM32</string>
-    <string name="settings_about_built_with">Realizzato con moderne tecnologie Android e Material Design 3</string>
+    <string name="settings_about_architecture_value">ARM64 &amp; ARM32</string>
+    <string name="settings_about_built_with">Costruito con moderne tecnologie Android e Material Design 3</string>
     <string name="settings_about_credits">Crediti</string>
     <string name="settings_about_developer_name">Anjishnu Nandi</string>
-    <string name="settings_about_developer_role">Lead Developer e Project Architect</string>
+    <string name="settings_about_developer_role">Lead Developer &amp; Architetto del Progetto</string>
     <string name="settings_about_team">Team ChromaHub</string>
     <string name="settings_about_team_desc">Sviluppatori appassionati che creano esperienze innovative</string>
-    <string name="settings_about_special_thanks">Ringraziamenti speciali</string>
+    <string name="settings_about_team_chromahub">Team ChromaHub</string>
+    <string name="settings_about_special_thanks">Ringraziamenti Speciali</string>
     <string name="settings_about_community">Community</string>
-    <string name="settings_about_community_desc">Un ringraziamento speciale ai fantastici membri della nostra community che hanno contribuito a migliorare Rhythm tramite test, feedback, suggerimenti e collaborazione.</string>
+    <string name="settings_about_community_desc">Un ringraziamento speciale ai fantastici membri della nostra community che hanno contribuito a migliorare Rhythm attraverso test, feedback, suggerimenti e collaborazione.</string>
     <string name="settings_about_contributor_izzy_name">Izzy</string>
     <string name="settings_about_contributor_izzy_role">Gestisce gli aggiornamenti su IzzyOnDroid</string>
     <string name="settings_about_contributor_christian_name">Christian</string>
-    <string name="settings_about_contributor_christian_role">Collab e Lead Dev di Project Booming</string>
+    <string name="settings_about_contributor_christian_role">Collab &amp; Lead Dev del Progetto Booming</string>
     <string name="settings_about_contributor_alex_name">Alex</string>
     <string name="settings_about_contributor_alex_role">Integrazione API Spotify Canvas</string>
     <string name="settings_about_want_featured">Vuoi apparire qui?</string>
     <string name="settings_about_contribute">Contribuisci a Rhythm tramite test, feedback o contributi al codice e unisciti alla nostra fantastica community!</string>
     <string name="settings_about_open_source_libraries">Librerie Open Source</string>
-    <string name="settings_about_view_licenses">Visualizza tutte le dipendenze e licenze</string>
+    <string name="settings_about_open_source_libs">Librerie Open Source</string>
+    <string name="settings_about_view_dependencies">Vedi Dipendenze</string>
+    <string name="settings_about_view_licenses">Vedi tutte le dipendenze e le licenze</string>
     <string name="settings_about_actions">Azioni</string>
-    <string name="settings_about_check_updates">Controlla aggiornamenti</string>
-    <string name="settings_about_visit_website">Visita il sito web</string>
-    <string name="settings_about_view_github">Visualizza su GitHub</string>
-    <string name="settings_about_report_bug">Segnala un bug o suggerisci una funzione</string>
-    <string name="settings_about_telegram_support">Gruppo di supporto Telegram</string>
-
+    <string name="settings_about_check_updates">Controlla Aggiornamenti</string>
+    <string name="settings_about_visit_website">Visita Sito Web</string>
+    <string name="settings_about_view_github">Vedi su GitHub</string>
+    <string name="settings_about_report_bug">Segnala Bug o Suggerisci Funzionalità</string>
+    <string name="settings_about_telegram_support">Gruppo Supporto Telegram</string>
+    
     <string name="settings_updates">Aggiornamenti</string>
     <string name="settings_updates_error">Errore</string>
     <string name="settings_updates_checking">Controllo in corso…</string>
-    <string name="settings_updates_available">Aggiornamento disponibile</string>
-    <string name="settings_updates_disabled">Aggiornamenti disabilitati</string>
-    <string name="settings_updates_manual_check">Controllo manuale</string>
+    <string name="settings_updates_available">Aggiornamento Disponibile</string>
+    <string name="settings_updates_disabled">Aggiornamenti Disabilitati</string>
+    <string name="settings_updates_manual_check">Controllo Manuale</string>
     <string name="settings_updates_up_to_date">Aggiornato</string>
-
+    
     <string name="status_disabled">Disabilitato</string>
-
+    
     <string name="home_title">Rhythm</string>
     <string name="home_settings_cd">Impostazioni</string>
     <string name="home_greeting_night">Buonanotte</string>
     <string name="home_greeting_morning">Buongiorno</string>
     <string name="home_greeting_afternoon">Buon pomeriggio</string>
     <string name="home_greeting_evening">Buonasera</string>
-    <string name="home_discover_albums">Scopri album</string>
-    <string name="home_explore_music">Esplora musica straordinaria</string>
-    <string name="home_no_featured_albums">Nessun album in evidenza</string>
-    <string name="home_no_featured_albums_desc">Aggiungi alcuni album alla libreria per vedere i contenuti in evidenza</string>
+    <string name="home_discover_albums">Scopri Album</string>
+    <string name="home_explore_music">Esplora musica incredibile</string>
+    <string name="home_no_featured_albums">Nessun Album in Evidenza</string>
+    <string name="home_no_featured_albums_desc">Aggiungi album alla tua libreria per vedere i contenuti in evidenza</string>
     <string name="home_artists">Artisti</string>
     <string name="home_explore_musicians">Esplora i tuoi musicisti preferiti</string>
-    <string name="home_no_artists">Nessun artista trovato</string>
-    <string name="home_no_artists_desc">Aggiungi musica alla libreria per vedere i tuoi artisti</string>
-    <string name="home_new_releases">Nuove uscite</string>
+    <string name="home_no_artists">Nessun Artista Trovato</string>
+    <string name="home_no_artists_desc">Aggiungi musica alla tua libreria per vedere i tuoi artisti</string>
+    <string name="home_new_releases">Nuove Uscite</string>
     <string name="home_fresh_music">Musica fresca solo per te</string>
-    <string name="home_no_new_releases">Nessuna nuova uscita</string>
-    <string name="home_no_new_releases_desc">I nuovi album appariranno qui quando aggiunti alla tua libreria</string>
-    <string name="home_recently_added">Aggiunti di recente</string>
+    <string name="home_no_new_releases">Nessuna Nuova Uscita</string>
+    <string name="home_no_new_releases_desc">I nuovi album appariranno qui man mano che vengono aggiunti alla libreria</string>
+    <string name="home_recently_added">Aggiunti di Recente</string>
     <string name="home_latest_additions">Le tue ultime aggiunte</string>
-    <string name="home_no_recently_added">Nessun album aggiunto di recente</string>
+    <string name="home_no_recently_added">Nessun Album Aggiunto di Recente</string>
     <string name="home_no_recently_added_desc">Gli album che aggiungi alla tua libreria appariranno qui</string>
-
-    <string name="home_quote_late_night_1">Atmosfere notturne per i sognatori 🌙</string>
+    
+    <string name="home_quote_late_night_1">Vibrazioni notturne per i sognatori 🌙</string>
     <string name="home_quote_late_night_2">Il momento perfetto per la tua playlist notturna 🎧</string>
     <string name="home_quote_late_night_3">La musica suona meglio a mezzanotte ✨</string>
     <string name="home_quote_late_night_4">Lascia che la musica della notte continui 🌟</string>
-
+    
     <string name="home_quote_morning_1">Inizia la giornata con la colonna sonora perfetta ✨</string>
     <string name="home_quote_morning_2">Lascia che la musica dia energia alla tua routine mattutina 🎵</string>
     <string name="home_quote_morning_3">Ogni mattina è una nuova sinfonia che aspetta di iniziare 🌅</string>
-    <string name="home_quote_morning_4">Caffè e musica: la miscela perfetta del mattino ☕</string>
-
-    <string name="home_quote_afternoon_1">Caricati con i tuoi ritmi preferiti 🚀</string>
+    <string name="home_quote_morning_4">Caffè e musica - il mix perfetto per il mattino ☕</string>
+    
+    <string name="home_quote_afternoon_1">Datti la carica con i tuoi ritmi preferiti 🚀</string>
     <string name="home_quote_afternoon_2">La musica rende tutto migliore 💪</string>
     <string name="home_quote_afternoon_3">Lascia che il ritmo guidi la tua giornata 🎯</string>
-    <string name="home_quote_afternoon_4">Aumenta la concentrazione con grandi melodie 🔥</string>
-
+    <string name="home_quote_afternoon_4">Alza la concentrazione con grandi brani 🔥</string>
+    
     <string name="home_quote_evening_1">Tempo di rilassarsi con melodie rilassanti 🌅</string>
     <string name="home_quote_evening_2">Che la colonna sonora della serata abbia inizio 🎶</string>
-    <string name="home_quote_evening_3">Momento perfetto per la tua playlist chill 😌</string>
+    <string name="home_quote_evening_3">Il momento perfetto per la tua playlist relax 😌</string>
     <string name="home_quote_evening_4">Rilassati con i tuoi brani preferiti 🌇</string>
-
-    <string name="home_quote_night_1">La notte è il momento della musica 🌙</string>
-    <string name="home_quote_night_2">Lascia che la notte ti canti una serenata 🎵</string>
+    
+    <string name="home_quote_night_1">La notte è tempo di musica 🌙</string>
+    <string name="home_quote_night_2">Lascia che la notte ti faccia una serenata 🎵</string>
     <string name="home_quote_night_3">Vibrazioni perfette per una notte tranquilla 🌟</string>
     <string name="home_quote_night_4">Abbraccia la calma della notte 😴</string>
-
+    
     <string name="home_continue_song">Continua da dove avevi interrotto con \"%1$s\"</string>
     <string name="home_adventure_continues">La tua avventura musicale continua</string>
-    <string name="home_discover_next_favorite">Pronto a scoprire la tua prossima canzone preferita?</string>
-
-    <string name="home_recommended_title">Consigliato per te</string>
+    <string name="home_discover_next_favorite">Pronto a scoprire il tuo prossimo brano preferito?</string>
+    
+    <string name="home_recommended_title">Consigliati Per Te</string>
     <string name="home_recommended_subtitle">Basato sulla tua cronologia di ascolto</string>
-    <string name="home_no_recommendations">Nessun consiglio</string>
+    <string name="home_no_recommendations">Nessun Consiglio</string>
     <string name="home_no_recommendations_desc">Ascolta un po\' di musica per ottenere consigli personalizzati</string>
-
-    <string name="home_listening_stats">Le tue statistiche di ascolto</string>
+    
+    <string name="home_listening_stats">Le Tue Statistiche di Ascolto</string>
     <string name="home_listening_stats_subtitle">Il viaggio musicale di questa settimana</string>
-    <string name="home_stat_listening_time">Tempo di ascolto</string>
-    <string name="home_stat_songs_played">Brani riprodotti</string>
+    <string name="home_stat_listening_time">Tempo di Ascolto</string>
+    <string name="home_stat_songs_played">Brani Riprodotti</string>
     <string name="home_stat_artists">Artisti</string>
-
-    <string name="home_mood_title">Umore e Momenti</string>
-    <string name="home_mood_subtitle">Musica per ogni sensazione</string>
+    
+    <string name="home_mood_title">Umore &amp; Momenti</string>
+    <string name="home_mood_subtitle">Musica per ogni stato d\'animo</string>
     <string name="home_mood_energize">Energia</string>
     <string name="home_mood_energize_desc">Aumenta la tua energia</string>
     <string name="home_mood_relax">Relax</string>
     <string name="home_mood_relax_desc">Rilassati e respira</string>
     <string name="home_mood_focus">Focus</string>
     <string name="home_mood_focus_desc">Modalità concentrazione</string>
-
-    <string name="home_recently_played">Riprodotti di recente</string>
+    
+    <string name="home_recently_played">Riprodotti di Recente</string>
     <string name="home_recently_played_subtitle">Continua il tuo viaggio musicale</string>
-    <string name="home_no_recent_activity">Nessuna attività recente</string>
-    <string name="home_no_recent_activity_desc">Inizia ad ascoltare per vedere qui i brani riprodotti di recente</string>
-
-    <string name="ui_view_all">Vedi tutto</string>
+    <string name="home_no_recent_activity">Nessuna Attività Recente</string>
+    <string name="home_no_recent_activity_desc">Inizia ad ascoltare per vedere qui i tuoi brani recenti</string>
+    
+    <string name="ui_view_all">Vedi Tutto</string>
     <string name="ui_play_action">Riproduci %1$s</string>
     <string name="ui_songs_count">%1$d brani</string>
-
+    
     <string name="update_available_cd">Aggiornamento disponibile</string>
-    <string name="update_available_title">Aggiornamento disponibile</string>
+    <string name="update_available_title">Aggiornamento Disponibile</string>
     <string name="update_version">Versione %1$s</string>
     <string name="update_whats_new">Novità:</string>
-    <string name="update_now">Aggiorna ora</string>
-    <string name="update_downloading">Download in corso…</string>
-
+    <string name="update_now">Aggiorna Ora</string>
+    <string name="update_downloading">Scaricamento…</string>
+    
     <string name="library_title">Libreria</string>
-    <string name="library_your_music">La tua musica</string>
-    <string name="library_your_playlists">Le tue playlist</string>
-    <string name="library_your_albums">I tuoi album</string>
-    <string name="library_your_artists">I tuoi artisti</string>
+    <string name="library_your_music">La Tua Musica</string>
+    <string name="library_your_playlists">Le Tue Playlist</string>
+    <string name="library_your_albums">I Tuoi Album</string>
+    <string name="library_your_artists">I Tuoi Artisti</string>
     <string name="library_tracks_count">%1$d di %2$d tracce</string>
     <string name="library_no_songs">Ancora nessun brano</string>
     <string name="library_no_artists">Nessun artista trovato</string>
     <string name="library_no_artists_desc">Aggiungi musica per vedere qui i tuoi artisti</string>
-    <string name="library_start_collection">Inizia a costruire la tua raccolta musicale</string>
-    <string name="library_sort_artists">Ordina artisti per</string>
+    <string name="library_start_collection">Inizia a costruire la tua collezione musicale</string>
+    <string name="library_sort_artists">Ordina Artisti Per</string>
     <string name="library_explore">Esplora</string>
-    <string name="library_storage_locations">Posizioni di archiviazione</string>
-    <string name="library_pinned_folders">Cartelle fissate</string>
-    <string name="library_go_back">Indietro</string>
+    <string name="library_storage_locations">Posizioni di Archiviazione</string>
+    <string name="library_pinned_folders">Cartelle Fissate</string>
+    <string name="library_go_back">Torna Indietro</string>
     <string name="library_home">Home</string>
     <string name="library_tap_browse">Tocca per sfogliare i file</string>
-    <string name="library_play_all">Riproduci tutto</string>
+    <string name="library_play_all">Riproduci Tutto</string>
     <string name="library_check_permissions">Controlla i permessi di archiviazione se i file non appaiono</string>
     <string name="library_creating_playlist">Creazione playlist e aggiunta di %1$d brani…</string>
     <string name="library_playlist_name_empty">Il nome della playlist non può essere vuoto</string>
-
-    <string name="storage_permission_required">Permesso di archiviazione richiesto</string>
-    <string name="storage_permission_desc">Per sfogliare i tuoi file musicali ed esplorare l\'archiviazione del dispositivo, Rhythm necessita del permesso per accedere ai tuoi file e media.</string>
+    
+    <string name="storage_permission_required">Permesso Archiviazione Richiesto</string>
+    <string name="storage_permission_desc">Per sfogliare i tuoi file musicali ed esplorare l\'archivio del dispositivo, Rhythm necessita del permesso per accedere ai tuoi file e media.</string>
     <string name="storage_permission_audio_only">Questo consente l\'accesso solo ai file audio e alle cartelle contenenti musica.</string>
-
+    
     <string name="player_now_playing">IN RIPRODUZIONE</string>
-    <string name="player_loading_lyrics">Caricamento testi…</string>
-    <string name="player_shuffle">CASUALE</string>
+    <string name="player_loading_lyrics">Caricamento testo…</string>
+    <string name="player_shuffle">SHUFFLE</string>
     <string name="player_lyrics">TESTO</string>
     <string name="player_repeat">RIPETI</string>
     <string name="player_queue">Coda</string>
-    <string name="player_playback_speed">Velocità riproduzione</string>
+    <string name="player_playback_speed">Velocità Riproduzione</string>
     <string name="player_playback_speed_desc">Regola la velocità di riproduzione audio.</string>
-
-    <string name="search_filter_results">Filtra risultati</string>
-    <string name="search_results">Risultati ricerca</string>
+    <string name="playback_speed">Velocità Riproduzione</string>
+    
+    <string name="search_filter_results">Filtra Risultati</string>
+    <string name="search_results">Risultati Ricerca</string>
     <string name="search_songs">Brani</string>
     <string name="search_albums">Album</string>
     <string name="search_artists">Artisti</string>
     <string name="search_playlists">Playlist</string>
-    <string name="search_view_all_songs">Vedi tutti i brani</string>
+    <string name="search_view_all_songs">Vedi Tutti i Brani</string>
     <string name="search_see_all_songs">Vedi tutti i %1$d brani</string>
-    <string name="search_recently_searched">Cercati di recente</string>
-    <string name="search_recent_searches">Ricerche recenti</string>
+    <string name="search_recently_searched">Cercato di Recente</string>
+    <string name="search_recent_searches">Ricerche Recenti</string>
     <string name="search_clear">Cancella</string>
-    <string name="search_no_recent_searches">Nessuna ricerca recente</string>
+    <string name="search_no_recent_searches">Nessuna Ricerca Recente</string>
     <string name="search_no_recent_searches_desc">La tua cronologia di ricerca apparirà qui</string>
-    <string name="search_recently_played">Riprodotti di recente</string>
-    <string name="search_no_recently_played">Nulla riprodotto di recente</string>
-    <string name="search_no_recently_played_desc">I brani che riproduci appariranno qui</string>
-    <string name="search_recommended">Consigliato per te</string>
+    <string name="search_recently_played">Riprodotti di Recente</string>
+    <string name="search_no_recently_played">Nessun Brano Recente</string>
+    <string name="search_no_recently_played_desc">I brani che ascolti appariranno qui</string>
+    <string name="search_recommended">Consigliati Per Te</string>
     <string name="search_recommended_desc">Basato sulla tua cronologia di ascolto</string>
-    <string name="search_all_songs">Tutti i brani (%1$d)</string>
-    <string name="search_browse_by_genre">Sfoglia per genere</string>
+    <string name="search_all_songs">Tutti i Brani (%1$d)</string>
+    <string name="search_browse_by_genre">Sfoglia per Genere</string>
     <string name="search_detecting_genres">Rilevamento generi…</string>
     <string name="search_genre_suggestions">I suggerimenti di genere appariranno qui una volta rilevati</string>
     <string name="search_no_genres">Nessun genere rilevato nella tua libreria</string>
     <string name="search_no_recent">Nessuna ricerca recente</string>
-
+    
     <string name="ui_play">Riproduci</string>
     <string name="ui_or">o</string>
     <string name="ui_skip_for_now">Salta per ora</string>
     <string name="ui_dismiss">Ignora</string>
     <string name="ui_retry">Riprova</string>
     <string name="ui_get_started">Inizia</string>
-    <string name="ui_enable_updates">Abilita aggiornamenti</string>
-    <string name="ui_check_now">Controlla ora</string>
-    <string name="ui_download_update">Scarica aggiornamento</string>
-    <string name="ui_install_update">Installa aggiornamento</string>
-    <string name="ui_cancel_download">Annulla download</string>
-
+    <string name="ui_enable_updates">Abilita Aggiornamenti</string>
+    <string name="ui_check_now">Controlla Ora</string>
+    <string name="ui_download_update">Scarica Aggiornamento</string>
+    <string name="ui_install_update">Installa Aggiornamento</string>
+    <string name="ui_cancel_download">Annulla Download</string>
+    
     <string name="common_rhythm">Rhythm</string>
     <string name="common_songs">Brani</string>
     <string name="common_home">Home</string>
     <string name="common_library">Libreria</string>
-
-    <string name="splash_tagline">La tua musica, il tuo ritmo</string>
+    
+    <string name="splash_tagline">La Tua Musica, Il Tuo Ritmo</string>
     <string name="splash_loading">Caricamento libreria musicale…</string>
-    <string name="splash_ready">Pronto a suonare!</string>
-
+    <string name="splash_ready">Pronti a ballare!</string>
+    
     <string name="badge_studio_master">STUDIO MASTER</string>
     <string name="badge_lossless">LOSSLESS</string>
-
+    
     <string name="nav_no_matching_songs">Nessun brano corrispondente trovato</string>
     <string name="nav_try_different">Prova una ricerca diversa</string>
-
+    
     <string name="updates_title">Aggiornamenti</string>
     <string name="updates_error">Errore</string>
     <string name="updates_checking">Controllo aggiornamenti…</string>
-    <string name="updates_available">Aggiornamento disponibile</string>
-    <string name="updates_disabled">Aggiornamenti disabilitati</string>
-    <string name="updates_manual_check">Solo controllo manuale</string>
+    <string name="updates_available">Aggiornamento Disponibile</string>
+    <string name="updates_disabled">Aggiornamenti Disabilitati</string>
+    <string name="updates_manual_check">Solo Controllo Manuale</string>
     <string name="updates_up_to_date">Aggiornato</string>
     <string name="updates_whats_new">Novità</string>
-    <string name="updates_known_issues">Problemi noti</string>
-    <string name="updates_downloading">Download aggiornamento…</string>
-    <string name="updates_download_complete">Download completato</string>
-    <string name="updates_check_failed">Controllo aggiornamenti fallito</string>
-    <string name="updates_settings">Impostazioni aggiornamento</string>
+    <string name="updates_known_issues">Problemi Noti</string>
+    <string name="updates_downloading">Scaricamento aggiornamento…</string>
+    <string name="updates_download_complete">Download Completato</string>
+    <string name="updates_check_failed">Controllo Aggiornamenti Fallito</string>
+    <string name="updates_settings">Impostazioni Aggiornamento</string>
     <string name="updates_released">Rilasciato: %1$s</string>
     <string name="updates_version">Versione %1$s</string>
-    <string name="updates_enable">Abilita aggiornamenti</string>
-    <string name="updates_check_now">Controlla ora</string>
-    <string name="updates_download_update">Scarica aggiornamento</string>
-    <string name="updates_install_update">Installa aggiornamento</string>
-    <string name="updates_cancel_download">Annulla download</string>
-    <string name="updates_auto_check_disabled">Il controllo automatico degli aggiornamenti è disabilitato. Puoi comunque controllare manualmente.</string>
+    <string name="updates_enable">Abilita Aggiornamenti</string>
+    <string name="updates_check_now">Controlla Ora</string>
+    <string name="updates_download_update">Scarica Aggiornamento</string>
+    <string name="updates_install_update">Installa Aggiornamento</string>
+    <string name="updates_cancel_download">Annulla Download</string>
+    <string name="cancel_download">Annulla Download</string>
+    <string name="download_update">Scarica Aggiornamento</string>
+    <string name="updates_auto_check_disabled">Il controllo automatico degli aggiornamenti è disabilitato. Puoi ancora controllare manualmente.</string>
     <string name="updates_disabled_desc">Gli aggiornamenti dell\'app sono stati disabilitati nelle impostazioni</string>
-    <string name="updates_smart_polling">Smart Polling attivo</string>
-    <string name="updates_smart_polling_desc">Utilizzo di controlli HTTP efficienti per rilevare gli aggiornamenti riducendo al minimo le chiamate API di GitHub. Riceverai notifiche istantanee quando vengono rilasciate nuove versioni.</string>
+    <string name="updates_smart_polling">Smart Polling Attivo</string>
+    <string name="updates_smart_polling_desc">Utilizzo di controlli HTTP efficienti per rilevare gli aggiornamenti minimizzando le chiamate API GitHub. Riceverai notifiche istantanee quando vengono rilasciate nuove versioni.</string>
     <string name="updates_channel_desc">Scegli quale canale di aggiornamento seguire:</string>
-
+    
     <string name="onboarding_welcome_title">Rhythm</string>
-    <string name="onboarding_welcome_subtitle">Il tuo lettore musicale offline all-in-one</string>
-    <string name="onboarding_welcome_desc">Personalizza ogni aspetto della tua esperienza di ascolto con funzionalità potenti e completa privacy. Riproduci la tua musica offline, senza pubblicità, con il controllo totale.</string>
+    <string name="onboarding_welcome_subtitle">Il tuo lettore musicale offline tutto-in-uno</string>
+    <string name="onboarding_welcome_desc">Personalizza ogni aspetto della tua esperienza di ascolto con funzionalità potenti e privacy totale. Ascolta la tua musica offline, senza pubblicità, con controllo completo.</string>
     <string name="onboarding_get_started">Inizia</string>
     <string name="onboarding_offline">Offline</string>
     <string name="onboarding_customizable">Personalizzabile</string>
     <string name="onboarding_private">Privato</string>
     <string name="onboarding_tagline">Lettore musicale • Progettato per Android</string>
     <string name="onboarding_android13_notice">Avviso Android 13+</string>
-    <string name="onboarding_android13_desc">Nelle versioni più recenti di Android, vedrai più richieste di autorizzazione. Concedi l\'accesso ai file audio e alle notifiche per la migliore esperienza.</string>
+    <string name="onboarding_android13_desc">Sulle versioni Android più recenti, vedrai diverse richieste di autorizzazione. Per favore concedi l\'accesso ai file audio e alle notifiche per la migliore esperienza.</string>
     <string name="onboarding_granted">✓ Concesso</string>
-    <string name="onboarding_backup_title">Proteggi i tuoi dati</string>
-    <string name="onboarding_backup_desc">Mantieni al sicuro playlist, impostazioni e preferenze con i backup automatici. Ripristina tutto quando cambi dispositivo o dopo la reinstallazione: non perdere mai la tua raccolta musicale.</string>
+    <string name="onboarding_backup_title">Proteggi i Tuoi Dati</string>
+    <string name="onboarding_backup_desc">Tieni al sicuro le tue playlist, impostazioni e preferenze con i backup automatici. Ripristina tutto quando cambi dispositivo o dopo la reinstallazione - non perdere mai la tua collezione musicale.</string>
     <string name="onboarding_auto_backup">Backup automatico</string>
-    <string name="onboarding_auto_backup_desc">Backup automatico delle impostazioni ogni settimana</string>
-    <string name="onboarding_backup_center">Centro Backup e Ripristino</string>
+    <string name="onboarding_auto_backup_desc">Esegui automaticamente il backup delle impostazioni ogni settimana</string>
+    <string name="onboarding_backup_center">Centro Backup &amp; Ripristino</string>
     <string name="onboarding_backup_center_desc">Crea backup o ripristina da file di backup esistenti</string>
-    <string name="onboarding_manual_backup_info">Puoi creare backup manualmente in qualsiasi momento in Impostazioni > Backup e Ripristino</string>
+    <string name="onboarding_manual_backup_info">Puoi creare backup manualmente in qualsiasi momento in Impostazioni > Backup &amp; Ripristino</string>
     <string name="onboarding_what_backed_up">Cosa viene salvato nel backup?</string>
-    <string name="onboarding_backed_up_1">Tutte le impostazioni, playlist, temi e personalizzazione della libreria</string>
+    <string name="onboarding_backed_up_1">Tutte le impostazioni, playlist, temi e personalizzazioni della libreria</string>
     <string name="onboarding_backed_up_2">Ripristina da file o appunti con un tocco</string>
-    <string name="onboarding_backed_up_3">Backup archiviati localmente sul tuo dispositivo per la privacy</string>
-    <string name="onboarding_audio_title">Esperienza Audio e Riproduzione</string>
-    <string name="onboarding_audio_desc">Personalizza la tua esperienza audio con feedback tattile, schermata predefinita, controlli volume, comportamento coda, impostazioni casuale, visualizzazione testi e impostazioni equalizzatore.</string>
-    <string name="onboarding_lyrics_sources">API: Testi online • Incorporati: Testi metadati • Locali: File .lrc</string>
-    <string name="onboarding_additional_features">Funzionalità audio aggiuntive</string>
-    <string name="onboarding_equalizer_desc">Equalizzatore: Regola finemente le frequenze audio in Tuner > Equalizzatore</string>
-    <string name="onboarding_sleep_timer_desc">Timer spegnimento: Interrompi automaticamente la riproduzione dopo un tempo impostato (accesso dalla schermata In Riproduzione)</string>
-    <string name="onboarding_library_title">Organizza la tua libreria musicale</string>
-    <string name="onboarding_library_desc">Personalizza come vengono visualizzati album, artisti e brani. Scegli il layout preferito, l\'ordine di visualizzazione e la disposizione delle schede.</string>
-    <string name="onboarding_library_how_works">Come funziona l\'organizzazione della libreria</string>
-    <string name="onboarding_library_1">Personalizza l\'ordine delle schede nella Libreria per un rapido accesso ai tuoi preferiti</string>
+    <string name="onboarding_backed_up_3">Backup salvati localmente sul tuo dispositivo per la privacy</string>
+    <string name="onboarding_audio_title">Esperienza Audio &amp; Riproduzione</string>
+    <string name="onboarding_audio_desc">Personalizza la tua esperienza audio con feedback aptico, schermata predefinita, controlli volume, comportamento coda, impostazioni shuffle, visualizzazione testi ed equalizzatore.</string>
+    <string name="onboarding_lyrics_sources">API: Testi online • Embedded: Testi dai metadati • Locale: File .lrc</string>
+    <string name="onboarding_additional_features">Funzionalità Audio Aggiuntive</string>
+    <string name="onboarding_equalizer_desc">Equalizzatore: Regola le frequenze audio in Impostazioni > Equalizzatore</string>
+    <string name="onboarding_sleep_timer_desc">Timer Sonno: Arresto automatico dopo un tempo impostato (accedi dalla schermata In Riproduzione)</string>
+    <string name="onboarding_library_title">Organizza la Tua Libreria Musicale</string>
+    <string name="onboarding_library_desc">Personalizza come vengono visualizzati i tuoi album, artisti e brani. Scegli il layout preferito, l\'ordine di ordinamento e la disposizione delle schede.</string>
+    <string name="onboarding_library_how_works">Come Funziona l\'Organizzazione della Libreria</string>
+    <string name="onboarding_library_1">Personalizza l\'ordine delle schede nella Libreria per un accesso rapido ai preferiti</string>
     <string name="onboarding_library_2">Crea e gestisci playlist direttamente dalla schermata Libreria</string>
-    <string name="onboarding_library_3">Opzioni avanzate di visualizzazione e ordinamento disponibili in Tuner > Personalizzazione Tema</string>
-    <string name="onboarding_theme_title">Rendi Rhythm tuo</string>
-    <string name="onboarding_theme_desc">Personalizza l\'aspetto di Rhythm per adattarlo al tuo stile. Scegli il tema di sistema, il carattere o i colori dinamici Material You (Android 12+).</string>
-    <string name="onboarding_live_preview">Anteprima live</string>
+    <string name="onboarding_library_3">Opzioni avanzate di visualizzazione e ordinamento disponibili in Impostazioni > Personalizzazione Tema</string>
+    <string name="onboarding_theme_title">Rendi Rhythm Tuo</string>
+    <string name="onboarding_theme_desc">Personalizza l\'aspetto di Rhythm per adattarlo al tuo stile. Scegli il tema di sistema, il font o i colori dinamici Material You (Android 12+).</string>
+    <string name="onboarding_live_preview">Anteprima Live</string>
     <string name="onboarding_primary">Primario</string>
     <string name="onboarding_container">Contenitore</string>
     <string name="onboarding_accent">Accento</string>
-    <string name="onboarding_advanced_custom">Personalizzazione avanzata</string>
-    <string name="onboarding_advanced_custom_desc">Schemi colori personalizzati, colori copertina album e caratteri</string>
-    <string name="onboarding_more_tuner">Più personalizzazione in Tuner</string>
+    <string name="onboarding_advanced_custom">Personalizzazione Avanzata</string>
+    <string name="onboarding_advanced_custom_desc">Schemi colori personalizzati, colori copertina album e font</string>
+    <string name="onboarding_more_tuner">Più Personalizzazione nelle Impostazioni</string>
     <string name="onboarding_tuner_1">Schemi colori personalizzati ed estrazione colore copertina</string>
-    <string name="onboarding_tuner_2">Personalizzazione caratteri e impostazioni tipografia</string>
-    <string name="onboarding_tuner_3">Opzioni tema avanzate disponibili in Tuner > Personalizzazione Tema</string>
+    <string name="onboarding_tuner_2">Personalizzazione font e impostazioni tipografiche</string>
+    <string name="onboarding_tuner_3">Opzioni tema avanzate disponibili in Impostazioni > Personalizzazione Tema</string>
     <string name="onboarding_step_progress">%1$d di %2$d</string>
-    <string name="onboarding_advanced_customization">Personalizzazione avanzata</string>
-    <string name="onboarding_advanced_customization_desc">Schemi colori personalizzati, colori copertina album e caratteri</string>
-
-    <string name="onboarding_media_scan_title">Filtra la tua libreria musicale</string>
-    <string name="onboarding_media_scan_desc">Controlla quali file audio appaiono nella tua libreria. Usa la modalità Blacklist per nascondere file indesiderati (suonerie, notifiche) o la modalità Whitelist per mostrare solo cartelle musicali specifiche.</string>
-    <string name="onboarding_media_scan_configure">Configura scansione media</string>
+    <string name="onboarding_advanced_customization">Personalizzazione Avanzata</string>
+    <string name="onboarding_advanced_customization_desc">Schemi colori personalizzati, colori copertina album e font</string>
+    
+    <string name="onboarding_media_scan_title">Filtra la Tua Libreria Musicale</string>
+    <string name="onboarding_media_scan_desc">Controlla quali file audio appaiono nella tua libreria. Usa la modalità Blacklist per nascondere file indesiderati (suonerie, notifiche), o la modalità Whitelist per mostrare solo specifiche cartelle musicali.</string>
+    <string name="onboarding_media_scan_configure">Configura Scansione Media</string>
     <string name="onboarding_media_scan_current_mode">Scegli modalità Blacklist o Whitelist • Attuale: %1$s</string>
-    <string name="onboarding_media_scan_settings">Impostazioni scansione media</string>
+    <string name="onboarding_media_scan_settings">Impostazioni Scansione Media</string>
     <string name="onboarding_media_scan_blacklist">Modalità Blacklist: Nascondi brani e cartelle specifici (suonerie, notifiche)</string>
     <string name="onboarding_media_scan_whitelist">Modalità Whitelist: Mostra solo brani dalle cartelle selezionate</string>
-    <string name="onboarding_media_scan_configure_in_tuner">Configura scansione in Tuner > Scansione Media</string>
-    <string name="onboarding_storage_title">Gestione archiviazione</string>
-    <string name="onboarding_storage_desc">Gestisci dimensione cache e archiviazione in Tuner > Gestione Cache</string>
-
-    <string name="onboarding_complete_title">Tutto pronto!</string>
+    <string name="onboarding_media_scan_configure_in_tuner">Configura scansione in Impostazioni > Scansione Media</string>
+    <string name="onboarding_storage_title">Gestione Archiviazione</string>
+    <string name="onboarding_storage_desc">Gestisci dimensione cache e archiviazione in Impostazioni > Gestione Cache</string>
+    
+    <string name="onboarding_complete_title">Tutto Pronto!</string>
     <string name="onboarding_complete_desc">Rhythm è pronto a suonare! La tua libreria musicale viene scansionata in background. Ecco cosa è configurato:</string>
     <string name="onboarding_whats_next">Cosa c\'è dopo?</string>
     <string name="onboarding_next_browse">Sfoglia i tuoi brani, album e artisti</string>
     <string name="onboarding_next_create">Crea la tua prima playlist</string>
-    <string name="onboarding_next_finetune">Regola l\'audio con l\'Equalizzatore</string>
+    <string name="onboarding_next_finetune">Ottimizza l\'audio con l\'Equalizzatore</string>
     <string name="onboarding_next_explore">Esplora altre impostazioni in qualsiasi momento</string>
-    <string name="onboarding_settings_change">Tutte le impostazioni possono essere modificate in qualsiasi momento in Impostazioni</string>
-
-    <string name="settings_tip_theme">Personalizza il tuo tema con colori, caratteri ed effetti festivi</string>
-    <string name="settings_tip_haptic">Abilita feedback tattile per risposte al tocco</string>
+    <string name="onboarding_settings_change">Tutte le impostazioni possono essere modificate in qualsiasi momento</string>
+    
+    <string name="settings_tip_theme">Personalizza il tuo tema con colori, font ed effetti festivi</string>
+    <string name="settings_tip_haptic">Abilita il feedback aptico per risposte tattili</string>
     <string name="settings_tip_media_scan">Usa la scansione media per nascondere file indesiderati dalla tua libreria</string>
-    <string name="settings_default_screen">Schermata iniziale predefinita</string>
-    <string name="settings_default_screen_desc">Scegli la tua schermata di avvio</string>
+    <string name="settings_default_screen">Schermata di Avvio Predefinita</string>
+    <string name="settings_default_screen_desc">Scegli la tua schermata iniziale</string>
     <string name="settings_home_desc">Scopri nuova musica e consigli</string>
-    <string name="settings_library_desc">Accesso rapido alla tua raccolta musicale</string>
-
-    <string name="cache_current_status">Stato cache attuale</string>
+    <string name="settings_library_desc">Accesso rapido alla tua collezione musicale</string>
+    
+    <string name="cache_current_status">Stato Cache Attuale</string>
     <string name="cache_calculating">Calcolo dimensione cache…</string>
-    <string name="cache_total_size">Dimensione totale cache:</string>
-    <string name="cache_limit">Limite cache:</string>
-    <string name="cache_clear_on_exit">Svuota cache all\'uscita</string>
-    <string name="cache_clear_on_exit_desc">Cancella automaticamente i dati nella cache alla chiusura dell\'app</string>
-
-    <string name="lyrics_source_priority">Priorità sorgente testi</string>
+    <string name="cache_total_size">Dimensione Totale Cache:</string>
+    <string name="cache_limit">Limite Cache:</string>
+    <string name="cache_max_size">Dimensione Massima Cache</string>
+    <string name="cache_max_size_desc">Imposta la dimensione massima per i dati memorizzati nella cache</string>
+    <string name="cache_about">Informazioni Cache</string>
+    <string name="cache_size_limit">Limite Dimensione Cache</string>
+    <string name="cache_clear_on_exit">Pulisci Cache all\'Uscita</string>
+    <string name="cache_clear_on_exit_desc">Pulisci automaticamente i dati cache quando l\'app viene chiusa</string>
+    
+    <string name="lyrics_source_priority">Priorità Sorgente Testi</string>
     <string name="lyrics_choose_source">Scegli dove cercare i Testi</string>
-    <string name="lyrics_embedded_note">I testi incorporati vengono estratti dai tag ID3v2 USLT nei tuoi file audio. Per risultati migliori, usa file MP3/FLAC taggati correttamente.</string>
-
-    <string name="theme_good_to_know">Buono a sapersi</string>
+    <string name="lyrics_embedded_note">I testi embedded vengono estratti dai tag ID3v2 USLT nei file audio. Per risultati migliori, usa file MP3/FLAC taggati correttamente.</string>
+    
+    <string name="theme_good_to_know">Buono a Sapersi</string>
     <string name="theme_tip_album_art">I colori della copertina si adattano dinamicamente alla tua musica</string>
     <string name="theme_tip_material_you">Material You usa i colori dello sfondo di sistema (Android 12+)</string>
-    <string name="theme_tip_custom_fonts">Importa caratteri personalizzati per personalizzare la tipografia</string>
-    <string name="theme_color_source">Sorgente colore</string>
+    <string name="theme_tip_custom_fonts">Importa font personalizzati per personalizzare la tipografia</string>
+    <string name="theme_color_source">Sorgente Colore</string>
     <string name="theme_color_source_desc">Scegli come vengono estratti i colori</string>
-    <string name="theme_font_source">Sorgente carattere</string>
-    <string name="theme_font_source_desc">Scegli da dove caricare i caratteri</string>
-    <string name="theme_color_schemes">Schemi colori</string>
-    <string name="theme_color_schemes_desc">Scegli tra schemi di colori preimpostati</string>
-    <string name="theme_custom_picker">Selettore colore personalizzato</string>
-    <string name="theme_custom_picker_desc">Crea il tuo schema di colori</string>
-    <string name="theme_font_selection">Selezione carattere</string>
-    <string name="theme_font_selection_desc">Scegli tra i caratteri di sistema disponibili</string>
-
+    <string name="theme_font_source">Sorgente Font</string>
+    <string name="theme_font_source_desc">Scegli da dove caricare i font</string>
+    <string name="theme_color_schemes">Schemi Colore</string>
+    <string name="theme_color_schemes_desc">Scegli tra schemi colore predefiniti</string>
+    <string name="theme_custom_picker">Selettore Colore Personalizzato</string>
+    <string name="theme_custom_picker_desc">Crea il tuo schema colori</string>
+    <string name="theme_font_selection">Selezione Font</string>
+    <string name="theme_font_selection_desc">Scegli tra i font di sistema disponibili</string>
+    
     <string name="playlist_no_songs_yet">Ancora nessun brano</string>
-
-    <string name="backup_title">Backup e Ripristino</string>
-    <string name="backup_desc">Proteggi le tue impostazioni personalizzate, playlist e preferenze. Crea backup manualmente o abilita backup settimanali automatici per la massima tranquillità.</string>
-    <string name="backup_auto_weekly">Backup automatico impostazioni settimanalmente</string>
+    
+    <string name="backup_title">Backup &amp; Ripristino</string>
+    <string name="backup_desc">Proteggi le tue impostazioni personalizzate, playlist e preferenze. Crea backup manualmente o abilita backup automatici settimanali per la massima tranquillità.</string>
+    <string name="backup_auto_weekly">Backup automatico settimanale delle impostazioni</string>
     <string name="backup_choose_save_location">Scegli dove salvare il file di backup</string>
-    <string name="backup_paste_data">Incolla dati di backup</string>
+    <string name="backup_paste_data">Incolla dati backup</string>
     <string name="backup_select_file">Seleziona file di backup</string>
-    <string name="backup_whats_included">Cosa è incluso nel backup?</string>
-    <string name="backup_included_1">Tutte le impostazioni, playlist, temi e personalizzazione della libreria</string>
+    <string name="backup_whats_included">Cosa è incluso nel Backup?</string>
+    <string name="backup_included_1">Tutte le impostazioni, playlist, temi e personalizzazioni della libreria</string>
     <string name="backup_included_2">Ripristina da file o appunti con un tocco</string>
-    <string name="backup_included_3">Backup archiviati localmente sul dispositivo per la privacy</string>
+    <string name="backup_included_3">Backup salvati localmente sul tuo dispositivo per la privacy</string>
     <string name="backup_manage">GESTISCI BACKUP</string>
     <string name="backup_restore">RIPRISTINA BACKUP</string>
-
+    
     <string name="blacklist_title">Gestione Blacklist</string>
     <string name="blacklist_desc">I brani e le cartelle bloccati non appariranno nei risultati di ricerca, nei consigli o nelle code di riproduzione automatica</string>
     <string name="blacklist_songs">Brani in Blacklist</string>
     <string name="blacklist_no_songs">Nessun brano in blacklist</string>
     <string name="blacklist_all_available">Tutti i tuoi brani sono disponibili per la riproduzione</string>
-    <string name="blacklist_add_folder">Aggiungi cartella alla Blacklist</string>
+    <string name="blacklist_add_folder">Aggiungi Cartella alla Blacklist</string>
     <string name="blacklist_folders">Cartelle in Blacklist</string>
     <string name="blacklist_no_folders">Nessuna cartella in blacklist</string>
-    <string name="blacklist_tap_to_add">Tocca il pulsante in alto per aggiungere cartelle alla blacklist</string>
-    <string name="blacklist_blocked_songs">Brani bloccati</string>
-    <string name="blacklist_available_songs">Brani disponibili</string>
-
+    <string name="blacklist_tap_to_add">Tocca il pulsante sopra per aggiungere cartelle alla blacklist</string>
+    <string name="blacklist_blocked_songs">Brani Bloccati</string>
+    <string name="blacklist_available_songs">Brani Disponibili</string>
+    
     <string name="queue_empty">La tua coda è vuota</string>
-    <string name="queue_add_songs">Aggiungi brani dalla libreria per iniziare ad ascoltare</string>
+    <string name="queue_add_songs">Aggiungi brani dalla tua libreria per iniziare ad ascoltare</string>
     <string name="queue_no_more">Nessun altro brano in coda</string>
     <string name="queue_add_more">Aggiungi altri brani per continuare la musica</string>
-
+    
     <string name="playlist_create">Crea Playlist</string>
     <string name="playlist_name_empty">Il nome della playlist non può essere vuoto</string>
-    <string name="playlist_queue_not_empty">Coda non vuota</string>
-    <string name="playlist_queue_songs">Hai %1$d brano/i %2$s nella coda attuale.</string>
+    <string name="playlist_queue_not_empty">Coda Non Vuota</string>
+    <string name="playlist_queue_songs">Hai %1$d brani nella coda attuale.</string>
     <string name="playlist_how_play">Come vorresti riprodurre \"%1$s\"?</string>
-
+    
     <string name="licenses_title">Licenze Open Source</string>
     <string name="licenses_desc">Costruito con fantastici progetti open source</string>
     <string name="licenses_apache">Licenza Apache 2.0</string>
-    <string name="licenses_attribution">Tutte le librerie consentono l\'uso, la riproduzione e la distribuzione con corretta attribuzione</string>
-
-    <string name="player_chip_order_title">Ordine Chip Lettore</string>
-    <string name="player_chip_order_desc">Personalizza chip lettore</string>
-    <string name="player_chip_reset">Ripristina predefiniti</string>
-
+    <string name="licenses_attribution">Tutte le librerie permettono l\'uso, la riproduzione e la distribuzione con corretta attribuzione</string>
+    
+    <string name="player_chip_order_title">Ordine Chip Player</string>
+    <string name="player_chip_order_desc">Personalizza i chip del player</string>
+    <string name="player_chip_reset">Reimposta a Default</string>
+    
     <string name="library_tab_order_title">Ordine Schede Libreria</string>
     <string name="library_tab_order_desc">Riordina e cambia visibilità</string>
-
+    
     <string name="playback_lyrics_priority">Priorità Sorgente Testi</string>
     <string name="playback_lyrics_priority_desc">Scegli quale sorgente controllare prima per i testi</string>
-    <string name="playback_settings">Impostazioni riproduzione</string>
-    <string name="playback_audio_settings">Impostazioni audio</string>
+    <string name="playback_settings">Impostazioni Riproduzione</string>
+    <string name="playback_audio_settings">Impostazioni Audio</string>
     <string name="playback_active_device">DISPOSITIVO ATTIVO</string>
     <string name="playback_no_device">Nessun dispositivo connesso</string>
-    <string name="playback_tap_output">Tocca per selezionare uscita</string>
-
-    <string name="lyrics_sync_adjustment">Regolazione sincronizzazione</string>
-    <string name="lyrics_sync_note">La regolazione della sincronizzazione funziona solo con testi sincronizzati nel tempo (formato LRC). Usa Ripristina per recuperare i testi sincronizzati se disponibili.</string>
-    <string name="lyrics_placeholder">Inserisci testo qui…\n\nPuoi usare il formato LRC:\n[00:12.00] Prima riga\n[00:17.00] Seconda riga</string>
-    <string name="lyrics_editor_title">Editor testi</string>
-
-    <string name="song_info_title">Informazioni brano</string>
+    <string name="playback_tap_output">Tocca per selezionare l\'uscita</string>
+    
+    <string name="lyrics_sync_adjustment">Regolazione Sincronizzazione</string>
+    <string name="lyrics_sync_note">La regolazione della sincronizzazione funziona solo con testi sincronizzati (formato LRC). Usa Reimposta per recuperare i testi sincronizzati se disponibili.</string>
+    <string name="lyrics_placeholder">Inserisci il testo qui…\n\nPuoi usare il formato LRC:\n[00:12.00] Prima riga\n[00:17.00] Seconda riga</string>
+    <string name="lyrics_editor_title">Editor Testi</string>
+    
+    <string name="song_info_title">Informazioni Brano</string>
     <string name="song_info_no_metadata">Nessun metadato disponibile</string>
-    <string name="song_info_permission">Rhythm necessita dell\'autorizzazione per modificare i metadati di questo file audio. Potresti vedere una finestra di dialogo di sistema che richiede l\'accesso: consentilo per salvare le modifiche.</string>
-
-    <string name="add_to_playlists">Aggiungi a Playlist</string>
-    <string name="add_to_playlist_action">Aggiungi a playlist</string>
-    <string name="playlist_create_new">Crea nuova playlist</string>
+    <string name="song_info_permission">Rhythm necessita del permesso per modificare i metadati di questo file audio. Potresti vedere una finestra di sistema che richiede l\'accesso - per favore consentilo per salvare le modifiche.</string>
+    
+    <string name="add_to_playlists">Aggiungi alle Playlist</string>
+    <string name="add_to_playlist_action">Aggiungi alla playlist</string>
+    <string name="playlist_create_new">Crea Nuova Playlist</string>
     <string name="playlist_create_first">Crea la tua prima playlist per aggiungere brani</string>
-
+    
     <string name="cache_management">Gestione Cache</string>
-    <string name="cache_manage_desc">Gestisci i dati memorizzati nella cache, inclusi immagini, file temporanei e altri dati dell\'app.</string>
-
+    <string name="cache_manage_desc">Gestisci i dati nella cache incluse immagini, file temporanei e altri dati dell\'app.</string>
+    
     <string name="beta_welcome">Benvenuto nel Programma Beta!</string>
-    <string name="beta_desc">Attualmente stai utilizzando la versione beta di Rhythm. Questa versione è ancora in fase di sviluppo e potrebbe contenere bug, funzionalità incomplete o comportamenti imprevisti.</string>
-
+    <string name="beta_desc">Attualmente stai utilizzando la versione beta di Rhythm. Questa versione è ancora in sviluppo e potrebbe contenere bug, funzionalità incomplete o comportamenti imprevisti.</string>
+    
     <string name="equalizer_disabled">L\'equalizzatore è disabilitato</string>
     <string name="equalizer_enable_desc">Abilita l\'equalizzatore per personalizzare la tua esperienza audio.</string>
-    <string name="equalizer_open_system">Apri equalizzatore di sistema</string>
-
-    <string name="theme_color_schemes_unavailable">Gli schemi di colori sono disponibili solo quando si utilizza la sorgente colore Personalizzata.</string>
-    <string name="theme_color_schemes_switch">Passa a Personalizzato nell\'impostazione Sorgente Colore per accedere agli schemi predefiniti.</string>
-    <string name="theme_custom_colors_unavailable">I colori personalizzati sono disponibili solo quando si utilizza la sorgente colore Personalizzata.</string>
-    <string name="theme_custom_colors_switch">Passa a Personalizzato nell\'impostazione Sorgente Colore per creare i tuoi colori.</string>
-    <string name="theme_system_fonts_unavailable">I caratteri di sistema sono disponibili solo quando si utilizza la sorgente carattere Sistema.</string>
-    <string name="theme_system_fonts_switch">Passa a Sistema nell\'impostazione Sorgente Carattere per scegliere tra i caratteri disponibili.</string>
-
-    <string name="backup_whats_included_placeholder">Cosa è incluso nel backup?</string>
-    <string name="backup_all_settings_placeholder">Tutte le impostazioni, playlist, temi e personalizzazione della libreria</string>
+    <string name="equalizer_open_system">Apri Equalizzatore di Sistema</string>
+    
+    <string name="theme_color_schemes_unavailable">Gli schemi colore sono disponibili solo quando si usa la sorgente colore Personalizzata.</string>
+    <string name="theme_color_schemes_switch">Passa a Personalizzata nelle impostazioni Sorgente Colore per accedere agli schemi predefiniti.</string>
+    <string name="theme_custom_colors_unavailable">I colori personalizzati sono disponibili solo quando si usa la sorgente colore Personalizzata.</string>
+    <string name="theme_custom_colors_switch">Passa a Personalizzata nelle impostazioni Sorgente Colore per creare i tuoi colori.</string>
+    <string name="theme_system_fonts_unavailable">I font di sistema sono disponibili solo quando si usa la sorgente font di Sistema.</string>
+    <string name="theme_system_fonts_switch">Passa a Sistema nelle impostazioni Sorgente Font per scegliere tra i font disponibili.</string>
+    
+    <string name="backup_whats_included_placeholder">Cosa è incluso nel Backup?</string>
+    <string name="backup_all_settings_placeholder">Tutte le impostazioni, playlist, temi e personalizzazioni della libreria</string>
     <string name="backup_restore_tap_placeholder">Ripristina da file o appunti con un tocco</string>
-    <string name="backup_local_storage_placeholder">Backup archiviati localmente sul dispositivo per la privacy</string>
+    <string name="backup_local_storage_placeholder">Backup salvati localmente sul tuo dispositivo per la privacy</string>
     <string name="library_reorder_tabs">Riordina le schede per personalizzare la tua esperienza nella libreria</string>
     <string name="external_services_desc">Controlla quali servizi API esterni sono attivi per migliorare la tua esperienza musicale. Attiva/disattiva i servizi per gestire l\'utilizzo dei dati e le funzionalità.</string>
     <string name="lyrics_source_priority_title">Priorità Sorgente Testi</string>
     <string name="lyrics_source_priority_desc_placeholder">Scegli dove Rhythm dovrebbe cercare prima i testi</string>
-
+    
     <string name="now_playing">IN RIPRODUZIONE</string>
     <string name="skip_for_now">Salta per ora</string>
-    <string name="install_update_now">Installa aggiornamento ora</string>
+    <string name="install_update_now">Installa Aggiornamento Ora</string>
     <string name="audio_settings">Impostazioni Audio</string>
     <string name="active_device">DISPOSITIVO ATTIVO</string>
     <string name="tap_select_output">Tocca per selezionare uscita</string>
@@ -589,76 +598,371 @@
     <string name="manage_backup">GESTISCI BACKUP</string>
     <string name="restore_backup">RIPRISTINA BACKUP</string>
     <string name="edit_metadata">Modifica Metadati</string>
-
+    
     <string name="updates_disabled_message">Gli aggiornamenti dell\'app sono stati disabilitati nelle impostazioni</string>
-    <string name="updates_auto_disabled">Il controllo automatico degli aggiornamenti è disabilitato. Puoi comunque controllare manualmente.</string>
+    <string name="updates_auto_disabled">Il controllo automatico degli aggiornamenti è disabilitato. Puoi ancora controllare manualmente.</string>
     <string name="updates_up_to_date_message">Sei aggiornato!</string>
-    <string name="updates_check_frequency">Quanto spesso Rhythm deve controllare gli aggiornamenti?</string>
+    <string name="updates_check_frequency">Quanto spesso Rhythm dovrebbe controllare gli aggiornamenti?</string>
     <string name="updates_experimental_coming">Altre funzionalità sperimentali in arrivo nei futuri aggiornamenti</string>
-
-    <string name="cache_total_size_label">Dimensione totale cache:</string>
-    <string name="cache_limit_label">Limite cache:</string>
-
+    
+    <string name="cache_total_size_label">Dimensione Totale Cache:</string>
+    <string name="cache_limit_label">Limite Cache:</string>
+    
     <string name="theme_featured_schemes">SCHEMI IN EVIDENZA</string>
     <string name="theme_more_schemes">ALTRI SCHEMI</string>
-    <string name="theme_quick_presets">Preimpostazioni rapide</string>
-    <string name="theme_advanced_rgb">Controlli RGB avanzati</string>
-    <string name="theme_font_preview">Ma la volpe col suo balzo ha raggiunto il quieto Fido</string>
-
+    <string name="theme_quick_presets">Preset Rapidi</string>
+    <string name="theme_advanced_rgb">Controlli RGB Avanzati</string>
+    <string name="theme_font_preview">Ma la volpe col suo balzo ha raggiunto il quieto fido</string>
+    
     <string name="external_services">Servizi Esterni</string>
     <string name="api_services">Servizi API</string>
-
+    
     <string name="equalizer">Equalizzatore</string>
-    <string name="frequency_bands">Bande di frequenza</string>
-    <string name="frequency_response">Risposta in frequenza</string>
-    <string name="audio_effects">Effetti audio</string>
+    <string name="frequency_bands">Bande di Frequenza</string>
+    <string name="frequency_response">Risposta in Frequenza</string>
+    <string name="audio_effects">Effetti Audio</string>
     <string name="virtualizer">Virtualizer</string>
-    <string name="system_equalizer">Equalizzatore di sistema</string>
-    <string name="system_equalizer_desc">Accedi all\'equalizzatore integrato del tuo dispositivo</string>
-
-    <string name="sleep_timer">Timer spegnimento</string>
-    <string name="sleep_timer_coming_soon">I controlli del timer di spegnimento saranno implementati qui</string>
-    <string name="sleep_timer_quick">Timer rapido</string>
-    <string name="sleep_timer_custom">Timer personalizzato</string>
+    <string name="system_equalizer">Equalizzatore di Sistema</string>
+    <string name="system_equalizer_desc">Accedi all\'equalizzatore integrato nel dispositivo</string>
+    
+    <string name="sleep_timer">Timer Sonno</string>
+    <string name="sleep_timer_coming_soon">I controlli del timer sonno saranno implementati qui</string>
+    <string name="sleep_timer_quick">Timer Rapido</string>
+    <string name="sleep_timer_custom">Timer Personalizzato</string>
     <string name="sleep_timer_custom_desc">Imposta una durata specifica</string>
-    <string name="sleep_timer_action">Azione timer</string>
-    <string name="sleep_timer_action_desc">Cosa succede quando il timer termina</string>
-    <string name="sleep_timer_select_duration">Seleziona durata timer</string>
-    <string name="sleep_timer_set_hours_minutes">Imposta ore e minuti per il timer di spegnimento</string>
+    <string name="sleep_timer_action">Azione Timer</string>
+    <string name="sleep_timer_action_desc">Cosa succede quando il timer finisce</string>
+    <string name="sleep_timer_select_duration">Seleziona Durata Timer</string>
+    <string name="sleep_timer_set_hours_minutes">Imposta ore e minuti per il timer sonno</string>
     <string name="coming_soon">Prossimamente</string>
-
-    <string name="crash_reports">Rapporti arresti anomali</string>
-    <string name="crashed_on">Arrestato il: %1$s</string>
-
-    <string name="about_lyrics_sources">Informazioni sorgenti testi</string>
-    <string name="sync_adjustment">Regolazione sincronizzazione</string>
+    
+    <string name="crash_reports">Rapporti Crash</string>
+    <string name="crashed_on">Andato in crash il: %1$s</string>
+    
+    <string name="about_lyrics_sources">Info Sorgenti Testi</string>
+    <string name="sync_adjustment">Regolazione Sincronizzazione</string>
     <string name="synced_lyrics_unavailable">Testi sincronizzati non disponibili per questo formato.</string>
     <string name="word_by_word_unavailable">Testi parola per parola non disponibili.</string>
-
+    
     <string name="exporting_playlists">Esportazione playlist in corso…</string>
     <string name="exporting_to_location">Esportazione playlist nella posizione selezionata…</string>
     <string name="importing_playlist">Importazione playlist in corso…</string>
-
-    <string name="restart_app">Riavviare l\'app?</string>
+    
+    <string name="restart_app">Riavviare App?</string>
     <string name="export_playlist">Esporta Playlist</string>
     <string name="export_all_playlists">Esporta Tutte le Playlist</string>
     <string name="export_count_playlists">Esporta %1$d playlist in:</string>
-    <string name="include_default_playlists">Includi playlist predefinite (Preferiti, Aggiunti di recente, Più riprodotti)</string>
+    <string name="include_default_playlists">Includi playlist predefinite (Preferiti, Aggiunti di Recente, Più Ascoltati)</string>
     <string name="import_playlist">Importa Playlist</string>
     <string name="select_playlist_file">Seleziona un file playlist da importare:</string>
     <string name="supported_formats">Formati supportati:</string>
-    <string name="may_take_moments">Potrebbe richiedere alcuni istanti…</string>
-
+    <string name="may_take_moments">Questo potrebbe richiedere alcuni istanti…</string>
+    
     <string name="canvas_unavailable">Canvas non disponibile</string>
     <string name="canvas_couldnt_load">Impossibile caricare Canvas</string>
-
+    
     <string name="beta_program">PROGRAMMA BETA</string>
     <string name="lets_go">Andiamo! 🎵</string>
-
+    
     <string name="special_thanks">Ringraziamenti Speciali</string>
-
+    
     <plurals name="playlist_count">
         <item quantity="one">playlist</item>
         <item quantity="other">playlist</item>
     </plurals>
+    
+    <string name="action_ok">OK</string>
+    <string name="action_cancel">Annulla</string>
+    <string name="action_save">Salva</string>
+    <string name="action_create">Crea</string>
+    <string name="action_delete">Elimina</string>
+    <string name="action_remove">Rimuovi</string>
+    <string name="action_export">Esporta</string>
+    <string name="action_export_all">Esporta Tutto</string>
+    <string name="action_import">Importa</string>
+    <string name="action_browse_files">Sfoglia File</string>
+    <string name="action_close">Chiudi</string>
+    <string name="action_reset">Reimposta</string>
+    <string name="action_apply">Applica</string>
+    <string name="action_continue">Continua</string>
+    <string name="action_proceed">Procedi</string>
+    <string name="action_later">Dopo</string>
+    <string name="action_retry">Riprova</string>
+    <string name="action_add">Aggiungi</string>
+    <string name="action_edit">Modifica</string>
+    <string name="action_change">Cambia</string>
+    <string name="action_choose">Scegli</string>
+    <string name="action_default">Default</string>
+    
+    <string name="settings_title">Impostazioni</string>
+    <string name="settings_section_appearance">Aspetto</string>
+    <string name="settings_theme_customization">Personalizzazione Tema</string>
+    <string name="settings_theme_customization_desc">Personalizza colori, font e aspetto</string>
+    <string name="settings_library_tab_order">Ordine Schede Libreria</string>
+    <string name="settings_library_tab_order_desc">Riordina le schede nella libreria</string>
+    <string name="settings_section_user_interface">Interfaccia Utente</string>
+    <string name="settings_language">Lingua</string>
+    <string name="settings_language_desc">Cambia la lingua dell\'app</string>
+    <string name="settings_haptic_feedback">Feedback Aptico</string>
+    <string name="settings_haptic_feedback_desc">Vibra quando tocchi i pulsanti</string>
+    <string name="settings_section_audio_playback">Audio &amp; Riproduzione</string>
+    <string name="settings_system_volume">Volume di Sistema</string>
+    <string name="settings_system_volume_desc">Usa il volume del dispositivo per la riproduzione</string>
+    <string name="settings_show_lyrics">Mostra Testi</string>
+    <string name="settings_show_lyrics_desc">Mostra i testi quando disponibili</string>
+    <string name="settings_queue_playback_title">Coda &amp; Riproduzione</string>
+    <string name="settings_queue_playback_desc">Configura il comportamento di coda e riproduzione</string>
+    <string name="settings_equalizer_title">Equalizzatore</string>
+    <string name="settings_equalizer_desc">Regola frequenze ed effetti audio</string>
+    <string name="settings_sleep_timer_title">Timer Sonno</string>
+    <string name="settings_sleep_timer_desc">Arresto automatico dopo un tempo impostato</string>
+    <string name="settings_section_library_content">Libreria &amp; Contenuti</string>
+    <string name="settings_group_by_album_artist">Raggruppa per Artista Album</string>
+    <string name="settings_group_by_album_artist_desc">Mostra album di collaborazione sotto l\'artista principale</string>
+    <string name="settings_media_scan_title">Scansione Media</string>
+    <string name="settings_media_scan_desc">Gestisci blacklist e scansione media</string>
+    <string name="settings_playlists_title">Playlist</string>
+    <string name="settings_playlists_desc">Gestisci le tue playlist</string>
+    <string name="settings_section_storage_data">Archiviazione &amp; Dati</string>
+    <string name="settings_cache_management_title">Gestione Cache</string>
+    <string name="settings_cache_management_desc">Controlla dimensione cache e pulizia</string>
+    <string name="settings_backup_restore_title">Backup &amp; Ripristino</string>
+    <string name="settings_backup_restore_desc">Proteggi impostazioni e playlist</string>
+    <string name="settings_section_services">Servizi</string>
+    <string name="settings_api_management">Gestione API</string>
+    <string name="settings_api_management_desc">Configura servizi API esterni</string>
+    <string name="settings_section_updates_info">Aggiornamenti &amp; Info</string>
+    <string name="settings_updates_title">Aggiornamenti</string>
+    <string name="settings_updates_desc">Controlla aggiornamenti dell\'app</string>
+    <string name="settings_about_title">Informazioni</string>
+    <string name="settings_about_desc">Versione app e info</string>
+    <string name="settings_section_advanced">Avanzate</string>
+    <string name="settings_crash_log_history">Cronologia Log Crash</string>
+    <string name="settings_crash_log_history_desc">Vedi e gestisci i rapporti crash</string>
+    <string name="settings_experimental_features">Funzionalità Sperimentali</string>
+    <string name="settings_experimental_features_desc">Prova funzionalità all\'avanguardia</string>
+    
+    <string name="playlist_name_label">Nome Playlist</string>
+    <string name="playlist_rename">Rinomina Playlist</string>
+    <string name="playlist_delete_title">Elimina Playlist</string>
+    <string name="playlist_remove_song">Rimuovi Brano</string>
+    <string name="playlist_export">Esporta playlist</string>
+    <string name="playlist_import">Importa playlist</string>
+    <string name="playlist_rename_action">Rinomina playlist</string>
+    <string name="playlist_delete_action">Elimina playlist</string>
+    <string name="playlist_search">Cerca brani</string>
+    <string name="playlist_search_in">Cerca brani nella playlist</string>
+    <string name="playlist_no_songs_available">Nessun Brano Disponibile</string>
+    <string name="playlist_all_in_playlist">Tutti i brani sono già in questa playlist.</string>
+    <string name="playlist_name_field">Nome playlist</string>
+    <string name="playlist_delete_confirm">Sei sicuro di voler eliminare \'%1$s\'? Questa azione non può essere annullata.</string>
+    <string name="playlist_remove_song_confirm">Rimuovere \'%1$s\' da questa playlist?</string>
+    
+    <string name="player_load_lyrics">Carica Testo</string>
+    <string name="player_retry_canvas">Riprova Canvas</string>
+    
+    <string name="search_songs_count">Brani (%1$d)</string>
+    <string name="search_albums_count">Album (%1$d)</string>
+    <string name="search_artists_count">Artisti (%1$d)</string>
+    <string name="search_playlists_count">Playlist (%1$d)</string>
+    
+    <string name="metadata_title">Titolo</string>
+    <string name="metadata_artist">Artista</string>
+    <string name="metadata_album">Album</string>
+    <string name="metadata_genre">Genere</string>
+    <string name="metadata_year">Anno</string>
+    <string name="metadata_track">Traccia</string>
+    <string name="metadata_saving">Salvataggio...</string>
+    <string name="metadata_save_changes">Salva Modifiche</string>
+    <string name="metadata_irreversible_changes">Modifiche Irreversibili</string>
+    <string name="metadata_media_access_required">Accesso Media Richiesto</string>
+    
+    <string name="updates_check_now_action">Controlla Ora</string>
+    <string name="updates_check_again">Controlla Ancora</string>
+    <string name="updates_download">Scarica Aggiornamento</string>
+    <string name="updates_install">Installa Aggiornamento</string>
+    <string name="updates_cancel">Annulla Download</string>
+    <string name="updates_enable_auto_check">Abilita Auto-controllo</string>
+    <string name="updates_channel_title">Canale Aggiornamento</string>
+    <string name="updates_check_interval_title">Intervallo Controllo Aggiornamenti</string>
+    
+    <string name="cache_clearing">Pulizia cache…</string>
+    <string name="cache_cleared">Cache pulita!</string>
+    <string name="cache_clear_all">Pulisci Tutta la Cache</string>
+    <string name="cache_clearing_lyrics">Pulizia testi…</string>
+    <string name="cache_lyrics_cleared">Testi puliti!</string>
+    <string name="cache_clear_lyrics_only">Pulisci Solo Cache Testi</string>
+    
+    <string name="backup_created_success">Backup Creato con Successo</string>
+    <string name="backup_restore_success">Ripristino Completato con Successo</string>
+    <string name="backup_restart_now">Riavvia Ora</string>
+    <string name="backup_continue_without_restart">Continua Senza Riavviare</string>
+    <string name="backup_error_title">Errore</string>
+    
+    <string name="import_export_json_format">Formato JSON</string>
+    <string name="import_export_pls_format">Playlist PLS</string>
+    <string name="import_complete_title">Importazione Completata</string>
+    <string name="import_complete_message">Importate con successo %1$d playlist.\n%2$s\n\nRiavvia l\'app per applicare le modifiche.</string>
+    <string name="import_restart_app">Riavvia App</string>
+    
+    <string name="sleep_timer_set_custom">Imposta Tempo Personalizzato</string>
+    <string name="sleep_timer_set">Imposta Timer</string>
+    
+    <string name="crash_logs_clear_all">Pulisci Tutti i Log</string>
+    <string name="crash_logs_test">Testa Crash</string>
+    <string name="crash_logs_copy">Copia Log</string>
+    <string name="crash_logs_details_title">Dettagli Log Crash</string>
+    
+    <string name="cd_back">Indietro</string>
+    <string name="cd_navigate_back">Torna indietro</string>
+    <string name="cd_play">Riproduci</string>
+    <string name="cd_play_all">Riproduci tutto</string>
+    <string name="cd_shuffle">Shuffle</string>
+    <string name="cd_play_album">Riproduci album</string>
+    <string name="cd_shuffle_play">Riproduzione casuale</string>
+    <string name="cd_previous_track">Traccia precedente</string>
+    <string name="cd_next_track">Traccia successiva</string>
+    <string name="cd_seek_back">Indietro di 10 secondi</string>
+    <string name="cd_seek_forward">Avanti di 10 secondi</string>
+    <string name="cd_more_options">Altre opzioni</string>
+    <string name="cd_filters">Filtri</string>
+    <string name="cd_clear_search">Cancella ricerca</string>
+    <string name="cd_refresh">Aggiorna</string>
+    <string name="cd_reorder_tabs">Riordina schede</string>
+    <string name="cd_toggle_view_type">Cambia tipo visualizzazione</string>
+    <string name="cd_open_playlist">Apri playlist</string>
+    <string name="cd_ascending">Crescente</string>
+    <string name="cd_descending">Decrescente</string>
+    <string name="cd_artist_image">Artista %1$s</string>
+    <string name="cd_play_artist">Riproduci %1$s</string>
+    <string name="cd_storage">Archiviazione</string>
+    <string name="cd_pinned">Fissato</string>
+    <string name="cd_folder">Cartella</string>
+    <string name="cd_open_folder">Apri cartella</string>
+    <string name="cd_folder_options">Opzioni cartella</string>
+    <string name="cd_export_playlists">Esporta playlist</string>
+    <string name="cd_import_playlist">Importa playlist</string>
+    <string name="cd_create_playlist">Crea playlist</string>
+    <string name="cd_create_new_playlist">Crea nuova playlist</string>
+    <string name="cd_home">Home</string>
+    <string name="cd_current_location">Posizione attuale</string>
+    <string name="cd_item_icon">Icona %1$s</string>
+    <string name="cd_open_storage">Apri archiviazione</string>
+    <string name="cd_minimize">Minimizza</string>
+    <string name="cd_song_info">Info brano</string>
+    <string name="cd_album_artwork">Copertina album per %1$s</string>
+    <string name="cd_no_song_playing">Nessun brano in riproduzione</string>
+    <string name="cd_toggle_shuffle">Attiva/Disattiva shuffle</string>
+    <string name="cd_toggle_lyrics">Attiva/Disattiva testi</string>
+    <string name="cd_toggle_repeat_mode">Cambia modalità ripetizione</string>
+    <string name="cd_show_actions">Mostra azioni</string>
+    <string name="cd_add_to_playlist_action">Aggiungi a playlist</string>
+    <string name="cd_toggle_favorite">Aggiungi/Rimuovi preferito</string>
+    <string name="cd_playback_speed_action">Velocità riproduzione</string>
+    <string name="cd_show_album">Mostra album</string>
+    <string name="cd_show_artist">Mostra artista</string>
+    <string name="cd_reorder_chips">Riordina chip</string>
+    <string name="cd_search">Cerca</string>
+    <string name="cd_view_all">Vedi tutto</string>
+    <string name="cd_albums">Album</string>
+    <string name="cd_artists">Artisti</string>
+    <string name="cd_songs">Brani</string>
+    <string name="cd_selected">Selezionato</string>
+    <string name="cd_rhythm_splash">Rhythm</string>
+    <string name="cd_search_in_playlist">Cerca brani nella playlist</string>
+    <string name="cd_shuffle_play_action">Riproduzione casuale</string>
+    <string name="cd_add_songs_to_playlist">Aggiungi brani alla playlist</string>
+    <string name="cd_remove_from_playlist">Rimuovi dalla playlist</string>
+    <string name="cd_change_language">Cambia Lingua</string>
+    <string name="cd_permissions">Permessi</string>
+    <string name="cd_backup_restore">Backup &amp; Ripristino</string>
+    <string name="cd_open_backup_restore">Apri backup &amp; ripristino</string>
+    <string name="cd_audio_playback_settings">Impostazioni Audio &amp; Riproduzione</string>
+    <string name="cd_library_setup">Configurazione Libreria</string>
+    <string name="cd_open_settings">Apri</string>
+    <string name="cd_theming">Temi</string>
+    <string name="cd_open_theme_customization">Apri personalizzazione tema</string>
+    <string name="cd_show_options">Mostra opzioni</string>
+    <string name="cd_app_updates">Aggiornamenti App</string>
+    <string name="cd_completed">Completato</string>
+    <string name="cd_media_scan_filtering">Filtro Scansione Media</string>
+    <string name="cd_open_media_scan_settings">Apri impostazioni scansione media</string>
+    <string name="cd_close">Chiudi</string>
+    <string name="cd_album_artwork_generic">Copertina album</string>
+    <string name="cd_language">Lingua</string>
+    <string name="cd_view_license">Vedi Licenza</string>
+    <string name="cd_refresh_devices">Aggiorna dispositivi</string>
+    <string name="cd_switch_device">Cambia dispositivo</string>
+    <string name="cd_volume">Volume</string>
+    <string name="cd_decrease_volume">Diminuisci volume</string>
+    <string name="cd_increase_volume">Aumenta volume</string>
+    <string name="cd_playback_speed">Velocità Riproduzione</string>
+    <string name="cd_playback_settings">Impostazioni Riproduzione</string>
+    <string name="cd_move_up">Sposta su</string>
+    <string name="cd_move_down">Sposta giù</string>
+    <string name="cd_add_songs">Aggiungi brani</string>
+    <string name="cd_clear_queue">Pulisci coda</string>
+    <string name="cd_now_playing">In riproduzione</string>
+    <string name="cd_drag_to_reorder">Trascina per riordinare</string>
+    <string name="cd_remove_from_queue">Rimuovi dalla coda</string>
+    <string name="cd_edit_metadata">Modifica metadati</string>
+    <string name="cd_reset_to_original">Ripristina all\'originale</string>
+    <string name="cd_remove_from_blacklist">Rimuovi dalla blacklist</string>
+    <string name="cd_remove_folder_from_blacklist">Rimuovi cartella dalla blacklist</string>
+    <string name="cd_beta_program_warning">Avviso Programma Beta</string>
+    <string name="cd_sort_songs">Ordina brani</string>
+    <string name="cd_add_selected_songs">Aggiungi brani selezionati</string>
+    <string name="cd_toggle_multi_select">Attiva/Disattiva selezione multipla</string>
+    <string name="cd_add_song">Aggiungi brano</string>
+    
+    <string name="audio_quality_dolby_atmos">Dolby Atmos</string>
+    <string name="audio_quality_dolby_truehd">Dolby TrueHD</string>
+    <string name="audio_quality_dolby_digital">Dolby Digital</string>
+    <string name="audio_quality_apple_lossless">Apple Lossless</string>
+    <string name="audio_quality_flac_lossless">FLAC Lossless</string>
+    <string name="audio_quality_ogg_vorbis">OGG Vorbis</string>
+    <string name="audio_quality_dts_audio">DTS Audio</string>
+    <string name="audio_quality_hi_res_lossless">Hi-Res Lossless</string>
+    <string name="audio_quality_cd_quality">Qualità CD</string>
+    <string name="audio_quality_studio_master">Studio Master</string>
+    <string name="audio_quality_lossless_surround">Surround Lossless</string>
+    <string name="audio_quality_lossy_surround">Surround Lossy</string>
+    <string name="audio_quality_dolby_surround">Dolby Surround</string>
+    
+    <string name="device_phone_speaker">Altoparlante Telefono</string>
+    <string name="device_wired_headphones">Cuffie Cablate</string>
+    <string name="device_wired_headset">Auricolari Cablati</string>
+    <string name="device_bluetooth_audio">Audio Bluetooth</string>
+    <string name="device_unknown">Dispositivo Sconosciuto</string>
+    
+    <string name="fallback_unknown_artist">Artista Sconosciuto</string>
+    <string name="fallback_unknown_album">Album Sconosciuto</string>
+    <string name="fallback_unknown_file">File Sconosciuto</string>
+    
+    <string name="service_app_updates">Aggiornamenti App</string>
+    <string name="service_rhythm_music">Rhythm Music</string>
+    <string name="service_starting">Avvio servizio…</string>
+    <string name="service_loading_settings">Caricamento impostazioni…</string>
+    <string name="service_setup_components">Configurazione componenti…</string>
+    <string name="service_initializing_player">Inizializzazione player…</string>
+    <string name="service_creating_controls">Creazione controlli riproduzione…</string>
+    <string name="service_setup_media_session">Configurazione sessione media…</string>
+    <string name="service_initializing_controller">Inizializzazione controller media…</string>
+    <string name="service_ready">Servizio pronto</string>
+    <string name="service_init_failed">Inizializzazione fallita</string>
+    
+    <string name="crash_bug_report">Segnalazione Bug</string>
+    <string name="crash_restart_app">Riavvia App</string>
+    
+    <string name="genre_hip_hop">Hip Hop</string>
+    
+    <string name="cache_internal">Cache Interna</string>
+    <string name="cache_external">Cache Esterna</string>
+    <string name="cache_canvas">Cache Canvas</string>
+    
+    <string name="default_playlist_recently_added">Aggiunti di Recente</string>
+    <string name="default_playlist_most_played">Più Ascoltati</string>
+    
+    <string name="ui_clear_all">Pulisci Tutto</string>
+    <string name="ui_error_generic">Errore</string>
 </resources>

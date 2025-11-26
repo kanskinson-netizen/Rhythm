@@ -743,4 +743,321 @@
         <item quantity="one">playlist</item>
         <item quantity="other">playlists</item>
     </plurals>
+    
+    <!-- Common Actions -->
+    <string name="action_ok">OK</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+    <string name="action_create">Create</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_remove">Remove</string>
+    <string name="action_export">Export</string>
+    <string name="action_export_all">Export All</string>
+    <string name="action_import">Import</string>
+    <string name="action_browse_files">Browse Files</string>
+    <string name="action_close">Close</string>
+    <string name="action_reset">Reset</string>
+    <string name="action_apply">Apply</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_proceed">Proceed</string>
+    <string name="action_later">Later</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_add">Add</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_change">Change</string>
+    <string name="action_choose">Choose</string>
+    <string name="action_default">Default</string>
+    
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_theme_customization">Theme Customization</string>
+    <string name="settings_theme_customization_desc">Customize colors, fonts, and appearance</string>
+    <string name="settings_library_tab_order">Library Tab Order</string>
+    <string name="settings_library_tab_order_desc">Reorder tabs in the library</string>
+    <string name="settings_section_user_interface">User Interface</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_desc">Change app language</string>
+    <string name="settings_haptic_feedback">Haptic Feedback</string>
+    <string name="settings_haptic_feedback_desc">Vibrate when tapping buttons</string>
+    <string name="settings_section_audio_playback">Audio &amp; Playback</string>
+    <string name="settings_system_volume">System Volume</string>
+    <string name="settings_system_volume_desc">Use device volume for playback</string>
+    <string name="settings_show_lyrics">Show Lyrics</string>
+    <string name="settings_show_lyrics_desc">Display lyrics when available</string>
+    <string name="settings_queue_playback_title">Queue &amp; Playback</string>
+    <string name="settings_queue_playback_desc">Configure queue and playback behavior</string>
+    <string name="settings_equalizer_title">Equalizer</string>
+    <string name="settings_equalizer_desc">Adjust audio frequencies and effects</string>
+    <string name="settings_sleep_timer_title">Sleep Timer</string>
+    <string name="settings_sleep_timer_desc">Auto-stop playback after set time</string>
+    <string name="settings_section_library_content">Library &amp; Content</string>
+    <string name="settings_group_by_album_artist">Group by Album Artist</string>
+    <string name="settings_group_by_album_artist_desc">Show collaboration albums under main artist</string>
+    <string name="settings_media_scan_title">Media Scan</string>
+    <string name="settings_media_scan_desc">Manage blacklist and media scanning</string>
+    <string name="settings_playlists_title">Playlists</string>
+    <string name="settings_playlists_desc">Manage your playlists</string>
+    <string name="settings_section_storage_data">Storage &amp; Data</string>
+    <string name="settings_cache_management_title">Cache Management</string>
+    <string name="settings_cache_management_desc">Control cache size and clearing</string>
+    <string name="settings_backup_restore_title">Backup &amp; Restore</string>
+    <string name="settings_backup_restore_desc">Safeguard settings and playlists</string>
+    <string name="settings_section_services">Services</string>
+    <string name="settings_api_management">API Management</string>
+    <string name="settings_api_management_desc">Configure external API services</string>
+    <string name="settings_section_updates_info">Updates &amp; Info</string>
+    <string name="settings_updates_title">Updates</string>
+    <string name="settings_updates_desc">Check for app updates</string>
+    <string name="settings_about_title">About</string>
+    <string name="settings_about_desc">App version and info</string>
+    <string name="settings_section_advanced">Advanced</string>
+    <string name="settings_crash_log_history">Crash Log History</string>
+    <string name="settings_crash_log_history_desc">View and manage crash reports</string>
+    <string name="settings_experimental_features">Experimental Features</string>
+    <string name="settings_experimental_features_desc">Try out cutting-edge features</string>
+    
+    <!-- Playlist Actions -->
+    <string name="playlist_name_label">Playlist Name</string>
+    <string name="playlist_rename">Rename Playlist</string>
+    <string name="playlist_delete_title">Delete Playlist</string>
+    <string name="playlist_remove_song">Remove Song</string>
+    <string name="playlist_export">Export playlist</string>
+    <string name="playlist_import">Import playlist</string>
+    <string name="playlist_rename_action">Rename playlist</string>
+    <string name="playlist_delete_action">Delete playlist</string>
+    <string name="playlist_search">Search songs</string>
+    <string name="playlist_search_in">Search songs in playlist</string>
+    <string name="playlist_no_songs_available">No Songs Available</string>
+    <string name="playlist_all_in_playlist">All songs are already in this playlist.</string>
+    <string name="playlist_name_field">Playlist name</string>
+    <string name="playlist_delete_confirm">Are you sure you want to delete \'%1$s\'? This action cannot be undone.</string>
+    <string name="playlist_remove_song_confirm">Remove \'%1$s\' from this playlist?</string>
+    
+    <!-- Player Actions -->
+    <string name="player_load_lyrics">Load Lyrics</string>
+    <string name="player_retry_canvas">Retry Canvas</string>
+    
+    <!-- Search -->
+    <string name="search_songs_count">Songs (%1$d)</string>
+    <string name="search_albums_count">Albums (%1$d)</string>
+    <string name="search_artists_count">Artists (%1$d)</string>
+    <string name="search_playlists_count">Playlists (%1$d)</string>
+    
+    <!-- Song Metadata -->
+    <string name="metadata_title">Title</string>
+    <string name="metadata_artist">Artist</string>
+    <string name="metadata_album">Album</string>
+    <string name="metadata_genre">Genre</string>
+    <string name="metadata_year">Year</string>
+    <string name="metadata_track">Track</string>
+    <string name="metadata_saving">Saving...</string>
+    <string name="metadata_save_changes">Save Changes</string>
+    <string name="metadata_irreversible_changes">Irreversible Changes</string>
+    <string name="metadata_media_access_required">Media Access Required</string>
+    
+    <!-- Updates Actions -->
+    <string name="updates_check_now_action">Check Now</string>
+    <string name="updates_check_again">Check Again</string>
+    <string name="updates_download">Download Update</string>
+    <string name="updates_install">Install Update</string>
+    <string name="updates_cancel">Cancel Download</string>
+    <string name="updates_enable_auto_check">Enable Auto-check</string>
+    <string name="updates_channel_title">Update Channel</string>
+    <string name="updates_check_interval_title">Update Check Interval</string>
+    
+    <!-- Cache Actions -->
+    <string name="cache_clearing">Clearing cache…</string>
+    <string name="cache_cleared">Cache cleared!</string>
+    <string name="cache_clear_all">Clear All Cache</string>
+    <string name="cache_clearing_lyrics">Clearing lyrics…</string>
+    <string name="cache_lyrics_cleared">Lyrics cache cleared!</string>
+    <string name="cache_clear_lyrics_only">Clear Lyrics Cache Only</string>
+    
+    <!-- Backup Actions -->
+    <string name="backup_created_success">Backup Created Successfully</string>
+    <string name="backup_restore_success">Restore Completed Successfully</string>
+    <string name="backup_restart_now">Restart Now</string>
+    <string name="backup_continue_without_restart">Continue Without Restart</string>
+    <string name="backup_error_title">Error</string>
+    
+    <!-- Import/Export -->
+    <string name="import_export_json_format">JSON Format</string>
+    <string name="import_export_pls_format">PLS Playlist</string>
+    <string name="import_complete_title">Import Complete</string>
+    <string name="import_complete_message">Successfully imported %1$d playlists.\n%2$s\n\nRestart the app to apply changes.</string>
+    <string name="import_restart_app">Restart App</string>
+    
+    <!-- Sleep Timer -->
+    <string name="sleep_timer_set_custom">Set Custom Time</string>
+    <string name="sleep_timer_set">Set Timer</string>
+    
+    <!-- Crash Logs -->
+    <string name="crash_logs_clear_all">Clear All Logs</string>
+    <string name="crash_logs_test">Test Crash</string>
+    <string name="crash_logs_copy">Copy Log</string>
+    <string name="crash_logs_details_title">Crash Log Details</string>
+    
+    <!-- Accessibility - Content Descriptions -->
+    <string name="cd_back">Back</string>
+    <string name="cd_navigate_back">Go back</string>
+    <string name="cd_play">Play</string>
+    <string name="cd_play_all">Play all</string>
+    <string name="cd_shuffle">Shuffle</string>
+    <string name="cd_play_album">Play album</string>
+    <string name="cd_shuffle_play">Shuffle play</string>
+    <string name="cd_previous_track">Previous track</string>
+    <string name="cd_next_track">Next track</string>
+    <string name="cd_seek_back">Seek 10 seconds back</string>
+    <string name="cd_seek_forward">Seek 10 seconds forward</string>
+    <string name="cd_more_options">More options</string>
+    <string name="cd_filters">Filters</string>
+    <string name="cd_clear_search">Clear search</string>
+    <string name="cd_refresh">Refresh</string>
+    <string name="cd_reorder_tabs">Reorder tabs</string>
+    <string name="cd_toggle_view_type">Toggle view type</string>
+    <string name="cd_open_playlist">Open playlist</string>
+    <string name="cd_ascending">Ascending</string>
+    <string name="cd_descending">Descending</string>
+    <string name="cd_artist_image">Artist %1$s</string>
+    <string name="cd_play_artist">Play %1$s</string>
+    <string name="cd_storage">Storage</string>
+    <string name="cd_pinned">Pinned</string>
+    <string name="cd_folder">Folder</string>
+    <string name="cd_open_folder">Open folder</string>
+    <string name="cd_folder_options">Folder options</string>
+    <string name="cd_export_playlists">Export playlists</string>
+    <string name="cd_import_playlist">Import playlist</string>
+    <string name="cd_create_playlist">Create playlist</string>
+    <string name="cd_create_new_playlist">Create new playlist</string>
+    <string name="cd_home">Home</string>
+    <string name="cd_current_location">Current location</string>
+    <string name="cd_item_icon">%1$s icon</string>
+    <string name="cd_open_storage">Open storage</string>
+    <string name="cd_minimize">Minimize</string>
+    <string name="cd_song_info">Song info</string>
+    <string name="cd_album_artwork">Album artwork for %1$s</string>
+    <string name="cd_no_song_playing">No song playing</string>
+    <string name="cd_toggle_shuffle">Toggle shuffle</string>
+    <string name="cd_toggle_lyrics">Toggle lyrics</string>
+    <string name="cd_toggle_repeat_mode">Toggle repeat mode</string>
+    <string name="cd_show_actions">Show actions</string>
+    <string name="cd_add_to_playlist_action">Add to playlist</string>
+    <string name="cd_toggle_favorite">Toggle favorite</string>
+    <string name="cd_playback_speed_action">Playback speed</string>
+    <string name="cd_show_album">Show album</string>
+    <string name="cd_show_artist">Show artist</string>
+    <string name="cd_reorder_chips">Reorder chips</string>
+    <string name="cd_search">Search</string>
+    <string name="cd_view_all">View all</string>
+    <string name="cd_albums">Albums</string>
+    <string name="cd_artists">Artists</string>
+    <string name="cd_songs">Songs</string>
+    <string name="cd_selected">Selected</string>
+    <string name="cd_rhythm_splash">Rhythm</string>
+    <string name="cd_search_in_playlist">Search songs in playlist</string>
+    <string name="cd_shuffle_play_action">Shuffle play</string>
+    <string name="cd_add_songs_to_playlist">Add songs to playlist</string>
+    <string name="cd_remove_from_playlist">Remove from playlist</string>
+    <string name="cd_change_language">Change Language</string>
+    <string name="cd_permissions">Permissions</string>
+    <string name="cd_backup_restore">Backup &amp; Restore</string>
+    <string name="cd_open_backup_restore">Open backup &amp; restore</string>
+    <string name="cd_audio_playback_settings">Audio &amp; Playback Settings</string>
+    <string name="cd_library_setup">Library Setup</string>
+    <string name="cd_open_settings">Open</string>
+    <string name="cd_theming">Theming</string>
+    <string name="cd_open_theme_customization">Open theme customization</string>
+    <string name="cd_show_options">Show options</string>
+    <string name="cd_app_updates">App Updates</string>
+    <string name="cd_completed">Completed</string>
+    <string name="cd_media_scan_filtering">Media Scan Filtering</string>
+    <string name="cd_open_media_scan_settings">Open media scan settings</string>
+    <string name="cd_close">Close</string>
+    <string name="cd_album_artwork_generic">Album artwork</string>
+    <string name="cd_language">Language</string>
+    <string name="cd_view_license">View License</string>
+    <string name="cd_refresh_devices">Refresh devices</string>
+    <string name="cd_switch_device">Switch device</string>
+    <string name="cd_volume">Volume</string>
+    <string name="cd_decrease_volume">Decrease volume</string>
+    <string name="cd_increase_volume">Increase volume</string>
+    <string name="cd_playback_speed">Playback Speed</string>
+    <string name="cd_playback_settings">Playback Settings</string>
+    <string name="cd_move_up">Move up</string>
+    <string name="cd_move_down">Move down</string>
+    <string name="cd_add_songs">Add songs</string>
+    <string name="cd_clear_queue">Clear queue</string>
+    <string name="cd_now_playing">Now playing</string>
+    <string name="cd_drag_to_reorder">Drag to reorder</string>
+    <string name="cd_remove_from_queue">Remove from queue</string>
+    <string name="cd_edit_metadata">Edit metadata</string>
+    <string name="cd_reset_to_original">Reset to original</string>
+    <string name="cd_remove_from_blacklist">Remove from blacklist</string>
+    <string name="cd_remove_folder_from_blacklist">Remove folder from blacklist</string>
+    <string name="cd_beta_program_warning">Beta Program Warning</string>
+    <string name="cd_sort_songs">Sort songs</string>
+    <string name="cd_add_selected_songs">Add selected songs</string>
+    <string name="cd_toggle_multi_select">Toggle multi-select</string>
+    <string name="cd_add_song">Add song</string>
+    
+    <!-- Audio Quality Labels -->
+    <string name="audio_quality_dolby_atmos">Dolby Atmos</string>
+    <string name="audio_quality_dolby_truehd">Dolby TrueHD</string>
+    <string name="audio_quality_dolby_digital">Dolby Digital</string>
+    <string name="audio_quality_apple_lossless">Apple Lossless</string>
+    <string name="audio_quality_flac_lossless">FLAC Lossless</string>
+    <string name="audio_quality_ogg_vorbis">OGG Vorbis</string>
+    <string name="audio_quality_dts_audio">DTS Audio</string>
+    <string name="audio_quality_hi_res_lossless">Hi-Res Lossless</string>
+    <string name="audio_quality_cd_quality">CD Quality</string>
+    <string name="audio_quality_studio_master">Studio Master</string>
+    <string name="audio_quality_lossless_surround">Lossless Surround</string>
+    <string name="audio_quality_lossy_surround">Lossy Surround</string>
+    <string name="audio_quality_dolby_surround">Dolby Surround</string>
+    
+    <!-- Device Names -->
+    <string name="device_phone_speaker">Phone Speaker</string>
+    <string name="device_wired_headphones">Wired Headphones</string>
+    <string name="device_wired_headset">Wired Headset</string>
+    <string name="device_bluetooth_audio">Bluetooth Audio</string>
+    <string name="device_unknown">Unknown Device</string>
+    
+    <!-- Fallback Metadata -->
+    <string name="fallback_unknown_artist">Unknown Artist</string>
+    <string name="fallback_unknown_album">Unknown Album</string>
+    <string name="fallback_unknown_file">Unknown File</string>
+    
+    <!-- Service Notifications -->
+    <string name="service_app_updates">App Updates</string>
+    <string name="service_rhythm_music">Rhythm Music</string>
+    <string name="service_starting">Starting service…</string>
+    <string name="service_loading_settings">Loading settings…</string>
+    <string name="service_setup_components">Setting up components…</string>
+    <string name="service_initializing_player">Initializing player…</string>
+    <string name="service_creating_controls">Creating playback controls…</string>
+    <string name="service_setup_media_session">Setting up media session…</string>
+    <string name="service_initializing_controller">Initializing media controller…</string>
+    <string name="service_ready">Service ready</string>
+    <string name="service_init_failed">Initialization failed</string>
+    
+    <!-- Crash Activity -->
+    <string name="crash_bug_report">Bug Report</string>
+    <string name="crash_restart_app">Restart App</string>
+    
+    <!-- Genre Detection -->
+    <string name="genre_hip_hop">Hip Hop</string>
+    
+    <!-- Cache Details -->
+    <string name="cache_internal">Internal Cache</string>
+    <string name="cache_external">External Cache</string>
+    <string name="cache_canvas">Canvas Cache</string>
+    
+    <!-- Default Playlists -->
+    <string name="default_playlist_recently_added">Recently Added</string>
+    <string name="default_playlist_most_played">Most Played</string>
+    
+    <!-- Misc UI -->
+    <string name="ui_clear_all">Clear All</string>
+    <string name="ui_error_generic">Error</string>
 </resources>
