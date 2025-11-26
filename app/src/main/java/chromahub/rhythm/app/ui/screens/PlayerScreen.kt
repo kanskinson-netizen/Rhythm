@@ -760,11 +760,22 @@ fun PlayerScreen(
             onSongClick = onSongClick,
             onPlayAll = { songs -> onPlayAlbumSongs(songs) },
             onShufflePlay = { songs -> onShuffleAlbumSongs(songs) },
-            onAddToQueue = { song -> /* TODO: Add queue functionality */ },
+            onAddToQueue = { song -> musicViewModel.addSongToQueue(song) },
             onAddSongToPlaylist = { song -> onAddSongToPlaylist(song, "") },
             onPlayerClick = onBack,
             sheetState = albumBottomSheetState,
-            haptics = haptic
+            haptics = haptic,
+            onPlayNext = { song -> musicViewModel.playNext(song) },
+            onToggleFavorite = { song -> musicViewModel.toggleFavorite(song) },
+            favoriteSongs = musicViewModel.favoriteSongs.collectAsState().value,
+            onShowSongInfo = { song ->
+                // Song info can be shown via a toast or separate sheet if needed
+                Toast.makeText(context, "${song.title}\nArtist: ${song.artist}\nAlbum: ${song.album}", Toast.LENGTH_SHORT).show()
+            },
+            onAddToBlacklist = { song ->
+                appSettings.addToBlacklist(song.id)
+                Toast.makeText(context, "${song.title} added to blacklist", Toast.LENGTH_SHORT).show()
+            }
         )
     }
 
@@ -793,11 +804,22 @@ fun PlayerScreen(
                     onShuffleArtistSongs(artistSongs)
                 }
             },
-            onAddToQueue = { song -> /* TODO: Add queue functionality */ },
+            onAddToQueue = { song -> musicViewModel.addSongToQueue(song) },
             onAddSongToPlaylist = { song -> onAddSongToPlaylist(song, "") },
             onPlayerClick = { /* Already in player screen */ },
             sheetState = artistBottomSheetState,
-            haptics = haptic
+            haptics = haptic,
+            onPlayNext = { song -> musicViewModel.playNext(song) },
+            onToggleFavorite = { song -> musicViewModel.toggleFavorite(song) },
+            favoriteSongs = musicViewModel.favoriteSongs.collectAsState().value,
+            onShowSongInfo = { song ->
+                // Song info can be shown via a toast or separate sheet if needed
+                Toast.makeText(context, "${song.title}\nArtist: ${song.artist}\nAlbum: ${song.album}", Toast.LENGTH_SHORT).show()
+            },
+            onAddToBlacklist = { song ->
+                appSettings.addToBlacklist(song.id)
+                Toast.makeText(context, "${song.title} added to blacklist", Toast.LENGTH_SHORT).show()
+            }
         )
     }
 

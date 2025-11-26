@@ -1416,20 +1416,8 @@ fun RhythmNavigation(
                                 showCreatePlaylistDialog.value = true
                             },
                             onClearQueue = {
-                                // TODO: Implement clearQueue method in viewModel
-                                // For now, we'll remove all songs except the current one
-                                val currentQueue = viewModel.currentQueue.value
-                                if (currentQueue.songs.size > 1) {
-                                    // Remove all songs except the currently playing one
-                                    val currentIndex = currentQueue.currentIndex
-                                    val songsToRemove =
-                                        currentQueue.songs.filterIndexed { index, _ ->
-                                            index != currentIndex
-                                        }
-                                    songsToRemove.forEach { song ->
-                                        viewModel.removeFromQueue(song)
-                                    }
-                                }
+                                // Use the proper clearQueue method
+                                viewModel.clearQueue()
                             },
                             // New parameters for loader control and bottom sheets
                             isMediaLoading = viewModel.isBuffering.collectAsState().value,
