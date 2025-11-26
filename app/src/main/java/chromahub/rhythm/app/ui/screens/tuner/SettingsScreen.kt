@@ -140,7 +140,7 @@ data class SettingGroup(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TunerSettingsScreen(
+fun SettingsScreen(
     onBackClick: () -> Unit,
     onNavigateTo: (String) -> Unit, // Add navigation callback
     scrollState: LazyListState? = null // Optional scroll state parameter
@@ -161,7 +161,7 @@ fun TunerSettingsScreen(
     var showLanguageSwitcher by remember { mutableStateOf(false) }
 
     CollapsibleHeaderScreen(
-        title = "Tuner",
+        title = "Settings",
         showBackButton = true,
         onBackClick = {
             HapticUtils.performHapticFeedback(context, hapticFeedback, HapticFeedbackType.LongPress)
@@ -273,7 +273,7 @@ fun TunerSettingsScreen(
         )
 
         val lazyListState = scrollState ?: rememberSaveable(
-            key = "tuner_settings_scroll_state",
+            key = "settings_scroll_state",
             saver = LazyListStateSaver
         ) {
             LazyListState()
@@ -718,21 +718,21 @@ fun SettingRow(item: SettingItem) {
 
 @Preview(showBackground = true)
 @Composable
-fun TunerSettingsScreenPreview() {
+fun SettingsScreenPreview() {
     RhythmTheme {
-        TunerSettingsScreen(onBackClick = {}, onNavigateTo = {})
+        SettingsScreen(onBackClick = {}, onNavigateTo = {})
     }
 }
 
 // Wrapper function for navigation
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit, appSettings: chromahub.rhythm.app.data.AppSettings) {
+fun SettingsScreenWrapper(onBack: () -> Unit, appSettings: chromahub.rhythm.app.data.AppSettings) {
     var currentRoute by rememberSaveable { mutableStateOf<String?>(null) }
     
     // Hoist the main settings scroll state to persist across navigation
     val mainSettingsScrollState = rememberSaveable(
-        key = "main_tuner_settings_scroll_state",
+        key = "main_settings_scroll_state",
         saver = LazyListStateSaver
     ) {
         LazyListState()
@@ -800,7 +800,7 @@ fun SettingsScreen(onBack: () -> Unit, appSettings: chromahub.rhythm.app.data.Ap
             SettingsRoutes.CRASH_LOG_HISTORY -> CrashLogHistorySettingsScreen(onBackClick = { currentRoute = null }, appSettings = appSettings)
             SettingsRoutes.QUEUE_PLAYBACK -> QueuePlaybackSettingsScreen(onBackClick = { currentRoute = null })
             SettingsRoutes.LYRICS_SOURCE -> LyricsSourceSettingsScreen(onBackClick = { currentRoute = null })
-            else -> TunerSettingsScreen(
+            else -> SettingsScreen(
                 onBackClick = handleBack,
                 onNavigateTo = { route -> currentRoute = route },
                 scrollState = mainSettingsScrollState

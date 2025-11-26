@@ -441,14 +441,14 @@
     <string name="onboarding_audio_desc">Customize your audio experience with haptic feedback, default screen, volume controls, queue behavior, shuffle settings, lyrics display, and equalizer settings.</string>
     <string name="onboarding_lyrics_sources">API: Online lyrics • Embedded: Metadata lyrics • Local: .lrc files</string>
     <string name="onboarding_additional_features">Additional Audio Features</string>
-    <string name="onboarding_equalizer_desc">Equalizer: Fine-tune audio frequencies in Tuner > Equalizer</string>
+    <string name="onboarding_equalizer_desc">Equalizer: Fine-tune audio frequencies in Settings > Equalizer</string>
     <string name="onboarding_sleep_timer_desc">Sleep Timer: Auto-stop playback after set time (access from Now Playing screen)</string>
     <string name="onboarding_library_title">Organize Your Music Library</string>
     <string name="onboarding_library_desc">Customize how your albums, artists, and songs are displayed. Choose your preferred layout, sorting order, and tab arrangement.</string>
     <string name="onboarding_library_how_works">How Library Organization Works</string>
     <string name="onboarding_library_1">Customize tab order in Library for quick access to your favorites</string>
     <string name="onboarding_library_2">Create and manage playlists directly from the Library screen</string>
-    <string name="onboarding_library_3">Advanced display and sorting options available in Tuner > Theme Customization</string>
+    <string name="onboarding_library_3">Advanced display and sorting options available in Settings > Theme Customization</string>
     <string name="onboarding_theme_title">Make Rhythm Yours</string>
     <string name="onboarding_theme_desc">Personalize Rhythm\'s appearance to match your style. Choose your system theme, font, or Material You dynamic colors (Android 12+).</string>
     <string name="onboarding_live_preview">Live Preview</string>
@@ -457,10 +457,10 @@
     <string name="onboarding_accent">Accent</string>
     <string name="onboarding_advanced_custom">Advanced Customization</string>
     <string name="onboarding_advanced_custom_desc">Custom color schemes, album art colors, and fonts</string>
-    <string name="onboarding_more_tuner">More Customization in Tuner</string>
+    <string name="onboarding_more_tuner">More Customization in Settings</string>
     <string name="onboarding_tuner_1">Custom color schemes and album art color extraction</string>
     <string name="onboarding_tuner_2">Font customization and typography settings</string>
-    <string name="onboarding_tuner_3">Advanced theme options available in Tuner > Theme Customization</string>
+    <string name="onboarding_tuner_3">Advanced theme options available in Settings > Theme Customization</string>
     <string name="onboarding_step_progress">%1$d of %2$d</string>
     <string name="onboarding_advanced_customization">Advanced Customization</string>
     <string name="onboarding_advanced_customization_desc">Custom color schemes, album art colors, and fonts</string>
@@ -472,9 +472,9 @@
     <string name="onboarding_media_scan_settings">Media Scanning Settings</string>
     <string name="onboarding_media_scan_blacklist">Blacklist Mode: Hide specific songs and folders (ringtones, notifications)</string>
     <string name="onboarding_media_scan_whitelist">Whitelist Mode: Show only songs from selected folders</string>
-    <string name="onboarding_media_scan_configure_in_tuner">Configure scanning in Tuner > Media Scan</string>
+    <string name="onboarding_media_scan_configure_in_tuner">Configure scanning in Settings > Media Scan</string>
     <string name="onboarding_storage_title">Storage Management</string>
-    <string name="onboarding_storage_desc">Manage cache size and storage in Tuner > Cache Management</string>
+    <string name="onboarding_storage_desc">Manage cache size and storage in Settings > Cache Management</string>
     
     <string name="onboarding_complete_title">You\'re All Set!</string>
     <string name="onboarding_complete_desc">Rhythm is ready to play! Your music library is being scanned in the background. Here\'s what\'s configured:</string>
@@ -485,7 +485,7 @@
     <string name="onboarding_next_explore">Explore more settings anytime</string>
     <string name="onboarding_settings_change">All settings can be changed anytime in Settings</string>
     
-    <!-- Settings/Tuner -->
+    <!-- Settings -->
     <string name="settings_tip_theme">Customize your theme with colors, fonts, and festive effects</string>
     <string name="settings_tip_haptic">Enable haptic feedback for tactile responses</string>
     <string name="settings_tip_media_scan">Use media scan to hide unwanted files from your library</string>

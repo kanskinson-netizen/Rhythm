@@ -170,13 +170,11 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_HAPTIC_FEEDBACK_ENABLED = "haptic_feedback_enabled"
         
         // Notification Settings
-        private const val KEY_USE_CUSTOM_NOTIFICATION = "use_custom_notification"
-        
-        // UI Settings
-        private const val KEY_USE_TUNER_SETTINGS = "use_tuner_settings"
-        private const val KEY_DEFAULT_SCREEN = "default_screen"
-        
-        // Blacklisted Songs
+    private const val KEY_USE_CUSTOM_NOTIFICATION = "use_custom_notification"
+    
+    // UI Settings
+    private const val KEY_USE_SETTINGS = "use_settings"
+    private const val KEY_DEFAULT_SCREEN = "default_screen"        // Blacklisted Songs
         private const val KEY_BLACKLISTED_SONGS = "blacklisted_songs"
         
         // Blacklisted Folders
@@ -689,8 +687,8 @@ class AppSettings private constructor(context: Context) {
     val useCustomNotification: StateFlow<Boolean> = _useCustomNotification.asStateFlow()
     
     // UI Settings
-    private val _useTunerSettings = MutableStateFlow(prefs.getBoolean(KEY_USE_TUNER_SETTINGS, true))
-    val useTunerSettings: StateFlow<Boolean> = _useTunerSettings.asStateFlow()
+    private val _useSettings = MutableStateFlow(prefs.getBoolean(KEY_USE_SETTINGS, true))
+    val useSettings: StateFlow<Boolean> = _useSettings.asStateFlow()
     
     // Blacklisted Songs
     private val _blacklistedSongs = MutableStateFlow<List<String>>(
@@ -1353,9 +1351,9 @@ class AppSettings private constructor(context: Context) {
     }
     
     // UI Settings Methods
-    fun setUseTunerSettings(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_USE_TUNER_SETTINGS, enabled).apply()
-        _useTunerSettings.value = enabled
+    fun setUseSettings(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_USE_SETTINGS, enabled).apply()
+        _useSettings.value = enabled
     }
     
     // Blacklisted Songs Methods

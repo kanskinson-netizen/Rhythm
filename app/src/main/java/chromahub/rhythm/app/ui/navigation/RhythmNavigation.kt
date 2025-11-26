@@ -95,7 +95,7 @@ import chromahub.rhythm.app.ui.screens.PlayerScreen
 
 import chromahub.rhythm.app.ui.screens.PlaylistDetailScreen
 import chromahub.rhythm.app.ui.screens.SearchScreen
-import chromahub.rhythm.app.ui.screens.tuner.SettingsScreen as TunerSettingsScreenWrapper
+import chromahub.rhythm.app.ui.screens.tuner.SettingsScreenWrapper
 import chromahub.rhythm.app.ui.screens.tuner.*
 import chromahub.rhythm.app.ui.screens.MediaScanLoader // Add MediaScanLoader import
 import chromahub.rhythm.app.util.HapticUtils
@@ -922,18 +922,17 @@ fun RhythmNavigation(
                                         targetScale = 0.85f,
                                         animationSpec = tween(300, easing = EaseInOutQuart)
                                     )
-                        }
-                    ) {
-                        // Use the tuner settings screen (now the default)
-                        TunerSettingsScreenWrapper(
-                            onBack = {
-                                navController.popBackStack()
-                            },
-                            appSettings = appSettings
-                        )
                     }
-                    
-                    // Tuner Settings Subroutes
+                ) {
+                    // Use the settings screen (now the default)
+                    SettingsScreenWrapper(
+                        onBack = {
+                            navController.popBackStack()
+                        },
+                        appSettings = appSettings
+                    )
+                }
+                                    // Tuner Settings Subroutes
                     composable(Screen.TunerNotifications.route) {
                         NotificationsSettingsScreen(onBackClick = { navController.popBackStack() })
                     }
