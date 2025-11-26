@@ -199,6 +199,15 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_SLEEP_TIMER_REMAINING_SECONDS = "sleep_timer_remaining_seconds"
         private const val KEY_SLEEP_TIMER_ACTION = "sleep_timer_action"
         
+        // Media Scan Tracking
+        private const val KEY_LAST_SCAN_TIMESTAMP = "last_scan_timestamp"
+        private const val KEY_LAST_SCAN_DURATION = "last_scan_duration"
+        
+        // Media Scan Filtering
+        private const val KEY_ALLOWED_FORMATS = "allowed_formats"
+        private const val KEY_MINIMUM_BITRATE = "minimum_bitrate"
+        private const val KEY_MINIMUM_DURATION = "minimum_duration"
+        
         // Library Sort Order
         private const val KEY_SONGS_SORT_ORDER = "songs_sort_order"
         
@@ -776,6 +785,26 @@ class AppSettings private constructor(context: Context) {
     
     private val _backupLocation = MutableStateFlow(prefs.getString(KEY_BACKUP_LOCATION, null))
     val backupLocation: StateFlow<String?> = _backupLocation.asStateFlow()
+    
+    // Media Scan Tracking
+    private val _lastScanTimestamp = MutableStateFlow(safeLong(KEY_LAST_SCAN_TIMESTAMP, 0L))
+    val lastScanTimestamp: StateFlow<Long> = _lastScanTimestamp.asStateFlow()
+    
+    private val _lastScanDuration = MutableStateFlow(safeLong(KEY_LAST_SCAN_DURATION, 0L))
+    val lastScanDuration: StateFlow<Long> = _lastScanDuration.asStateFlow()
+    
+    // Media Scan Filtering
+    private val _allowedFormats = MutableStateFlow(
+        prefs.getStringSet(KEY_ALLOWED_FORMATS, setOf("mp3", "flac", "ogg", "m4a", "opus", "wav", "aac", "wma"))
+            ?.toSet() ?: setOf("mp3", "flac", "ogg", "m4a", "opus", "wav", "aac", "wma")
+    )
+    val allowedFormats: StateFlow<Set<String>> = _allowedFormats.asStateFlow()
+    
+    private val _minimumBitrate = MutableStateFlow(prefs.getInt(KEY_MINIMUM_BITRATE, 0)) // 0 = no filter
+    val minimumBitrate: StateFlow<Int> = _minimumBitrate.asStateFlow()
+    
+    private val _minimumDuration = MutableStateFlow(safeLong(KEY_MINIMUM_DURATION, 0L)) // 0 = no filter
+    val minimumDuration: StateFlow<Long> = _minimumDuration.asStateFlow()
     
     // Library Sort Order
     private val _songsSortOrder = MutableStateFlow(prefs.getString(KEY_SONGS_SORT_ORDER, "TITLE_ASC") ?: "TITLE_ASC")
@@ -1609,6 +1638,35 @@ class AppSettings private constructor(context: Context) {
         }
     }
     
+    // Media Scanning Methods
+    fun setLastScanTimestamp(timestamp: Long) {
+        prefs.edit().putLong(KEY_LAST_SCAN_TIMESTAMP, timestamp).apply()
+        _lastScanTimestamp.value = timestamp
+    }
+    
+    fun setLastScanDuration(duration: Long) {
+        prefs.edit().putLong(KEY_LAST_SCAN_DURATION, duration).apply()
+        _lastScanDuration.value = duration
+    }
+    
+    fun setAllowedFormats(formats: Set<String>) {
+        prefs.edit().putStringSet(KEY_ALLOWED_FORMATS, formats).apply()
+        _allowedFormats.value = formats
+        Log.d("AppSettings", "Allowed formats updated: $formats")
+    }
+    
+    fun setMinimumBitrate(bitrate: Int) {
+        prefs.edit().putInt(KEY_MINIMUM_BITRATE, bitrate).apply()
+        _minimumBitrate.value = bitrate
+        Log.d("AppSettings", "Minimum bitrate set to: ${bitrate}kbps")
+    }
+    
+    fun setMinimumDuration(duration: Long) {
+        prefs.edit().putLong(KEY_MINIMUM_DURATION, duration).apply()
+        _minimumDuration.value = duration
+        Log.d("AppSettings", "Minimum duration set to: ${duration}ms")
+    }
+    
     /**
      * Schedule weekly automatic backups using WorkManager
      */
@@ -2169,6 +2227,16 @@ class AppSettings private constructor(context: Context) {
         _sleepTimerActive.value = prefs.getBoolean(KEY_SLEEP_TIMER_ACTIVE, false)
         _sleepTimerRemainingSeconds.value = prefs.getLong(KEY_SLEEP_TIMER_REMAINING_SECONDS, 0L)
         _sleepTimerAction.value = prefs.getString(KEY_SLEEP_TIMER_ACTION, "FADE_OUT") ?: "FADE_OUT"
+        
+        // Media Scan Tracking
+        _lastScanTimestamp.value = safeLong(KEY_LAST_SCAN_TIMESTAMP, 0L)
+        _lastScanDuration.value = safeLong(KEY_LAST_SCAN_DURATION, 0L)
+        
+        // Media Scan Filtering
+        _allowedFormats.value = prefs.getStringSet(KEY_ALLOWED_FORMATS, setOf("mp3", "flac", "ogg", "m4a", "opus", "wav", "aac", "wma"))
+            ?.toSet() ?: setOf("mp3", "flac", "ogg", "m4a", "opus", "wav", "aac", "wma")
+        _minimumBitrate.value = prefs.getInt(KEY_MINIMUM_BITRATE, 0)
+        _minimumDuration.value = safeLong(KEY_MINIMUM_DURATION, 0L)
 
         // Pinned Folders
         _pinnedFolders.value = try {

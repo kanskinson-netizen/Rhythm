@@ -2,10 +2,14 @@ package chromahub.rhythm.app.data
 
 import android.content.ContentUris
 import android.content.Context
+import android.database.ContentObserver
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
+import android.util.LruCache
 import chromahub.rhythm.app.network.NetworkClient
 import chromahub.rhythm.app.network.DeezerApiService
 import chromahub.rhythm.app.network.DeezerArtist
@@ -32,6 +36,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
 import java.net.URL
 import chromahub.rhythm.app.data.LyricsData
@@ -42,6 +49,52 @@ import chromahub.rhythm.app.util.EnhancedLyricLine
 import chromahub.rhythm.app.util.EnhancedWord
 import chromahub.rhythm.app.util.AppleMusicLyricsParser
 import android.content.SharedPreferences
+
+/**
+ * Scan progress data class for real-time updates
+ */
+data class ScanProgress(
+    val current: Int,
+    val total: Int,
+    val stage: String, // "Songs", "Albums", "Artists", "Metadata"
+    val estimatedTimeMs: Long = 0
+)
+
+/**
+ * Scan statistics for tracking library state
+ */
+data class ScanStatistics(
+    val lastScanTime: Long,
+    val scanDuration: Long,
+    val totalSongs: Int,
+    val filteredSongs: Int,
+    val totalAlbums: Int,
+    val totalArtists: Int,
+    val storageUsedBytes: Long,
+    val averageBitrate: Int,
+    val duplicatesFound: Int
+)
+
+/**
+ * Scan history entry
+ */
+data class ScanHistoryEntry(
+    val timestamp: Long,
+    val songsAdded: Int,
+    val songsRemoved: Int,
+    val duration: Long,
+    val errorCount: Int
+)
+
+/**
+ * Folder suggestion for smart blacklisting
+ */
+data class FolderSuggestion(
+    val path: String,
+    val reason: String,
+    val songCount: Int,
+    val confidence: Double
+)
 
 class MusicRepository(context: Context) {
     private val TAG = "MusicRepository"
@@ -54,6 +107,23 @@ class MusicRepository(context: Context) {
     
     // Genre cache using SharedPreferences
     private val genrePrefs: SharedPreferences by lazy { context.getSharedPreferences("genre_cache", Context.MODE_PRIVATE) }
+    
+    // Scan progress tracking
+    private val _scanProgress = MutableStateFlow(ScanProgress(0, 0, "Idle"))
+    val scanProgress: StateFlow<ScanProgress> = _scanProgress.asStateFlow()
+    
+    // Scan history
+    private val _scanHistory = MutableStateFlow<List<ScanHistoryEntry>>(emptyList())
+    val scanHistory: StateFlow<List<ScanHistoryEntry>> = _scanHistory.asStateFlow()
+    
+    // Song cache to avoid duplicate MediaStore queries
+    private var cachedSongs: List<Song>? = null
+    private var cacheTimestamp: Long = 0
+    private val CACHE_VALIDITY_MS = 60_000 // 1 minute
+    
+    // ContentObserver for automatic updates
+    private var mediaStoreObserver: ContentObserver? = null
+    private var onMediaStoreChangeCallback: (() -> Unit)? = null
 
     /**
      * API Fallback Strategy:
@@ -82,6 +152,44 @@ class MusicRepository(context: Context) {
     private val ytmusicApiService = NetworkClient.ytmusicApiService
     private val appleMusicApiService = NetworkClient.appleMusicApiService
     private val genericHttpClient = NetworkClient.genericHttpClient
+
+    /**
+     * Register ContentObserver to monitor MediaStore changes
+     */
+    fun registerMediaStoreObserver(onChange: () -> Unit) {
+        if (mediaStoreObserver != null) {
+            Log.d(TAG, "ContentObserver already registered")
+            return
+        }
+        
+        onMediaStoreChangeCallback = onChange
+        mediaStoreObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean) {
+                super.onChange(selfChange)
+                Log.d(TAG, "MediaStore changed, triggering callback")
+                onChange()
+            }
+        }
+        
+        context.contentResolver.registerContentObserver(
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+            true,
+            mediaStoreObserver!!
+        )
+        Log.d(TAG, "ContentObserver registered for MediaStore changes")
+    }
+    
+    /**
+     * Unregister ContentObserver
+     */
+    fun unregisterMediaStoreObserver() {
+        mediaStoreObserver?.let {
+            context.contentResolver.unregisterContentObserver(it)
+            mediaStoreObserver = null
+            onMediaStoreChangeCallback = null
+            Log.d(TAG, "ContentObserver unregistered")
+        }
+    }
 
     // LRU caches for artist images, album artwork, and lyrics to avoid memory leaks
     private val artistImageCache = object : LinkedHashMap<String, Uri?>(16, 0.75f, true) {
@@ -156,9 +264,29 @@ class MusicRepository(context: Context) {
         }
     }
 
-    suspend fun loadSongs(): List<Song> = withContext(Dispatchers.IO) {
+    suspend fun loadSongs(
+        forceRefresh: Boolean = false,
+        allowedFormats: Set<String>? = null,
+        minimumBitrate: Int = 0,
+        minimumDuration: Long = 0L
+    ): List<Song> = withContext(Dispatchers.IO) {
+        // Check cache first
+        if (!forceRefresh && 
+            cachedSongs != null && 
+            System.currentTimeMillis() - cacheTimestamp < CACHE_VALIDITY_MS) {
+            Log.d(TAG, "Returning cached songs (${cachedSongs!!.size})")
+            return@withContext cachedSongs!!
+        }
+        
         val startTime = System.currentTimeMillis()
         val songs = mutableListOf<Song>()
+        val errors = mutableListOf<Pair<Int, Exception>>()
+        val seenIds = mutableSetOf<String>()
+        val seenPaths = mutableSetOf<String>()
+        var duplicatesFound = 0
+        var filteredByFormat = 0
+        var filteredByQuality = 0
+        
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -176,7 +304,8 @@ class MusicRepository(context: Context) {
             MediaStore.Audio.Media.YEAR,
             MediaStore.Audio.Media.DATE_ADDED,
             MediaStore.Audio.Media.SIZE,
-            MediaStore.Audio.Media.GENRE
+            MediaStore.Audio.Media.GENRE,
+            MediaStore.Audio.Media.DATA // For path-based duplicate detection
         )
 
         // Improved selection to filter out very short files and invalid entries
@@ -184,6 +313,8 @@ class MusicRepository(context: Context) {
         val sortOrder = "${MediaStore.Audio.Media.DATE_ADDED} DESC"
 
         try {
+            _scanProgress.value = ScanProgress(0, 0, "Songs", 0)
+            
             context.contentResolver.query(
                 collection,
                 projection,
@@ -193,6 +324,7 @@ class MusicRepository(context: Context) {
             )?.use { cursor ->
                 val count = cursor.count
                 Log.d(TAG, "Found $count audio files to process")
+                _scanProgress.value = ScanProgress(0, count, "Songs", 0)
                 
                 if (count == 0) {
                     Log.w(TAG, "No audio files found in MediaStore")
@@ -222,39 +354,233 @@ class MusicRepository(context: Context) {
                     )
                 } catch (e: IllegalArgumentException) {
                     Log.e(TAG, "Required column not found in MediaStore", e)
+                    _scanProgress.value = ScanProgress(0, 0, "Error", 0)
                     return@withContext emptyList()
                 }
 
                 var processedCount = 0
-                val batchSize = 1000
+                val batchSize = 100
+                val pathColumnIndex = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
                 
                 while (cursor.moveToNext()) {
                     try {
                         val song = createSongFromCursor(cursor, columnIndices)
                         if (song != null) {
+                            // Duplicate detection by ID
+                            if (seenIds.contains(song.id)) {
+                                Log.d(TAG, "Skipping duplicate ID: ${song.id} - ${song.title}")
+                                duplicatesFound++
+                                processedCount++
+                                continue
+                            }
+                            
+                            // Duplicate detection by path
+                            if (pathColumnIndex >= 0) {
+                                val path = cursor.getString(pathColumnIndex)
+                                if (path != null && seenPaths.contains(path)) {
+                                    Log.d(TAG, "Skipping duplicate path: $path - ${song.title}")
+                                    duplicatesFound++
+                                    processedCount++
+                                    continue
+                                }
+                                
+                                // Format filtering
+                                if (allowedFormats != null && path.isNotEmpty()) {
+                                    val extension = path.substringAfterLast('.', "").lowercase()
+                                    if (extension.isNotEmpty() && !allowedFormats.contains(extension)) {
+                                        filteredByFormat++
+                                        processedCount++
+                                        continue
+                                    }
+                                }
+                                
+                                seenPaths.add(path)
+                            }
+                            
+                            // Duration filtering (quality check)
+                            if (minimumDuration > 0 && song.duration < minimumDuration) {
+                                filteredByQuality++
+                                processedCount++
+                                continue
+                            }
+                            
+                            // Note: Bitrate filtering is done later since we need to extract metadata
+                            // For now, we add the song and can filter in post-processing if needed
+                            
+                            seenIds.add(song.id)
                             songs.add(song)
                         }
                         
                         processedCount++
+                        
+                        // Update progress periodically
+                        if (processedCount % 10 == 0) {
+                            _scanProgress.value = ScanProgress(processedCount, count, "Songs", 0)
+                        }
+                        
                         // Yield control periodically to avoid blocking
                         if (processedCount % batchSize == 0) {
                             yield()
                         }
                     } catch (e: Exception) {
                         Log.w(TAG, "Error processing song at position ${cursor.position}", e)
+                        errors.add(cursor.position to e)
+                        processedCount++
                         continue
                     }
                 }
                 
                 val endTime = System.currentTimeMillis()
-                Log.d(TAG, "Loaded ${songs.size} songs in ${endTime - startTime}ms")
+                val duration = endTime - startTime
+                Log.d(TAG, "Loaded ${songs.size} songs in ${duration}ms")
+                Log.d(TAG, "Filtering stats - Duplicates: $duplicatesFound, Format: $filteredByFormat, Quality: $filteredByQuality, Errors: ${errors.size}")
+                
+                // Update cache
+                cachedSongs = songs
+                cacheTimestamp = System.currentTimeMillis()
+                
+                // Update scan progress to complete
+                _scanProgress.value = ScanProgress(songs.size, count, "Complete", duration)
+                
+                // Log errors if any
+                if (errors.isNotEmpty()) {
+                    Log.w(TAG, "Scan completed with ${errors.size} errors. First error: ${errors.first().second.message}")
+                }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error querying MediaStore for songs", e)
-            return@withContext emptyList()
+            Log.e(TAG, "Critical error during song scan", e)
+            _scanProgress.value = ScanProgress(0, 0, "Error", 0)
+            // Return partial results if available
+            return@withContext songs
         }
 
         return@withContext songs
+    }
+    
+    /**
+     * Perform incremental scan for newly added songs only
+     */
+    suspend fun performIncrementalScan(
+        lastScanTimestamp: Long,
+        allowedFormats: Set<String>? = null,
+        minimumBitrate: Int = 0,
+        minimumDuration: Long = 0L
+    ): List<Song> = withContext(Dispatchers.IO) {
+        Log.d(TAG, "Starting incremental scan since timestamp: $lastScanTimestamp")
+        val startTime = System.currentTimeMillis()
+        val newSongs = mutableListOf<Song>()
+        var filteredByFormat = 0
+        var filteredByQuality = 0
+        
+        val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+        } else {
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+        }
+
+        val projection = arrayOf(
+            MediaStore.Audio.Media._ID,
+            MediaStore.Audio.Media.TITLE,
+            MediaStore.Audio.Media.ARTIST,
+            MediaStore.Audio.Media.ALBUM,
+            MediaStore.Audio.Media.ALBUM_ID,
+            MediaStore.Audio.Media.DURATION,
+            MediaStore.Audio.Media.TRACK,
+            MediaStore.Audio.Media.YEAR,
+            MediaStore.Audio.Media.DATE_ADDED,
+            MediaStore.Audio.Media.SIZE,
+            MediaStore.Audio.Media.GENRE
+        )
+
+        // Only scan songs added after last scan
+        val selection = "${MediaStore.Audio.Media.IS_MUSIC} = 1 AND ${MediaStore.Audio.Media.DURATION} > 10000 AND ${MediaStore.Audio.Media.DATE_ADDED} > ?"
+        val selectionArgs = arrayOf((lastScanTimestamp / 1000).toString())
+        val sortOrder = "${MediaStore.Audio.Media.DATE_ADDED} DESC"
+
+        try {
+            context.contentResolver.query(
+                collection,
+                projection,
+                selection,
+                selectionArgs,
+                sortOrder
+            )?.use { cursor ->
+                val count = cursor.count
+                Log.d(TAG, "Found $count new audio files")
+                _scanProgress.value = ScanProgress(0, count, "Incremental", 0)
+                
+                if (count == 0) {
+                    return@withContext emptyList()
+                }
+
+                val columnIndices = try {
+                    ColumnIndices(
+                        id = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID),
+                        title = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE),
+                        artist = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST),
+                        album = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM),
+                        albumId = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID),
+                        duration = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION),
+                        track = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK),
+                        year = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR),
+                        dateAdded = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED),
+                        size = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.SIZE),
+                        genre = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.GENRE),
+                        albumArtist = cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ARTIST)
+                    )
+                } catch (e: IllegalArgumentException) {
+                    Log.e(TAG, "Required column not found in MediaStore", e)
+                    return@withContext emptyList()
+                }
+
+                var processedCount = 0
+                val pathColumnIndex = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
+                
+                while (cursor.moveToNext()) {
+                    try {
+                        val song = createSongFromCursor(cursor, columnIndices)
+                        if (song != null) {
+                            // Format filtering
+                            if (allowedFormats != null && pathColumnIndex >= 0) {
+                                val path = cursor.getString(pathColumnIndex)
+                                if (path != null && path.isNotEmpty()) {
+                                    val extension = path.substringAfterLast('.', "").lowercase()
+                                    if (extension.isNotEmpty() && !allowedFormats.contains(extension)) {
+                                        filteredByFormat++
+                                        processedCount++
+                                        continue
+                                    }
+                                }
+                            }
+                            
+                            // Duration filtering
+                            if (minimumDuration > 0 && song.duration < minimumDuration) {
+                                filteredByQuality++
+                                processedCount++
+                                continue
+                            }
+                            
+                            newSongs.add(song)
+                        }
+                        processedCount++
+                        if (processedCount % 10 == 0) {
+                            _scanProgress.value = ScanProgress(processedCount, count, "Incremental", 0)
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Error processing new song at position ${cursor.position}", e)
+                    }
+                }
+                
+                val duration = System.currentTimeMillis() - startTime
+                Log.d(TAG, "Incremental scan complete: ${newSongs.size} new songs in ${duration}ms")
+                Log.d(TAG, "Filtering stats - Format: $filteredByFormat, Quality: $filteredByQuality")
+                _scanProgress.value = ScanProgress(newSongs.size, count, "Complete", duration)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error during incremental scan", e)
+        }
+
+        return@withContext newSongs
     }
     
     private data class ColumnIndices(
@@ -918,10 +1244,102 @@ class MusicRepository(context: Context) {
         // and provide fresh data. The ViewModel will then update its StateFlows.
         // No need to return anything here, as the ViewModel will call these methods
         // and collect the results.
-        loadSongs()
+        loadSongs(forceRefresh = true)
         loadAlbums()
         loadArtists()
         Log.d(TAG, "Music data refresh complete.")
+    }
+    
+    /**
+     * Suggest folders to blacklist based on common patterns
+     */
+    suspend fun suggestFoldersToBlacklist(songs: List<Song>): List<FolderSuggestion> = withContext(Dispatchers.IO) {
+        Log.d(TAG, "Analyzing folders for blacklist suggestions...")
+        val suggestions = mutableListOf<FolderSuggestion>()
+        
+        // Get folder statistics
+        val folderStats = mutableMapOf<String, MutableList<Song>>()
+        songs.forEach { song ->
+            try {
+                val uri = song.uri
+                val projection = arrayOf(MediaStore.Audio.Media.DATA)
+                context.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val dataIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
+                        val path = cursor.getString(dataIndex)
+                        val folder = path.substringBeforeLast("/")
+                        folderStats.getOrPut(folder) { mutableListOf() }.add(song)
+                    }
+                }
+            } catch (e: Exception) {
+                // Skip songs we can't get path for
+            }
+        }
+        
+        // Common system folders to suggest blacklisting
+        val systemFolders = listOf(
+            "Ringtones", "ringtones", "Notifications", "notifications",  
+            "Alarms", "alarms", "WhatsApp", "Telegram", "ui", "system"
+        )
+        
+        folderStats.forEach { (folder, folderSongs) ->
+            // Check for system folder names
+            systemFolders.forEach { sysFolder ->
+                if (folder.contains(sysFolder, ignoreCase = true)) {
+                    suggestions.add(FolderSuggestion(
+                        path = folder,
+                        reason = "System folder: $sysFolder",
+                        songCount = folderSongs.size,
+                        confidence = 0.9
+                    ))
+                }
+            }
+            
+            // Check for folders with very short files (likely ringtones/notifications)
+            val avgDuration = folderSongs.mapNotNull { it.duration }.average()
+            if (avgDuration < 30000) { // Less than 30 seconds
+                suggestions.add(FolderSuggestion(
+                    path = folder,
+                    reason = "Contains short audio files (avg ${(avgDuration / 1000).toInt()}s)",
+                    songCount = folderSongs.size,
+                    confidence = 0.8
+                ))
+            }
+        }
+        
+        Log.d(TAG, "Generated ${suggestions.size} folder suggestions")
+        return@withContext suggestions.distinctBy { it.path }.sortedByDescending { it.confidence }
+    }
+    
+    /**
+     * Calculate comprehensive scan statistics
+     */
+    fun calculateScanStatistics(
+        allSongs: List<Song>,
+        filteredSongs: List<Song>,
+        albums: List<Album>,
+        artists: List<Artist>,
+        lastScanTime: Long,
+        lastScanDuration: Long
+    ): ScanStatistics {
+        // Note: storageUsed set to 0 since Song doesn't track file size
+        // Would require additional file system access to calculate
+        val storageUsed = 0L
+        val bitrates = allSongs.mapNotNull { it.bitrate }
+        val avgBitrate = if (bitrates.isNotEmpty()) bitrates.average().toInt() else 0
+        val duplicatesRemoved = allSongs.size - filteredSongs.size
+        
+        return ScanStatistics(
+            lastScanTime = lastScanTime,
+            scanDuration = lastScanDuration,
+            totalSongs = allSongs.size,
+            filteredSongs = filteredSongs.size,
+            totalAlbums = albums.size,
+            totalArtists = artists.size,
+            storageUsedBytes = storageUsed,
+            averageBitrate = avgBitrate,
+            duplicatesFound = duplicatesRemoved
+        )
     }
 
     /**

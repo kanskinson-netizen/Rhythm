@@ -11,6 +11,7 @@ import android.media.audiofx.AudioEffect
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
+import android.util.LruCache
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
@@ -99,6 +100,16 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     val virtualizerEnabled = appSettings.virtualizerEnabled
     val virtualizerStrength = appSettings.virtualizerStrength
     
+    // Media scanning progress
+    val scanProgress = repository.scanProgress
+    val lastScanTimestamp = appSettings.lastScanTimestamp
+    val lastScanDuration = appSettings.lastScanDuration
+    
+    // Media scanning filters
+    val allowedFormats = appSettings.allowedFormats
+    val minimumBitrate = appSettings.minimumBitrate
+    val minimumDuration = appSettings.minimumDuration
+    
     // Search history
     private val _searchHistory = MutableStateFlow<List<String>>(emptyList())
     val searchHistory: StateFlow<List<String>> = _searchHistory.asStateFlow()
@@ -120,13 +131,20 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
     // Lyrics fetch job tracking to prevent race conditions
     private var lyricsFetchJob: Job? = null
+    
+    // Scan job for cancellation support
+    private var scanJob: Job? = null
 
     // Main music data
     private val _songs = MutableStateFlow<List<Song>>(emptyList())
     val songs: StateFlow<List<Song>> = _songs.asStateFlow()
     
-    // Cache for file paths to avoid repeated ContentResolver queries
-    private val pathCache = mutableMapOf<String, String?>()
+    // LRU cache for file paths to avoid repeated ContentResolver queries
+    private val pathCache = LruCache<String, String>(1000)
+    
+    // Filter cache to optimize repeated filtering operations
+    private val filterCache = mutableMapOf<String, Boolean>()
+    private var lastFilterSettings = ""
     
     // Filtered songs excluding blacklisted ones and including only whitelisted ones (both songs and folders)
     val filteredSongs: StateFlow<List<Song>> = kotlinx.coroutines.flow.combine(
@@ -169,6 +187,13 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             return@withContext songs
         }
         
+        // Check if filter settings changed (to clear cache)
+        val currentSettings = "$mediaScanMode-${blacklistedIds.size}-${blacklistedFolders.size}-${whitelistedIds.size}-${whitelistedFolders.size}"
+        if (currentSettings != lastFilterSettings) {
+            filterCache.clear()
+            lastFilterSettings = currentSettings
+        }
+        
         val startTime = System.currentTimeMillis()
         val result = mutableListOf<Song>()
         
@@ -177,47 +202,46 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         var processed = 0
         
         for (song in songs) {
+            // Check cache first (if filter settings unchanged)
+            val cacheKey = "${song.id}_$mediaScanMode"
+            val cachedResult = filterCache[cacheKey]
+            if (cachedResult != null) {
+                if (cachedResult) result.add(song)
+                processed++
+                continue
+            }
+            
+            var shouldInclude = false
+            
             // In BLACKLIST mode: exclude blacklisted songs/folders, include everything else
             if (useBlacklistMode && hasBlacklist) {
                 // Check if song is individually blacklisted
                 if (blacklistedIds.contains(song.id)) {
-                    processed++
-                    continue
-                }
-                
-                // Check if song is in a blacklisted folder
-                if (blacklistedFolders.isNotEmpty()) {
+                    shouldInclude = false
+                } else if (blacklistedFolders.isNotEmpty()) {
+                    // Check if song is in a blacklisted folder
                     val songPath = getPathFromUriCached(song.uri)
-                    if (songPath != null && isPathBlacklisted(songPath, blacklistedFolders)) {
-                        processed++
-                        continue
-                    }
+                    shouldInclude = songPath == null || !isPathBlacklisted(songPath, blacklistedFolders)
+                } else {
+                    shouldInclude = true
                 }
-                
-                // Song passed blacklist checks, include it
-                result.add(song)
             }
             // In WHITELIST mode: include ONLY whitelisted songs/folders, exclude everything else
             else if (useWhitelistMode && hasWhitelist) {
-                var isWhitelisted = false
-                
                 // Check if song ID is individually whitelisted
                 if (whitelistedIds.contains(song.id)) {
-                    isWhitelisted = true
-                }
-                
-                // Check if song is in a whitelisted folder
-                if (!isWhitelisted && whitelistedFolders.isNotEmpty()) {
+                    shouldInclude = true
+                } else if (whitelistedFolders.isNotEmpty()) {
+                    // Check if song is in a whitelisted folder
                     val songPath = getPathFromUriCached(song.uri)
-                    if (songPath != null && isPathWhitelisted(songPath, whitelistedFolders)) {
-                        isWhitelisted = true
-                    }
+                    shouldInclude = songPath != null && isPathWhitelisted(songPath, whitelistedFolders)
                 }
-                
-                // Only add if whitelisted
-                if (isWhitelisted) {
-                    result.add(song)
-                }
+            }
+            
+            // Cache result
+            filterCache[cacheKey] = shouldInclude
+            if (shouldInclude) {
+                result.add(song)
             }
             
             processed++
@@ -226,31 +250,41 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             if (processed % batchSize == 0) {
                 yield()
             }
+            
+            // Limit cache size
+            if (filterCache.size > 10000) {
+                filterCache.clear()
+                Log.d(TAG, "Filter cache cleared due to size limit")
+            }
         }
         
         val endTime = System.currentTimeMillis()
-        Log.d(TAG, "Filtered ${songs.size} songs to ${result.size} in ${endTime - startTime}ms (mode: $mediaScanMode, blacklist: $hasBlacklist, whitelist: $hasWhitelist)")
+        Log.d(TAG, "Filtered ${songs.size} songs to ${result.size} in ${endTime - startTime}ms (mode: $mediaScanMode, cached: ${filterCache.size})")
         
         result
     }
     
     private fun isPathBlacklisted(songPath: String, blacklistedFolders: List<String>): Boolean {
         // Normalize song path for consistent comparison
-        val normalizedSongPath = songPath.replace("\\", "/")
+        val normalizedSongPath = songPath.replace("\\", "/").trimEnd('/')
         
         return blacklistedFolders.any { folderPath ->
-            val normalizedFolderPath = folderPath.replace("\\", "/")
-            normalizedSongPath.startsWith(normalizedFolderPath, ignoreCase = true)
+            val normalizedFolderPath = folderPath.replace("\\", "/").trimEnd('/')
+            // Exact match or child of folder
+            normalizedSongPath == normalizedFolderPath ||
+            normalizedSongPath.startsWith("$normalizedFolderPath/", ignoreCase = true)
         }
     }
     
     private fun isPathWhitelisted(songPath: String, whitelistedFolders: List<String>): Boolean {
         // Normalize song path for consistent comparison
-        val normalizedSongPath = songPath.replace("\\", "/")
+        val normalizedSongPath = songPath.replace("\\", "/").trimEnd('/')
         
         return whitelistedFolders.any { folderPath ->
-            val normalizedFolderPath = folderPath.replace("\\", "/")
-            normalizedSongPath.startsWith(normalizedFolderPath, ignoreCase = true)
+            val normalizedFolderPath = folderPath.replace("\\", "/").trimEnd('/')
+            // Exact match or child of folder
+            normalizedSongPath == normalizedFolderPath ||
+            normalizedSongPath.startsWith("$normalizedFolderPath/", ignoreCase = true)
         }
     }
 
@@ -574,7 +608,11 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     
     private suspend fun initializeCoreData(): InitializationResult {
         return try {
-            val songs = repository.loadSongs()
+            val songs = repository.loadSongs(
+                allowedFormats = allowedFormats.value,
+                minimumBitrate = minimumBitrate.value,
+                minimumDuration = minimumDuration.value
+            )
             val albums = repository.loadAlbums()
             val artists = repository.loadArtists()
             
@@ -674,6 +712,15 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     }
     
     private suspend fun startBackgroundTasks() {
+        // Register ContentObserver for automatic MediaStore updates
+        repository.registerMediaStoreObserver {
+            Log.d(TAG, "MediaStore changed, scheduling incremental scan")
+            viewModelScope.launch {
+                delay(2000) // Debounce - wait for changes to settle
+                performIncrementalScan()
+            }
+        }
+        
         // Start artwork fetching in background without blocking initialization
         viewModelScope.launch {
             try {
@@ -717,6 +764,34 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             } catch (e: Exception) {
                 Log.e(TAG, "Error starting background audio metadata extraction", e)
             }
+        }
+    }
+    
+    /**
+     * Perform incremental scan for newly added songs
+     */
+    private suspend fun performIncrementalScan() {
+        Log.d(TAG, "Performing incremental scan...")
+        val lastScanTime = appSettings.lastScanTimestamp.value
+        
+        try {
+            val newSongs = repository.performIncrementalScan(
+                lastScanTimestamp = lastScanTime,
+                allowedFormats = allowedFormats.value,
+                minimumBitrate = minimumBitrate.value,
+                minimumDuration = minimumDuration.value
+            )
+            if (newSongs.isNotEmpty()) {
+                Log.d(TAG, "Found ${newSongs.size} new songs, updating library")
+                _songs.value = _songs.value + newSongs
+                _albums.value = repository.loadAlbums()
+                _artists.value = repository.loadArtists()
+                
+                // Update last scan time
+                appSettings.setLastScanTimestamp(System.currentTimeMillis())
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error during incremental scan", e)
         }
     }
 
@@ -824,19 +899,29 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
      * This will update the songs, albums, and artists in the ViewModel.
      */
     fun refreshLibrary() {
-        viewModelScope.launch {
+        // Cancel any existing scan
+        scanJob?.cancel()
+        
+        scanJob = viewModelScope.launch {
             Log.d(TAG, "Starting library refresh...")
             _isMediaScanning.value = true // Show media scan loader
             _isInitialized.value = false // Indicate that data is being refreshed
             _isGenreDetectionComplete.value = false // Reset genre detection state
             // Don't reset _isGenreDetectionRunning to allow proper concurrency check
+            
+            val startTime = System.currentTimeMillis()
 
             try {
                 // Trigger the refresh in the repository
                 repository.refreshMusicData()
 
-                // Reload data into StateFlows after refresh
-                _songs.value = repository.loadSongs()
+                // Reload data into StateFlows after refresh with filtering parameters
+                _songs.value = repository.loadSongs(
+                    forceRefresh = true,
+                    allowedFormats = allowedFormats.value,
+                    minimumBitrate = minimumBitrate.value,
+                    minimumDuration = minimumDuration.value
+                )
                 _albums.value = repository.loadAlbums()
                 _artists.value = repository.loadArtists()
 
@@ -868,13 +953,25 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
 
-                Log.d(TAG, "Library refresh complete. Loaded ${_songs.value.size} songs, ${_albums.value.size} albums, ${_artists.value.size} artists")
+                val duration = System.currentTimeMillis() - startTime
+                appSettings.setLastScanTimestamp(System.currentTimeMillis())
+                appSettings.setLastScanDuration(duration)
+                
+                Log.d(TAG, "Library refresh complete. Loaded ${_songs.value.size} songs, ${_albums.value.size} albums, ${_artists.value.size} artists in ${duration}ms")
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                Log.d(TAG, "Library refresh cancelled by user")
+                throw e // Re-throw to allow proper cancellation
             } catch (e: Exception) {
                 Log.e(TAG, "Error during library refresh", e)
                 // Ensure we still have some data even if refresh fails
                 if (_songs.value.isEmpty()) {
                     try {
-                        _songs.value = repository.loadSongs()
+                        _songs.value = repository.loadSongs(
+                            forceRefresh = true,
+                            allowedFormats = allowedFormats.value,
+                            minimumBitrate = minimumBitrate.value,
+                            minimumDuration = minimumDuration.value
+                        )
                         _albums.value = repository.loadAlbums()
                         _artists.value = repository.loadArtists()
                     } catch (fallbackError: Exception) {
@@ -891,6 +988,16 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 Log.d(TAG, "Media scanning state cleared - final state: ${_songs.value.size} songs, ${_albums.value.size} albums, ${_artists.value.size} artists")
             }
         }
+    }
+    
+    /**
+     * Cancel ongoing scan operation
+     */
+    fun cancelScan() {
+        Log.d(TAG, "Cancelling scan...")
+        scanJob?.cancel()
+        _isMediaScanning.value = false
+        _isInitialized.value = true
     }
 
     /**
@@ -2523,7 +2630,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         audioDeviceManager.showOutputSwitcherDialog()
     }
 
-    override fun onCleared() {
+    private fun cleanupResources() {
         Log.d(TAG, "ViewModel being cleared - cleaning up resources")
         
         // Cancel all coroutine jobs
@@ -2549,8 +2656,6 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         } catch (e: Exception) {
             Log.e(TAG, "Error cleaning up repository", e)
         }
-        
-        super.onCleared()
     }
 
     /**
@@ -4423,22 +4528,6 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         Log.d(TAG, "========================")
     }
 
-    companion object {
-        // SharedPreferences keys
-        private const val PREF_HIGH_QUALITY_AUDIO = "high_quality_audio"
-        private const val PREF_GAPLESS_PLAYBACK = "gapless_playback"
-        private const val PREF_CROSSFADE = "crossfade"
-        private const val PREF_CROSSFADE_DURATION = "crossfade_duration"
-        private const val PREF_AUDIO_NORMALIZATION = "audio_normalization"
-        private const val PREF_REPLAY_GAIN = "replay_gain"
-        private const val PREF_SHOW_LYRICS = "show_lyrics"
-        private const val PREF_ONLINE_ONLY_LYRICS = "online_only_lyrics"
-        private const val PREF_SONG_PLAY_COUNTS = "song_play_counts"
-        
-        // Player control constants
-        private const val REWIND_THRESHOLD_MS = 3000L // 3 seconds
-    }
-
     fun playAlbumShuffled(album: Album) {
         viewModelScope.launch {
             Log.d(TAG, "Playing shuffled album: ${album.title} (ID: ${album.id})")
@@ -4529,9 +4618,16 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
      */
     private fun getPathFromUriCached(uri: Uri): String? {
         val uriString = uri.toString()
-        return pathCache.getOrPut(uriString) {
-            getPathFromUri(uri)
+        val cached = pathCache.get(uriString)
+        if (cached != null) {
+            return cached
         }
+        
+        val path = getPathFromUri(uri)
+        if (path != null) {
+            pathCache.put(uriString, path)
+        }
+        return path
     }
     
     /**
@@ -4676,5 +4772,38 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private var sleepTimerJob: kotlinx.coroutines.Job? = null
     
     // Sleep timer now uses direct ViewModel state management instead of broadcast receivers
+    
+    companion object {
+        // SharedPreferences keys
+        private const val PREF_HIGH_QUALITY_AUDIO = "high_quality_audio"
+        private const val PREF_GAPLESS_PLAYBACK = "gapless_playback"
+        private const val PREF_CROSSFADE = "crossfade"
+        private const val PREF_CROSSFADE_DURATION = "crossfade_duration"
+        private const val PREF_AUDIO_NORMALIZATION = "audio_normalization"
+        private const val PREF_REPLAY_GAIN = "replay_gain"
+        private const val PREF_SHOW_LYRICS = "show_lyrics"
+        private const val PREF_ONLINE_ONLY_LYRICS = "online_only_lyrics"
+        private const val PREF_SONG_PLAY_COUNTS = "song_play_counts"
+        
+        // Player control constants
+        private const val REWIND_THRESHOLD_MS = 3000L // 3 seconds
+    }
+    
+    override fun onCleared() {
+        super.onCleared()
+        Log.d(TAG, "ViewModel clearing, cleaning up resources")
+        
+        // Unregister ContentObserver
+        repository.unregisterMediaStoreObserver()
+        
+        // Cancel ongoing scan
+        scanJob?.cancel()
+        
+        // Release MediaController
+        mediaController?.release()
+        controllerFuture?.let { future ->
+            MediaController.releaseFuture(future)
+        }
+    }
     
 }
