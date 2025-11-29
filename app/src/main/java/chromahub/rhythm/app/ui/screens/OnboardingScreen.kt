@@ -1349,7 +1349,7 @@ fun EnhancedBackupRestoreContent(
         Card(
             onClick = onOpenBottomSheet,
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -1360,7 +1360,7 @@ fun EnhancedBackupRestoreContent(
                 Icon(
                     imageVector = Icons.Filled.Backup,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
@@ -1369,18 +1369,18 @@ fun EnhancedBackupRestoreContent(
                         text = context.getString(R.string.onboarding_backup_center),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
                     )
                     Text(
                         text = context.getString(R.string.onboarding_backup_center_desc),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
                     )
                 }
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                     contentDescription = "Open backup & restore",
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -1393,11 +1393,11 @@ fun EnhancedBackupRestoreContent(
             exit = shrinkVertically() + fadeOut()
         ) {
             Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f)
-                ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                )
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
@@ -1406,14 +1406,14 @@ fun EnhancedBackupRestoreContent(
                     Icon(
                         imageVector = Icons.Filled.Lightbulb,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = context.getString(R.string.onboarding_manual_backup_info),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
             }
@@ -1421,22 +1421,22 @@ fun EnhancedBackupRestoreContent(
         
         // Backup features info card
         Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
-            ),
-            modifier = Modifier.fillMaxWidth()
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+            )
         ) {
             Column(
                 modifier = Modifier.padding(20.dp)
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(bottom = 12.dp)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Info,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
@@ -1444,9 +1444,10 @@ fun EnhancedBackupRestoreContent(
                         text = context.getString(R.string.onboarding_what_backed_up),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
+                Spacer(modifier = Modifier.height(12.dp))
                 
                 BackupFeatureTipItem(
                     icon = Icons.Filled.Save,
@@ -1512,14 +1513,14 @@ private fun BackupFeatureTipItem(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f),
+            tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
             modifier = Modifier.size(18.dp)
         )
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onTertiaryContainer
+            color = MaterialTheme.colorScheme.onPrimaryContainer
         )
     }
 }
@@ -1527,7 +1528,8 @@ private fun BackupFeatureTipItem(
 @Composable
 private fun LibraryTipItem(
     icon: ImageVector,
-    text: String
+    text: String,
+    color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onPrimaryContainer
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -1536,14 +1538,14 @@ private fun LibraryTipItem(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+            tint = color.copy(alpha = 0.8f),
             modifier = Modifier.size(18.dp)
         )
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onPrimaryContainer
+            color = color
         )
     }
 }
@@ -1721,13 +1723,14 @@ fun EnhancedAudioPlaybackContent(
                     
                     // Lyrics sources info
                     Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
-                        ),
-                        modifier = Modifier.fillMaxWidth()
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f)
+                        )
                     ) {
                         Row(
-                            modifier = Modifier.padding(12.dp),
+                            modifier = Modifier.padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
@@ -1736,7 +1739,7 @@ fun EnhancedAudioPlaybackContent(
                                 tint = MaterialTheme.colorScheme.onTertiaryContainer,
                                 modifier = Modifier.size(18.dp)
                             )
-                            Spacer(modifier = Modifier.width(10.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 text = context.getString(R.string.onboarding_lyrics_sources),
                                 style = MaterialTheme.typography.bodySmall,
@@ -1915,50 +1918,80 @@ fun EnhancedLibrarySetupContent(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Additional features info
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            LibraryFeatureCard(
-                icon = Icons.Filled.FormatListNumbered,
-                title = "Library Tab Order",
-                description = "Reorder Songs, Playlists, Albums, Artists, and Explorer tabs",
-                onClick = onOpenTabOrderBottomSheet,
-                usePrimaryStyle = true
-            )
+        // Library organization settings
+        // Column(
+        //     modifier = Modifier.fillMaxWidth(),
+        //     verticalArrangement = Arrangement.spacedBy(12.dp)
+        // ) {
+        //     // Album view type dropdown
+        //     SettingsDropdownItem(
+        //         title = "Album Display Style",
+        //         description = "Choose list or grid layout for albums",
+        //         selectedOption = albumViewType.name.lowercase().replaceFirstChar { it.uppercase() },
+        //         icon = Icons.Filled.Album,
+        //         options = listOf("List", "Grid"),
+        //         onOptionSelected = { selectedOption ->
+        //             val newViewType = chromahub.rhythm.app.data.AlbumViewType.valueOf(selectedOption.uppercase())
+        //             appSettings.setAlbumViewType(newViewType)
+        //         }
+        //     )
 
-            // Playlist Management - Hidden, info only
-            /*
-            LibraryFeatureCard(
-                icon = Icons.Filled.Queue,
-                title = "Playlist Management",
-                description = "Create, import, export, and organize your music playlists",
-                onClick = onOpenPlaylistManagementBottomSheet,
-                usePrimaryStyle = true
-            )
-            */
-        }
+        //     // Artist view type dropdown
+        //     SettingsDropdownItem(
+        //         title = "Artist Display Style",
+        //         description = "Choose list or grid layout for artists",
+        //         selectedOption = artistViewType.name.lowercase().replaceFirstChar { it.uppercase() },
+        //         icon = Icons.Filled.Person,
+        //         options = listOf("List", "Grid"),
+        //         onOptionSelected = { selectedOption ->
+        //             val newViewType = chromahub.rhythm.app.data.ArtistViewType.valueOf(selectedOption.uppercase())
+        //             appSettings.setArtistViewType(newViewType)
+        //         }
+        //     )
+        // }
+        
+        // Spacer(modifier = Modifier.height(16.dp))
+        
+        // Library tab order feature
+        LibraryFeatureCard(
+            icon = Icons.Filled.FormatListNumbered,
+            title = "Library Tab Order",
+            description = "Reorder Songs, Playlists, Albums, Artists, and Explorer tabs",
+            onClick = onOpenTabOrderBottomSheet,
+            useTertiaryStyle = true
+        )
+
+        // Playlist Management - Hidden, info only
+        /*
+        LibraryFeatureCard(
+            icon = Icons.Filled.Queue,
+            title = "Playlist Management",
+            description = "Create, import, export, and organize your music playlists",
+            onClick = onOpenPlaylistManagementBottomSheet,
+            usePrimaryStyle = true
+        )
+        */
         
         Spacer(modifier = Modifier.height(16.dp))
         
         // How it Works info card
         Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
-            ),
-            modifier = Modifier.fillMaxWidth()
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+            )
         ) {
             Column(
                 modifier = Modifier.padding(20.dp)
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(bottom = 12.dp)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Info,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
@@ -1966,9 +1999,10 @@ fun EnhancedLibrarySetupContent(
                         text = context.getString(R.string.onboarding_library_how_works),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
+                Spacer(modifier = Modifier.height(12.dp))
                 
                 LibraryTipItem(
                     icon = Icons.Filled.Reorder,
@@ -1984,7 +2018,6 @@ fun EnhancedLibrarySetupContent(
                 )
             }
         }
-        
 
     }
 }
@@ -1995,16 +2028,18 @@ private fun LibraryFeatureCard(
     title: String,
     description: String,
     onClick: (() -> Unit)? = null,
-    usePrimaryStyle: Boolean = false
+    usePrimaryStyle: Boolean = false,
+    useTertiaryStyle: Boolean = false
 ) {
     Card(
         onClick = onClick ?: {},
         enabled = onClick != null,
         colors = CardDefaults.cardColors(
-            containerColor = if (usePrimaryStyle)
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-            else
-                MaterialTheme.colorScheme.surfaceContainerLow
+            containerColor = when {
+                useTertiaryStyle -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+                usePrimaryStyle -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                else -> MaterialTheme.colorScheme.surfaceContainerLow
+            }
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         shape = RoundedCornerShape(12.dp),
@@ -2019,10 +2054,11 @@ private fun LibraryFeatureCard(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (usePrimaryStyle)
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                else
-                    MaterialTheme.colorScheme.primary,
+                tint = when {
+                    useTertiaryStyle -> MaterialTheme.colorScheme.onTertiaryContainer
+                    usePrimaryStyle -> MaterialTheme.colorScheme.onPrimaryContainer
+                    else -> MaterialTheme.colorScheme.primary
+                },
                 modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(12.dp))
@@ -2031,18 +2067,20 @@ private fun LibraryFeatureCard(
                     text = title,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (usePrimaryStyle)
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    else
-                        MaterialTheme.colorScheme.onSurface
+                    color = when {
+                        useTertiaryStyle -> MaterialTheme.colorScheme.onTertiaryContainer
+                        usePrimaryStyle -> MaterialTheme.colorScheme.onPrimaryContainer
+                        else -> MaterialTheme.colorScheme.onSurface
+                    }
                 )
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (usePrimaryStyle)
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    else
-                        MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = when {
+                        useTertiaryStyle -> MaterialTheme.colorScheme.onTertiaryContainer
+                        usePrimaryStyle -> MaterialTheme.colorScheme.onPrimaryContainer
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                     lineHeight = 16.sp
                 )
             }
@@ -2334,22 +2372,22 @@ fun EnhancedThemingContent(
         
         // Guide to Tuner settings
         Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
-            ),
-            modifier = Modifier.fillMaxWidth()
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+            )
         ) {
             Column(
                 modifier = Modifier.padding(20.dp)
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(bottom = 12.dp)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Settings,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
@@ -2357,9 +2395,10 @@ fun EnhancedThemingContent(
                         text = context.getString(R.string.onboarding_more_tuner),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
+                Spacer(modifier = Modifier.height(12.dp))
                 
                 LibraryTipItem(
                     icon = Icons.Filled.Palette,
@@ -3507,56 +3546,10 @@ fun EnhancedMediaScanContent(
         Spacer(modifier = Modifier.height(16.dp))
         */
         
-        // Media scanning settings info card
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
-            ),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(20.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Tune,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = context.getString(R.string.onboarding_media_scan_settings),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                    )
-                }
-                
-                LibraryTipItem(
-                    icon = Icons.Filled.Block,
-                    text = context.getString(R.string.onboarding_media_scan_blacklist)
-                )
-                LibraryTipItem(
-                    icon = Icons.Filled.CheckCircle,
-                    text = context.getString(R.string.onboarding_media_scan_whitelist)
-                )
-                LibraryTipItem(
-                    icon = Icons.Filled.Settings,
-                    text = context.getString(R.string.onboarding_media_scan_configure_in_tuner)
-                )
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(12.dp))
-        
         // Cache management info card
         Card(
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f)
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -3567,7 +3560,7 @@ fun EnhancedMediaScanContent(
                 Icon(
                     imageVector = Icons.Filled.Storage,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
@@ -3576,62 +3569,63 @@ fun EnhancedMediaScanContent(
                         text = context.getString(R.string.onboarding_storage_title),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
                     )
                     Text(
                         text = context.getString(R.string.onboarding_storage_desc),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
                     )
                 }
             }
         }
         
-//        Spacer(modifier = Modifier.height(16.dp))
-//
-//        // Media scan tips card
-//        Card(
-//            colors = CardDefaults.cardColors(
-//                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
-//            ),
-//            modifier = Modifier.fillMaxWidth()
-//        ) {
-//            Column(
-//                modifier = Modifier.padding(20.dp)
-//            ) {
-//                Row(
-//                    verticalAlignment = Alignment.CenterVertically,
-//                    modifier = Modifier.padding(bottom = 12.dp)
-//                ) {
-//                    Icon(
-//                        imageVector = Icons.Filled.Info,
-//                        contentDescription = null,
-//                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-//                        modifier = Modifier.size(24.dp)
-//                    )
-//                    Spacer(modifier = Modifier.width(12.dp))
-//                    Text(
-//                        text = "How It Works",
-//                        style = MaterialTheme.typography.titleMedium,
-//                        fontWeight = FontWeight.Bold,
-//                        color = MaterialTheme.colorScheme.onPrimaryContainer
-//                    )
-//                }
-//
-//                MediaScanTipItem(
-//                    icon = Icons.Filled.Block,
-//                    text = "Blacklist hides unwanted audio (ringtones, notifications)"
-//                )
-//                MediaScanTipItem(
-//                    icon = Icons.Filled.CheckCircle,
-//                    text = "Whitelist shows only specific folders for a curated library"
-//                )
-//                MediaScanTipItem(
-//                    icon = Icons.Filled.Folder,
-//                    text = "Folder filters apply to all songs within that folder"
-//                )
-//            }
-//        }
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Media scan tips card
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+            ),
+            shape = RoundedCornerShape(18.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "How It Works",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+
+                MediaScanTipItem(
+                    icon = Icons.Filled.Block,
+                    text = context.getString(R.string.onboarding_media_scan_blacklist)
+                )
+                MediaScanTipItem(
+                    icon = Icons.Filled.CheckCircle,
+                    text = context.getString(R.string.onboarding_media_scan_whitelist)
+                )
+                MediaScanTipItem(
+                    icon = Icons.Filled.Settings,
+                    text = context.getString(R.string.onboarding_media_scan_configure_in_tuner)
+                )
+            }
+        }
         
         /*Spacer(modifier = Modifier.height(24.dp))
         
@@ -3920,22 +3914,22 @@ fun EnhancedSetupFinishedContent(onFinish: () -> Unit) {
         
         // Next steps card
         Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
-            ),
-            modifier = Modifier.fillMaxWidth()
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+            )
         ) {
             Column(
                 modifier = Modifier.padding(20.dp)
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(bottom = 12.dp)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Lightbulb,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
@@ -3943,9 +3937,10 @@ fun EnhancedSetupFinishedContent(onFinish: () -> Unit) {
                         text = context.getString(R.string.onboarding_whats_next),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
+                Spacer(modifier = Modifier.height(12.dp))
                 
                 NextStepItem(
                     icon = Icons.Filled.LibraryMusic,
@@ -3993,14 +3988,14 @@ private fun NextStepItem(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f),
+            tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
             modifier = Modifier.size(18.dp)
         )
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onTertiaryContainer
+            color = MaterialTheme.colorScheme.onPrimaryContainer
         )
     }
 }
