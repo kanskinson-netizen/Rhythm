@@ -275,6 +275,22 @@ fun PlayerScreen(
     val appSettingsInstance =
         appSettings ?: chromahub.rhythm.app.data.AppSettings.getInstance(context)
     val useSystemVolume by appSettingsInstance.useSystemVolume.collectAsState()
+    val groupByAlbumArtist by appSettingsInstance.groupByAlbumArtist.collectAsState()
+
+    // Helper function to split artist names
+    val splitArtistNames: (String) -> List<String> = remember {
+        { artistName ->
+            val separators = listOf(
+                " & ", " and ", ", ", " feat. ", " feat ", " ft. ", " ft ",
+                " featuring ", " x ", " X ", " vs ", " vs. ", " with "
+            )
+            var names = listOf(artistName)
+            for (separator in separators) {
+                names = names.flatMap { it.split(separator, ignoreCase = true) }
+            }
+            names.map { it.trim() }.filter { it.isNotBlank() }
+        }
+    }
 
     // System volume state
     var systemVolume by remember { mutableFloatStateOf(0.5f) }
@@ -2943,8 +2959,18 @@ fun PlayerScreen(
                                                         )
                                                         // Find the artist for the current song and show bottom sheet
                                                         song?.let { currentSong ->
-                                                            val artistForSong =
-                                                                artists.find { it.name == currentSong.artist }
+                                                            // Respect groupByAlbumArtist setting when finding artist
+                                                            val artistForSong = if (groupByAlbumArtist) {
+                                                                // When grouping by album artist, match against albumArtist (with fallback to artist)
+                                                                val songArtistName = (currentSong.albumArtist?.takeIf { it.isNotBlank() } ?: currentSong.artist).trim()
+                                                                artists.find { it.name == songArtistName }
+                                                            } else {
+                                                                // When not grouping, check if any split artist name matches
+                                                                val songArtistNames = splitArtistNames(currentSong.artist)
+                                                                artists.find { artist ->
+                                                                    songArtistNames.any { it.equals(artist.name, ignoreCase = true) }
+                                                                }
+                                                            }
                                                             artistForSong?.let {
                                                                 selectedArtist = it
                                                                 showArtistSheet = true

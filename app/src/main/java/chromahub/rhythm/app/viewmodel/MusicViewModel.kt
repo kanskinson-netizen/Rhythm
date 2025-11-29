@@ -321,8 +321,17 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     songAlbumArtist == artist.name 
                 }
             } else {
-                // When grouping by track artist, match against song's artist
-                filteredSongs.any { song -> song.artist == artist.name }
+                // When grouping by track artist, match if artist appears in song's artist field (split collaborations)
+                filteredSongs.any { song -> 
+                    // Split artist names on common separators
+                    val separators = listOf(" & ", " and ", ", ", " feat. ", " feat ", " ft. ", " ft ", " featuring ", " x ", " X ", " vs ", " vs. ", " with ")
+                    var names = listOf(song.artist)
+                    for (separator in separators) {
+                        names = names.flatMap { it.split(separator, ignoreCase = true) }
+                    }
+                    val artistNames = names.map { it.trim() }.filter { it.isNotBlank() }
+                    artistNames.any { it.equals(artist.name, ignoreCase = true) }
+                }
             }
         }
     }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Lazily, emptyList())

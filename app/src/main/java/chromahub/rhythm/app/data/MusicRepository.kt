@@ -1100,58 +1100,79 @@ class MusicRepository(context: Context) {
      * This groups by track artist, showing collaborations as separate entries
      */
     private suspend fun loadArtistsFromMediaStore(): List<Artist> = withContext(Dispatchers.IO) {
-        val artists = mutableListOf<Artist>()
-        val collection = MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI
-
-        val projection = arrayOf(
-            MediaStore.Audio.Artists._ID,
-            MediaStore.Audio.Artists.ARTIST,
-            MediaStore.Audio.Artists.NUMBER_OF_ALBUMS,
-            MediaStore.Audio.Artists.NUMBER_OF_TRACKS
-        )
-
-        val selection = "${MediaStore.Audio.Artists.ARTIST} != ''"
-        val sortOrder = "${MediaStore.Audio.Artists.ARTIST} ASC"
-
-        context.contentResolver.query(
-            collection,
-            projection,
-            selection,
-            null,
-            sortOrder
-        )?.use { cursor ->
-            // Cache column indices
-            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists._ID)
-            val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.ARTIST)
-            val albumsColumn =
-                cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.NUMBER_OF_ALBUMS)
-            val tracksColumn =
-                cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.NUMBER_OF_TRACKS)
-
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(idColumn)
-                var name = cursor.getString(artistColumn)
-                val numAlbums = cursor.getInt(albumsColumn)
-                val numTracks = cursor.getInt(tracksColumn)
-
-                // Clean up artist name
-                if (name.isNullOrBlank() || name.equals("<unknown>", ignoreCase = true)) {
-                    // Try to find a better name from the artist's tracks
-                    name = findBetterArtistName(id.toString()) ?: "Unknown Artist"
+        // Load all songs to properly count tracks/albums for split artists
+        val allSongs = loadSongs()
+        val artistMap = mutableMapOf<String, MutableList<Song>>()
+        val albumsByArtist = mutableMapOf<String, MutableSet<String>>()
+        
+        // Group songs by individual track artists (splitting collaborations)
+        for (song in allSongs) {
+            // Split artist names on common separators
+            val artistNames = splitArtistNames(song.artist)
+            
+            for (artistName in artistNames) {
+                val cleanName = artistName.trim()
+                
+                // Skip invalid artist names
+                if (cleanName.isBlank() || cleanName.equals("<unknown>", ignoreCase = true)) {
+                    continue
                 }
-
-                val artist = Artist(
-                    id = id.toString(),
-                    name = name,
-                    numberOfAlbums = numAlbums,
-                    numberOfTracks = numTracks
-                )
-                artists.add(artist)
+                
+                // Add song to artist's collection
+                artistMap.getOrPut(cleanName) { mutableListOf() }.add(song)
+                
+                // Track unique albums for this artist
+                if (song.album.isNotBlank()) {
+                    albumsByArtist.getOrPut(cleanName) { mutableSetOf() }.add(song.album)
+                }
             }
         }
+        
+        // Create Artist objects from grouped data
+        val artists = artistMap.map { (artistName, songs) ->
+            val albums = albumsByArtist[artistName] ?: emptySet()
+            Artist(
+                id = "track_artist_${artistName.hashCode()}", // Generate unique ID based on name
+                name = artistName,
+                numberOfAlbums = albums.size,
+                numberOfTracks = songs.size
+            )
+        }.sortedBy { it.name.lowercase() }
 
-        Log.d(TAG, "Loaded ${artists.size} artists from MediaStore")
+        Log.d(TAG, "Loaded ${artists.size} artists from track artists (split collaborations)")
         artists
+    }
+    
+    /**
+     * Splits artist names on common collaboration separators.
+     * Returns a list of individual artist names.
+     */
+    fun splitArtistNames(artistName: String): List<String> {
+        // Common separators for collaborations
+        val separators = listOf(
+            " & ",
+            " and ",
+            ", ",
+            " feat. ",
+            " feat ",
+            " ft. ",
+            " ft ",
+            " featuring ",
+            " x ",
+            " X ",
+            " vs ",
+            " vs. ",
+            " with "
+        )
+        
+        var names = listOf(artistName)
+        
+        // Split on each separator
+        for (separator in separators) {
+            names = names.flatMap { it.split(separator, ignoreCase = true) }
+        }
+        
+        return names.map { it.trim() }.filter { it.isNotBlank() }
     }
     
     /**
@@ -3530,13 +3551,15 @@ class MusicRepository(context: Context) {
         Log.d("MusicRepository", "Found artist: ${artist.name} (ID: $artistId, groupByAlbumArtist=$groupByAlbumArtist)")
 
         // Filter songs that match the artist's name
-        // When grouping by album artist, check album artist first, then fall back to track artist
         val artistSongs = allSongs.filter { song ->
             if (groupByAlbumArtist) {
+                // When grouping by album artist, match exactly against album artist (with fallback to track artist)
                 val songArtistName = (song.albumArtist?.takeIf { it.isNotBlank() } ?: song.artist).trim()
                 songArtistName == artist.name
             } else {
-                song.artist == artist.name
+                // When not grouping, check if artist name appears in the track artist field (exact or as part of collaboration)
+                val artistNames = splitArtistNames(song.artist)
+                artistNames.any { it.equals(artist.name, ignoreCase = true) }
             }
         }
 
@@ -3563,17 +3586,21 @@ class MusicRepository(context: Context) {
         Log.d("MusicRepository", "Found artist: ${artist.name} (ID: $artistId, groupByAlbumArtist=$groupByAlbumArtist)")
 
         // Filter albums that match the artist's name
-        // When grouping by album artist, check if any song in the album has matching album artist
         val artistAlbums = allAlbums.filter { album ->
             if (groupByAlbumArtist) {
-                // Check if any song from this album has the artist as album artist
+                // When grouping by album artist, check if any song in the album has matching album artist
                 allSongs.any { song ->
                     song.album == album.title &&
                     song.albumId == album.id &&
                     (song.albumArtist?.takeIf { it.isNotBlank() } ?: song.artist).trim() == artist.name
                 }
             } else {
-                album.artist == artist.name
+                // When not grouping, check if artist appears in any song's track artist field for this album
+                allSongs.any { song ->
+                    song.album == album.title &&
+                    song.albumId == album.id &&
+                    splitArtistNames(song.artist).any { it.equals(artist.name, ignoreCase = true) }
+                }
             }
         }
 

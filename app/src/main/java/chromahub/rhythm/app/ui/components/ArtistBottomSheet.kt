@@ -81,6 +81,21 @@ fun ArtistBottomSheet(
     val allSongs by viewModel.songs.collectAsState()
     val allAlbums by viewModel.albums.collectAsState()
     
+    // Helper function to split artist names
+    val splitArtistNames: (String) -> List<String> = remember {
+        { artistName ->
+            val separators = listOf(
+                " & ", " and ", ", ", " feat. ", " feat ", " ft. ", " ft ",
+                " featuring ", " x ", " X ", " vs ", " vs. ", " with "
+            )
+            var names = listOf(artistName)
+            for (separator in separators) {
+                names = names.flatMap { it.split(separator, ignoreCase = true) }
+            }
+            names.map { it.trim() }.filter { it.isNotBlank() }
+        }
+    }
+    
     // Filter songs and albums for this artist based on grouping preference
     val artistSongs = remember(allSongs, artist, groupByAlbumArtist) {
         allSongs.filter { song ->
@@ -89,8 +104,8 @@ fun ArtistBottomSheet(
                 val songArtistName = (song.albumArtist?.takeIf { it.isNotBlank() } ?: song.artist).trim()
                 songArtistName == artist.name
             } else {
-                // When not grouping, match track artist directly
-                song.artist == artist.name
+                // When not grouping, check if artist appears in track artist field (split collaborations)
+                splitArtistNames(song.artist).any { it.equals(artist.name, ignoreCase = true) }
             }
         }
     }
@@ -106,9 +121,13 @@ fun ArtistBottomSheet(
                 }
             }
         } else {
-            // When not grouping, match album artist directly
+            // When not grouping, check if artist appears in any song's track artist field for this album
             allAlbums.filter { album ->
-                album.artist == artist.name
+                allSongs.any { song ->
+                    song.album == album.title &&
+                    song.albumId == album.id &&
+                    splitArtistNames(song.artist).any { it.equals(artist.name, ignoreCase = true) }
+                }
             }
         }
     }

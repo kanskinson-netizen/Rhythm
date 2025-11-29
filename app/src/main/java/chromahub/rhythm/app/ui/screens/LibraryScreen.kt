@@ -1329,7 +1329,24 @@ fun SingleCardSongsContent(
     haptics: androidx.compose.ui.hapticfeedback.HapticFeedback
 ) {
     val context = LocalContext.current
+    val appSettings = remember { AppSettings.getInstance(context) }
+    val groupByAlbumArtist by appSettings.groupByAlbumArtist.collectAsState()
     var selectedCategory by remember { mutableStateOf("All") }
+    
+    // Helper function to split artist names
+    val splitArtistNames: (String) -> List<String> = remember {
+        { artistName ->
+            val separators = listOf(
+                " & ", " and ", ", ", " feat. ", " feat ", " ft. ", " ft ",
+                " featuring ", " x ", " X ", " vs ", " vs. ", " with "
+            )
+            var names = listOf(artistName)
+            for (separator in separators) {
+                names = names.flatMap { it.split(separator, ignoreCase = true) }
+            }
+            names.map { it.trim() }.filter { it.isNotBlank() }
+        }
+    }
     
     // Cache for audio quality detection to avoid re-computation
     val audioQualityCache = remember { mutableMapOf<String, AudioQualityDetector.AudioQuality>() }
@@ -1800,8 +1817,18 @@ fun SingleCardSongsContent(
                             onToggleFavorite = { onToggleFavorite(song) },
                             isFavorite = favoriteSongs.contains(song.id),
                             onGoToArtist = { 
-                                // Find the artist from the list
-                                val artist = artists.find { it.name.equals(song.artist, ignoreCase = true) }
+                                // Find the artist from the list - respect groupByAlbumArtist setting
+                                val artist = if (groupByAlbumArtist) {
+                                    // When grouping by album artist, match against albumArtist (with fallback to artist)
+                                    val songArtistName = (song.albumArtist?.takeIf { it.isNotBlank() } ?: song.artist).trim()
+                                    artists.find { it.name.equals(songArtistName, ignoreCase = true) }
+                                } else {
+                                    // When not grouping, check if any split artist name matches
+                                    val songArtistNames = splitArtistNames(song.artist)
+                                    artists.find { artist ->
+                                        songArtistNames.any { it.equals(artist.name, ignoreCase = true) }
+                                    }
+                                }
                                 artist?.let { onGoToArtist(it) }
                             },
                             onGoToAlbum = { 
@@ -2274,7 +2301,24 @@ fun SongsTab(
     haptics: androidx.compose.ui.hapticfeedback.HapticFeedback
 ) {
     val context = LocalContext.current
+    val appSettings = remember { AppSettings.getInstance(context) }
+    val groupByAlbumArtist by appSettings.groupByAlbumArtist.collectAsState()
     var selectedCategory by remember { mutableStateOf("All") }
+    
+    // Helper function to split artist names
+    val splitArtistNames: (String) -> List<String> = remember {
+        { artistName ->
+            val separators = listOf(
+                " & ", " and ", ", ", " feat. ", " feat ", " ft. ", " ft ",
+                " featuring ", " x ", " X ", " vs ", " vs. ", " with "
+            )
+            var names = listOf(artistName)
+            for (separator in separators) {
+                names = names.flatMap { it.split(separator, ignoreCase = true) }
+            }
+            names.map { it.trim() }.filter { it.isNotBlank() }
+        }
+    }
     
     // Helper functions for quality detection (needed for this deprecated function)
     fun isLosslessAudio(song: Song): Boolean {
@@ -2655,8 +2699,18 @@ fun SongsTab(
                                 onToggleFavorite = { onToggleFavorite(song) },
                                 isFavorite = favoriteSongs.contains(song.id),
                                 onGoToArtist = { 
-                                    // Find the artist from the list
-                                    val artist = artists.find { it.name.equals(song.artist, ignoreCase = true) }
+                                    // Find the artist from the list - respect groupByAlbumArtist setting
+                                    val artist = if (groupByAlbumArtist) {
+                                        // When grouping by album artist, match against albumArtist (with fallback to artist)
+                                        val songArtistName = (song.albumArtist?.takeIf { it.isNotBlank() } ?: song.artist).trim()
+                                        artists.find { it.name.equals(songArtistName, ignoreCase = true) }
+                                    } else {
+                                        // When not grouping, check if any split artist name matches
+                                        val songArtistNames = splitArtistNames(song.artist)
+                                        artists.find { artist ->
+                                            songArtistNames.any { it.equals(artist.name, ignoreCase = true) }
+                                        }
+                                    }
                                     artist?.let { onGoToArtist(it) }
                                 },
                                 onGoToAlbum = { 
