@@ -2723,7 +2723,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 return@launch
             }
 
-            val sortedSongsByPlayCount = _songs.value.sortedByDescending { song ->
+            // Use filteredSongs to respect whitelist/blacklist mode
+            val sortedSongsByPlayCount = filteredSongs.value.sortedByDescending { song ->
                 _songPlayCounts.value[song.id] ?: 0
             }
 
