@@ -2,6 +2,8 @@ package chromahub.rhythm.app.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseInOut
+import androidx.compose.animation.core.EaseInOutSine
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
@@ -19,11 +21,13 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -39,49 +43,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import chromahub.rhythm.app.R
+import chromahub.rhythm.app.data.AppSettings
 import chromahub.rhythm.app.viewmodel.MusicViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 @Composable
 fun SplashScreen(
     musicViewModel: MusicViewModel,
     onMediaScanComplete: () -> Unit = {}
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val appSettings = remember { chromahub.rhythm.app.data.AppSettings.getInstance(context) }
-    
-    // Festive theme states
-    val festiveThemeEnabled by appSettings.festiveThemeEnabled.collectAsState()
-    val festiveThemeSelected by appSettings.festiveThemeSelected.collectAsState()
-    val festiveThemeAutoDetect by appSettings.festiveThemeAutoDetect.collectAsState()
-    val festiveThemeShowParticles by appSettings.festiveThemeShowParticles.collectAsState()
-    val festiveThemeShowDecorations by appSettings.festiveThemeShowDecorations.collectAsState()
-    val festiveThemeParticleIntensity by appSettings.festiveThemeParticleIntensity.collectAsState()
-    val festiveThemeApplyToSplash by appSettings.festiveThemeApplyToSplash.collectAsState()
-    
-    // Determine active festive theme
-    val activeFestiveTheme = remember(festiveThemeEnabled, festiveThemeAutoDetect, festiveThemeSelected) {
-        if (!festiveThemeEnabled) {
-            chromahub.rhythm.app.ui.theme.FestiveTheme.NONE
-        } else if (festiveThemeAutoDetect) {
-            chromahub.rhythm.app.ui.theme.FestiveTheme.detectCurrentFestival()
-        } else {
-            try {
-                chromahub.rhythm.app.ui.theme.FestiveTheme.valueOf(festiveThemeSelected)
-            } catch (e: Exception) {
-                chromahub.rhythm.app.ui.theme.FestiveTheme.NONE
-            }
-        }
-    }
+    val context = LocalContext.current
+    val appSettings = remember { AppSettings.getInstance(context) }
     
     val infiniteTransition = rememberInfiniteTransition(label = "splashAnimations")
     
@@ -92,7 +76,7 @@ fun SplashScreen(
         animationSpec = infiniteRepeatable(
             animation = tween(
                 durationMillis = 2500,
-                easing = androidx.compose.animation.core.EaseInOutSine
+                easing = EaseInOutSine
             ),
             repeatMode = RepeatMode.Reverse
         ),
@@ -171,7 +155,7 @@ fun SplashScreen(
         showLoader = true
         loaderAlpha.animateTo(
             targetValue = 1f,
-            animationSpec = tween(400, easing = androidx.compose.animation.core.EaseInOut)
+            animationSpec = tween(400, easing = EaseInOut)
         )
     }
 
@@ -204,22 +188,6 @@ fun SplashScreen(
             },
         contentAlignment = Alignment.Center
     ) {
-        // Festive decorations overlay
-        if (festiveThemeEnabled && festiveThemeApplyToSplash && activeFestiveTheme != chromahub.rhythm.app.ui.theme.FestiveTheme.NONE) {
-            chromahub.rhythm.app.ui.components.FestiveDecorations(
-                config = chromahub.rhythm.app.ui.theme.FestiveThemeConfig(
-                    enabled = festiveThemeEnabled,
-                    selectedTheme = activeFestiveTheme,
-                    autoDetect = festiveThemeAutoDetect,
-                    showParticles = festiveThemeShowParticles,
-                    particleIntensity = festiveThemeParticleIntensity,
-                    applyToSplash = festiveThemeApplyToSplash,
-                    applyToMainUI = false
-                ),
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-        
         // Background particles using the drawable
 //        AnimatedVisibility(
 //            visible = showContent,
@@ -251,7 +219,7 @@ fun SplashScreen(
                 Box(
                     contentAlignment = Alignment.Center
                 ) {
-                    // App name revealing with expand animation (like TabButton in ThemeCustomizationBottomSheet)
+                    // App name revealing with expand animation
                     // Rendered first so it appears BEHIND the logo in z-order
                     if (showAppName) {
                         Row(
@@ -259,7 +227,7 @@ fun SplashScreen(
                                 translationX = appNameOffsetX.value
                             }
                         ) {
-                            androidx.compose.animation.AnimatedVisibility(
+                            AnimatedVisibility(
                                 visible = showAppName,
                                 enter = expandHorizontally(
                                     animationSpec = spring(
@@ -272,8 +240,8 @@ fun SplashScreen(
                                 exit = shrinkHorizontally() + fadeOut()
                             ) {
                                 Text(
-                                    text = "Rhythm",
-                                    style = MaterialTheme.typography.displayMedium.copy(
+                                    text = context.getString(R.string.common_rhythm),
+                                    style = MaterialTheme.typography.displayLarge.copy(
                                         fontSize = 48.sp,
                                         letterSpacing = 2.sp
                                     ),
@@ -309,7 +277,7 @@ fun SplashScreen(
                 ) {
                     if (showTagline) {
                         Row {
-                            androidx.compose.animation.AnimatedVisibility(
+                            AnimatedVisibility(
                                 visible = showTagline,
                                 enter = expandHorizontally(
                                     animationSpec = spring(
@@ -330,47 +298,13 @@ fun SplashScreen(
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    // Show festive greeting if enabled and decorations are on
-                                    if (festiveThemeEnabled && festiveThemeApplyToSplash && 
-                                        festiveThemeShowDecorations && 
-                                        activeFestiveTheme != chromahub.rhythm.app.ui.theme.FestiveTheme.NONE) {
-                                        
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.Center
-                                        ) {
-                                            Text(
-                                                text = activeFestiveTheme.emoji,
-                                                style = MaterialTheme.typography.titleLarge,
-                                                modifier = Modifier.padding(end = 8.dp)
-                                            )
-                                            Text(
-                                                text = getFestiveGreeting(activeFestiveTheme),
-                                                style = MaterialTheme.typography.titleMedium.copy(
-                                                    letterSpacing = 1.sp,
-                                                    fontSize = 17.sp
-                                                ),
-                                                fontWeight = FontWeight.Medium,
-                                                color = activeFestiveTheme.primaryColor,
-                                                textAlign = TextAlign.Center
-                                            )
-                                            Text(
-                                                text = activeFestiveTheme.emoji,
-                                                style = MaterialTheme.typography.titleLarge,
-                                                modifier = Modifier.padding(start = 8.dp)
-                                            )
-                                        }
-                                        
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                    }
-                                    
                                     Text(
-                                        text = "Your Music, Your Rhythm",
-                                        style = MaterialTheme.typography.titleMedium.copy(
+                                        text = context.getString(R.string.splash_tagline),
+                                        style = MaterialTheme.typography.titleLarge.copy(
                                             letterSpacing = 1.sp,
-                                            fontSize = 17.sp
+                                            fontSize = 17.sp,
+                                            fontWeight = FontWeight.Medium
                                         ),
-                                        fontWeight = FontWeight.Medium,
                                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
                                         textAlign = TextAlign.Center
                                     )
@@ -398,7 +332,7 @@ fun SplashScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "Loading your music library...",
+                        text = context.getString(R.string.splash_loading),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                         fontWeight = FontWeight.Medium
@@ -417,7 +351,7 @@ fun SplashScreen(
                                     animation = tween(
                                         600,
                                         delayMillis = animationDelay,
-                                        easing = androidx.compose.animation.core.EaseInOut
+                                        easing = EaseInOut
                                     ),
                                     repeatMode = RepeatMode.Reverse
                                 ),
@@ -436,23 +370,5 @@ fun SplashScreen(
                 }
             }
         }
-    }
-}
-
-/**
- * Get festive greeting text for the given theme
- */
-private fun getFestiveGreeting(theme: chromahub.rhythm.app.ui.theme.FestiveTheme): String {
-    return when (theme) {
-        chromahub.rhythm.app.ui.theme.FestiveTheme.DIWALI -> "Happy Diwali!"
-        chromahub.rhythm.app.ui.theme.FestiveTheme.CHRISTMAS -> "Merry Christmas!"
-        chromahub.rhythm.app.ui.theme.FestiveTheme.NEW_YEAR -> "Happy New Year!"
-        chromahub.rhythm.app.ui.theme.FestiveTheme.HOLI -> "Happy Holi!"
-        chromahub.rhythm.app.ui.theme.FestiveTheme.HALLOWEEN -> "Happy Halloween!"
-        chromahub.rhythm.app.ui.theme.FestiveTheme.VALENTINES -> "Happy Valentine's Day!"
-        chromahub.rhythm.app.ui.theme.FestiveTheme.EASTER -> "Happy Easter!"
-        chromahub.rhythm.app.ui.theme.FestiveTheme.INDEPENDENCE_DAY -> "Happy Independence Day!"
-        chromahub.rhythm.app.ui.theme.FestiveTheme.THANKSGIVING -> "Happy Thanksgiving!"
-        else -> ""
     }
 }

@@ -391,27 +391,45 @@ object PlaylistImportExportUtils {
             return it 
         }
         
-        // Try file name match (basename without extension)
-        val fileName = path.substringAfterLast("/").substringBeforeLast(".")
-        availableSongs.find { song ->
-            val songFileName = song.uri.lastPathSegment?.substringBeforeLast(".")
-                ?: song.uri.path?.substringAfterLast("/")?.substringBeforeLast(".")
-            songFileName?.equals(fileName, ignoreCase = true) == true
-        }?.let { 
-            Log.d(TAG, "Found song by filename match: $fileName")
-            return it 
+        // Try file name match (basename without extension - handles both / and \ separators)
+        val fileName = path.substringAfterLast("/").substringAfterLast("\\").substringBeforeLast(".")
+        if (fileName.isNotBlank()) {
+            availableSongs.find { song ->
+                val songFileName = song.uri.lastPathSegment?.substringBeforeLast(".")
+                    ?: song.uri.path?.substringAfterLast("/")?.substringBeforeLast(".")
+                songFileName?.equals(fileName, ignoreCase = true) == true
+            }?.let { 
+                Log.d(TAG, "Found song by filename match: $fileName")
+                return it 
+            }
         }
         
         // Try fuzzy filename match (handles URL encoding, underscores vs spaces, etc.)
         val normalizedFileName = fileName.replace("_", " ").replace("%20", " ").lowercase()
-        availableSongs.find { song ->
-            val songFileName = (song.uri.lastPathSegment?.substringBeforeLast(".")
-                ?: song.uri.path?.substringAfterLast("/")?.substringBeforeLast(".")
-                ?: "").replace("_", " ").replace("%20", " ").lowercase()
-            songFileName == normalizedFileName
-        }?.let { 
-            Log.d(TAG, "Found song by normalized filename match: $normalizedFileName")
-            return it 
+        if (normalizedFileName.isNotBlank()) {
+            availableSongs.find { song ->
+                val songFileName = (song.uri.lastPathSegment?.substringBeforeLast(".")
+                    ?: song.uri.path?.substringAfterLast("/")?.substringBeforeLast(".")
+                    ?: "").replace("_", " ").replace("%20", " ").lowercase()
+                songFileName == normalizedFileName
+            }?.let { 
+                Log.d(TAG, "Found song by normalized filename match: $normalizedFileName")
+                return it 
+            }
+        }
+        
+        // Try matching by path segments (handles different root paths but same folder structure)
+        val pathSegments = path.split("/", "\\").filter { it.isNotBlank() }
+        if (pathSegments.size >= 2) {
+            availableSongs.find { song ->
+                val songPath = song.uri.path ?: ""
+                val songSegments = songPath.split("/").filter { it.isNotBlank() }
+                // Match last 2 segments (folder/filename) to handle different storage roots
+                songSegments.takeLast(2) == pathSegments.takeLast(2)
+            }?.let {
+                Log.d(TAG, "Found song by path segments match: ${pathSegments.takeLast(2)}")
+                return it
+            }
         }
         
         // Try title match from EXTINF metadata

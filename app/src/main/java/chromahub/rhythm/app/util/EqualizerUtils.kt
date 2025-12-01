@@ -25,14 +25,17 @@ object EqualizerUtils {
         return try {
             // First try with the standard audio effect action
             val intent = Intent(AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL).apply {
-                putExtra(AudioEffect.EXTRA_AUDIO_SESSION, 0)
+                putExtra(AudioEffect.EXTRA_PACKAGE_NAME, context.packageName)
                 putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC)
-                // Add flags to open in a new task
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                // Try to get audio session ID from system (0 means use app's default)
+                putExtra(AudioEffect.EXTRA_AUDIO_SESSION, 0)
             }
             
             // Check if there's an app that can handle this intent
-            if (isIntentResolvable(context, intent)) {
+            val packageManager = context.packageManager
+            val resolveInfo = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+            
+            if (resolveInfo.isNotEmpty()) {
                 context.startActivity(intent)
                 Log.d(TAG, "Opened system equalizer with standard intent")
                 true
@@ -92,19 +95,6 @@ object EqualizerUtils {
                 Log.e(TAG, "Error launching equalizer package: $packageName", e)
                 // Continue trying other packages
             }
-        }
-        
-        // Try a more generic approach - open sound settings
-        try {
-            val settingsIntent = Intent(android.provider.Settings.ACTION_SOUND_SETTINGS)
-            settingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            if (isIntentResolvable(context, settingsIntent)) {
-                context.startActivity(settingsIntent)
-                Log.d(TAG, "Opened sound settings")
-                return true
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error opening sound settings", e)
         }
         
         return false

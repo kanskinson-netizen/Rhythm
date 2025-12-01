@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -22,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import chromahub.rhythm.app.R
 import chromahub.rhythm.app.util.AppleMusicLyricsParser
 import chromahub.rhythm.app.util.WordByWordLyricLine
 import kotlinx.coroutines.launch
@@ -37,7 +39,21 @@ sealed class LyricsItem {
 }
 
 /**
+ * Animation presets for word-by-word highlighting
+ * TODO: Implement different animation styles for word transitions
+ */
+enum class WordAnimationPreset {
+    DEFAULT,      // Standard fade and scale
+    BOUNCE,       // Bouncy spring animation (TODO: implement)
+    SLIDE,        // Slide-in from sides (TODO: implement)
+    GLOW,         // Glowing highlight effect (TODO: implement)
+    KARAOKE,      // Filling bar effect (TODO: implement)
+    MINIMAL       // Subtle color change only (TODO: implement)
+}
+
+/**
  * Composable for displaying word-by-word synchronized lyrics from Apple Music
+ * TODO: Add animation preset system for different word highlighting styles
  */
 @Composable
 fun WordByWordLyricsView(
@@ -45,8 +61,14 @@ fun WordByWordLyricsView(
     currentPlaybackTime: Long,
     modifier: Modifier = Modifier,
     listState: LazyListState = rememberLazyListState(),
-    onSeek: ((Long) -> Unit)? = null
+    onSeek: ((Long) -> Unit)? = null,
+    syncOffset: Long = 0L, // TODO: Add UI controls for adjusting sync offset in real-time
+    animationPreset: WordAnimationPreset = WordAnimationPreset.DEFAULT // TODO: Implement animation presets
 ) {
+    val context = LocalContext.current
+    // TODO: Apply syncOffset to all timestamp comparisons for manual sync adjustment
+    val adjustedPlaybackTime = currentPlaybackTime + syncOffset
+    
     val parsedLyrics = remember(wordByWordLyrics) {
         AppleMusicLyricsParser.parseWordByWordLyrics(wordByWordLyrics)
     }
@@ -71,24 +93,24 @@ fun WordByWordLyricsView(
 
     val coroutineScope = rememberCoroutineScope()
     
-    // Find current line index (among lyric lines only)
-    val currentLineIndex by remember(currentPlaybackTime, parsedLyrics) {
+    // Find current line index (among lyric lines only) - using adjustedPlaybackTime for sync offset
+    val currentLineIndex by remember(adjustedPlaybackTime, parsedLyrics) {
         derivedStateOf {
             parsedLyrics.indexOfLast { line ->
-                currentPlaybackTime >= line.lineTimestamp && currentPlaybackTime <= line.lineEndtime
+                adjustedPlaybackTime >= line.lineTimestamp && adjustedPlaybackTime <= line.lineEndtime
             }
         }
     }
 
-    // Find current item index (including gaps)
-    val currentItemIndex by remember(currentPlaybackTime, lyricsItems) {
+    // Find current item index (including gaps) - using adjustedPlaybackTime for sync offset
+    val currentItemIndex by remember(adjustedPlaybackTime, lyricsItems) {
         derivedStateOf {
             lyricsItems.indexOfFirst { item ->
                 when (item) {
                     is LyricsItem.LyricLine -> 
-                        currentPlaybackTime >= item.line.lineTimestamp && currentPlaybackTime <= item.line.lineEndtime
+                        adjustedPlaybackTime >= item.line.lineTimestamp && adjustedPlaybackTime <= item.line.lineEndtime
                     is LyricsItem.Gap -> 
-                        currentPlaybackTime >= item.startTime && currentPlaybackTime < item.startTime + item.duration
+                        adjustedPlaybackTime >= item.startTime && adjustedPlaybackTime < item.startTime + item.duration
                 }
             }.takeIf { it >= 0 } ?: 0
         }
@@ -133,7 +155,7 @@ fun WordByWordLyricsView(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Word-by-word lyrics not available.",
+                text = context.getString(R.string.word_by_word_unavailable),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center
@@ -217,12 +239,13 @@ fun WordByWordLyricsView(
                         // Calculate distance-based alpha for better readability
                         val distanceFromCurrent = abs(index - currentLineIndex)
                         
-                        // Build annotated string with word-level highlighting
+                        // Build annotated string with word-level highlighting (using adjustedPlaybackTime)
                         val annotatedText = buildAnnotatedString {
                             line.words.forEachIndexed { wordIndex, word ->
+                                // TODO: Apply animation preset here based on animationPreset parameter
                                 val isWordActive = isCurrentLine && 
-                                    currentPlaybackTime >= word.timestamp && 
-                                    currentPlaybackTime <= word.endtime
+                                    adjustedPlaybackTime >= word.timestamp && 
+                                    adjustedPlaybackTime <= word.endtime
                                 
                                 // Improved alpha values based on distance for better readability
                                 val wordAlpha = when {
@@ -234,10 +257,22 @@ fun WordByWordLyricsView(
                                     else -> 0.32f // Far away lines
                                 }
                                 
+                                // Apply different colors based on voice tag
+                                val baseColor = when (line.voiceTag) {
+                                    "v2" -> MaterialTheme.colorScheme.secondary
+                                    "v3" -> MaterialTheme.colorScheme.tertiary
+                                    else -> MaterialTheme.colorScheme.primary // Default/v1
+                                }
+                                
                                 val wordColor = if (isWordActive) {
-                                    MaterialTheme.colorScheme.primary
+                                    baseColor // Active word gets voice-specific color
                                 } else if (isCurrentLine) {
-                                    MaterialTheme.colorScheme.onSurface
+                                    // Inactive words in current line - use voice color but slightly dimmed
+                                    when (line.voiceTag) {
+                                        "v2" -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f)
+                                        "v3" -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.7f)
+                                        else -> MaterialTheme.colorScheme.onSurface
+                                    }
                                 } else {
                                     MaterialTheme.colorScheme.onSurface.copy(alpha = wordAlpha)
                                 }

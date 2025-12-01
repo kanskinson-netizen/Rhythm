@@ -1,0 +1,968 @@
+<resources>
+    <string name="app_name">Rhythm</string>
+    
+    <string name="media3_notification_channel_name">Rhythm Music</string>
+    <string name="media3_notification_channel_description">Afspeelbediening</string>
+    
+    <string name="widget_description">Rhythm Music Widget - Bedien het afspelen met responsieve lay-outs van 2x1 tot 5x5 rasterformaten</string>
+    <string name="widget_description_glance">Rhythm Music - Bedien het afspelen met 9 responsieve lay-outs, Material 3-design en realtime statusupdates</string>
+    <string name="widget_name_glance">Rhythm Music</string>
+    <string name="no_song_playing">Geen nummer aan het afspelen</string>
+    <string name="unknown_artist">Onbekende artiest</string>
+    <string name="unknown_album">Onbekend album</string>
+    <string name="album_art">Albumhoes</string>
+    <string name="play_pause">Afspelen/Pauzeren</string>
+    <string name="skip_next">Volgende</string>
+    <string name="skip_previous">Vorige</string>
+    
+    <string name="cd_navigate">Navigeren</string>
+    <string name="cd_configure">Configureren</string>
+    <string name="cd_delete_playlist">Afspeellijst verwijderen</string>
+    <string name="cd_remove">Verwijderen</string>
+    <string name="cd_rhythm_logo">Rhythm-logo</string>
+    <string name="cd_view_github_profile">Bekijk GitHub-profiel</string>
+    <string name="cd_report_bug">Fout rapporteren</string>
+    <string name="cd_telegram_support">Telegram-ondersteuning</string>
+    
+    <string name="settings_notifications">Meldingen</string>
+    <string name="settings_notification_style">Meldingstijl</string>
+    <string name="settings_custom_notifications">Aangepaste meldingen</string>
+    <string name="settings_custom_notifications_desc">Gebruik de aangepaste meldingsstijl van de app in plaats van de systeemmediamelding</string>
+    
+    <string name="settings_queue_playback">Wachtrij &amp; Afspelen</string>
+    <string name="settings_queue_behavior">Wachtrijgedrag</string>
+    <string name="settings_use_exoplayer_shuffle">Gebruik ExoPlayer Shuffle</string>
+    <string name="settings_use_exoplayer_shuffle_desc">Laat de mediaspeler shuffle afhandelen (aanbevolen: UIT voor handmatige shuffle)</string>
+    <string name="settings_auto_queue">Automatische wachtrij</string>
+    <string name="settings_auto_queue_desc">Voeg automatisch gerelateerde nummers toe aan de wachtrij tijdens het afspelen</string>
+    <string name="settings_clear_queue_on_new_song">Wachtrij wissen bij nieuw nummer</string>
+    <string name="settings_clear_queue_on_new_song_desc">Wis de huidige wachtrij wanneer direct een nieuw nummer wordt gestart</string>
+    <string name="settings_playback_persistence">Afspeelgeheugen</string>
+    <string name="settings_remember_repeat_mode">Herhaalmodus onthouden</string>
+    <string name="settings_remember_repeat_mode_desc">Sla de herhaalmodus (Uit/Alles/Eén) op tussen app-starts</string>
+    <string name="settings_remember_shuffle_mode">Shuffle-modus onthouden</string>
+    <string name="settings_remember_shuffle_mode_desc">Sla de shuffle aan/uit-status op tussen app-starts</string>
+    
+    <string name="settings_playlists">Afspeellijsten</string>
+    <string name="settings_playlists_overview">Overzicht</string>
+    <string name="settings_playlists_management">Beheer</string>
+    <string name="settings_create_new_playlist">Nieuwe afspeellijst maken</string>
+    <string name="settings_create_new_playlist_desc">Voeg een nieuwe aangepaste afspeellijst toe</string>
+    <string name="settings_import_playlists">Afspeellijsten importeren</string>
+    <string name="settings_import_playlists_desc">Importeren vanuit JSON-, M3U- of PLS-bestanden</string>
+    <string name="settings_export_all_playlists">Alle afspeellijsten exporteren</string>
+    <string name="settings_export_all_playlists_desc">Maak een back-up van alle afspeellijsten naar een bestand</string>
+    <string name="settings_cleanup_empty_playlists">Lege afspeellijsten opschonen</string>
+    <string name="settings_cleanup_empty_playlists_desc">Verwijder %1$d lege afspeellijst(en)%2$s</string>
+    <string name="settings_default_playlists">Standaard afspeellijsten</string>
+    <string name="settings_no_default_playlists">Geen standaard afspeellijsten</string>
+    <string name="settings_no_default_playlists_desc">Standaard afspeellijsten worden automatisch aangemaakt</string>
+    <string name="settings_my_playlists">Mijn afspeellijsten</string>
+    <string name="settings_no_custom_playlists">Geen aangepaste afspeellijsten</string>
+    <string name="settings_no_custom_playlists_desc">Maak je eerste afspeellijst om te beginnen</string>
+    <string name="settings_total">Totaal</string>
+    <string name="settings_custom">Aangepast</string>
+    <string name="settings_default">Standaard</string>
+    
+    <string name="operation_exporting_playlists">Afspeellijsten exporteren…</string>
+    <string name="operation_exporting_playlists_location">Afspeellijsten exporteren naar geselecteerde locatie…</string>
+    <string name="operation_importing_playlist">Afspeellijst importeren…</string>
+    
+    <string name="dialog_cleanup_empty_playlists_title">Lege afspeellijsten opschonen?</string>
+    <string name="dialog_cleanup_empty_playlists_message">Dit zal %1$d lege afspeellijst(en)%2$s permanent verwijderen. Deze actie kan niet ongedaan worden gemaakt.</string>
+    <string name="dialog_delete_playlist_title">Afspeellijst verwijderen?</string>
+    <string name="dialog_delete_playlist_message">Weet je zeker dat je \"%1$s\" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.</string>
+    <string name="dialog_delete">Verwijderen</string>
+    <string name="dialog_cancel">Annuleren</string>
+    <string name="dialog_save">Opslaan</string>
+    
+    <string name="settings_media_scan">Mediascan</string>
+    <string name="settings_mode_selection">Modusselectie</string>
+    <string name="settings_blacklist_mode">Zwarte lijst-modus</string>
+    <string name="settings_blacklist_mode_desc">Verberg specifieke nummers en mappen uit je bibliotheek</string>
+    <string name="settings_whitelist_mode">Witte lijst-modus</string>
+    <string name="settings_whitelist_mode_desc">Toon alleen nummers uit geselecteerde mappen</string>
+    <string name="settings_song_management">Nummerbeheer</string>
+    <string name="settings_manage_songs">Nummers beheren</string>
+    <string name="settings_manage_songs_desc">%1$d %2$s nummers</string>
+    <string name="settings_blocked">geblokkeerd</string>
+    <string name="settings_whitelisted">op witte lijst</string>
+    <string name="settings_clear_all_songs">Alle nummers wissen</string>
+    <string name="settings_clear_all_songs_desc">Verwijder alle %1$s nummers</string>
+    <string name="settings_folder_management">Mapbeheer</string>
+    <string name="settings_manage_folders">Mappen beheren</string>
+    <string name="settings_manage_folders_desc">%1$d %2$s mappen</string>
+    <string name="settings_add_folder">Map toevoegen</string>
+    <string name="settings_add_folder_desc">Selecteer een map om te %1$s</string>
+    <string name="settings_block">blokkeren</string>
+    <string name="settings_whitelist">toestaan</string>
+    <string name="settings_clear_all_folders">Alle mappen wissen</string>
+    <string name="settings_clear_all_folders_desc">Verwijder alle %1$s mappen</string>
+    <string name="settings_quick_tips">Snelle tips</string>
+    <string name="settings_quick_tip_blacklist">Zwarte lijst-modus verbergt specifieke nummers en mappen uit je bibliotheek</string>
+    <string name="settings_quick_tip_whitelist">Witte lijst-modus toont alleen nummers uit geselecteerde mappen</string>
+    <string name="settings_quick_tip_folder">Gebruik mapbeheer om je muziekcollectie te organiseren</string>
+    <string name="settings_blocked_songs">Geblokkeerde nummers</string>
+    <string name="settings_whitelisted_songs">Toegestane nummers</string>
+    <string name="settings_blocked_folders">Geblokkeerde mappen</string>
+    <string name="settings_whitelisted_folders">Toegestane mappen</string>
+    <string name="settings_total_songs">Totaal aantal nummers</string>
+    <string name="settings_clear_all_button">Wis alle %1$s nummers</string>
+    <string name="settings_add_folder_button">Map toevoegen</string>
+    <string name="settings_clear_all_button_short">Alles wissen</string>
+    <string name="settings_root">Root</string>
+    
+    <string name="settings_spotify_canvas">Spotify Canvas</string>
+    <string name="settings_spotify_api_config">Spotify API-configuratie</string>
+    <string name="settings_spotify_api_config_desc">Voer je Spotify API-gegevens in om zoeken naar nummers en Canvas-video\'s in te schakelen.</string>
+    <string name="settings_spotify_default_keys_warning">Je gebruikt momenteel de standaard Spotify-sleutels van de app. Voor volledige functionaliteit en om limieten te voorkomen, voer je je eigen Client ID en Secret in.</string>
+    <string name="settings_spotify_client_id">Client ID</string>
+    <string name="settings_spotify_client_id_placeholder">Jouw Spotify Client ID</string>
+    <string name="settings_spotify_client_secret">Client Secret</string>
+    <string name="settings_spotify_client_secret_placeholder">Jouw Spotify Client Secret</string>
+    <string name="settings_spotify_test_connection">Verbinding testen</string>
+    <string name="settings_spotify_testing">Testen…</string>
+    <string name="settings_spotify_error">Fout: %1$s</string>
+    <string name="settings_spotify_instructions">Om je Spotify API-gegevens te verkrijgen:\n• Ga naar developer.spotify.com\n• Maak een nieuwe app aan\n• Kopieer de Client ID en Client Secret</string>
+    
+    <string name="settings_about">Over</string>
+    <string name="settings_about_music_player">Muziekspeler</string>
+    <string name="settings_about_version">v%1$s</string>
+    <string name="settings_about_description">Een moderne, veelzijdige muziekspeler voor Android</string>
+    <string name="settings_about_project_details">Projectdetails</string>
+    <string name="settings_about_version_label">Versie</string>
+    <string name="settings_about_build">Build</string>
+    <string name="settings_about_target_sdk">Doel-SDK</string>
+    <string name="settings_about_architecture">Architectuur</string>
+    <string name="settings_about_architecture_value">ARM64 &amp; ARM32</string>
+    <string name="settings_about_built_with">Gebouwd met moderne Android-technologieën en Material Design 3</string>
+    <string name="settings_about_credits">Credits</string>
+    <string name="settings_about_developer_name">Anjishnu Nandi</string>
+    <string name="settings_about_developer_role">Hoofdontwikkelaar &amp; Projectarchitect</string>
+    <string name="settings_about_team">Team ChromaHub</string>
+    <string name="settings_about_team_desc">Gepassioneerde ontwikkelaars die innovatieve ervaringen creëren</string>
+    <string name="settings_about_team_chromahub">Team ChromaHub</string>
+    <string name="settings_about_special_thanks">Speciale dank</string>
+    <string name="settings_about_community">Gemeenschap</string>
+    <string name="settings_about_community_desc">Speciale dank aan onze geweldige communityleden die hebben bijgedragen aan het verbeteren van Rhythm door middel van testen, feedback, suggesties en samenwerking.</string>
+    <string name="settings_about_contributor_izzy_name">Izzy</string>
+    <string name="settings_about_contributor_izzy_role">Beheert updates op IzzyOnDroid</string>
+    <string name="settings_about_contributor_christian_name">Christian</string>
+    <string name="settings_about_contributor_christian_role">Collab &amp; Hoofdontwikkelaar Project Booming</string>
+    <string name="settings_about_contributor_alex_name">Alex</string>
+    <string name="settings_about_contributor_alex_role">Spotify Canvas API-integratie</string>
+    <string name="settings_about_want_featured">Wil je hier vermeld worden?</string>
+    <string name="settings_about_contribute">Draag bij aan Rhythm door testen, feedback of codebijdragen en sluit je aan bij onze geweldige community!</string>
+    <string name="settings_about_open_source_libraries">Open source-bibliotheken</string>
+    <string name="settings_about_open_source_libs">Open source-bibliotheken</string>
+    <string name="settings_about_view_dependencies">Bekijk afhankelijkheden</string>
+    <string name="settings_about_view_licenses">Bekijk alle afhankelijkheden en licenties</string>
+    <string name="settings_about_actions">Acties</string>
+    <string name="settings_about_check_updates">Controleer op updates</string>
+    <string name="settings_about_visit_website">Bezoek website</string>
+    <string name="settings_about_view_github">Bekijk op GitHub</string>
+    <string name="settings_about_report_bug">Meld een fout of stel een functie voor</string>
+    <string name="settings_about_telegram_support">Telegram-ondersteuningsgroep</string>
+    
+    <string name="settings_updates">Updates</string>
+    <string name="settings_updates_error">Fout</string>
+    <string name="settings_updates_checking">Controleren…</string>
+    <string name="settings_updates_available">Update beschikbaar</string>
+    <string name="settings_updates_disabled">Updates uitgeschakeld</string>
+    <string name="settings_updates_manual_check">Handmatige controle</string>
+    <string name="settings_updates_up_to_date">Up-to-date</string>
+    
+    <string name="status_disabled">Uitgeschakeld</string>
+    
+    <string name="home_title">Rhythm</string>
+    <string name="home_settings_cd">Instellingen</string>
+    <string name="home_greeting_night">Goedenacht</string>
+    <string name="home_greeting_morning">Goedemorgen</string>
+    <string name="home_greeting_afternoon">Goedemiddag</string>
+    <string name="home_greeting_evening">Goedenavond</string>
+    <string name="home_discover_albums">Ontdek albums</string>
+    <string name="home_explore_music">Verken geweldige muziek</string>
+    <string name="home_no_featured_albums">Geen uitgelichte albums</string>
+    <string name="home_no_featured_albums_desc">Voeg albums toe aan je bibliotheek om uitgelichte inhoud te zien</string>
+    <string name="home_artists">Artiesten</string>
+    <string name="home_explore_musicians">Verken je favoriete muzikanten</string>
+    <string name="home_no_artists">Geen artiesten gevonden</string>
+    <string name="home_no_artists_desc">Voeg muziek toe aan je bibliotheek om je artiesten te zien</string>
+    <string name="home_new_releases">Nieuwe releases</string>
+    <string name="home_fresh_music">Nieuwe muziek speciaal voor jou</string>
+    <string name="home_no_new_releases">Geen nieuwe releases</string>
+    <string name="home_no_new_releases_desc">Nieuwe albums verschijnen hier wanneer ze aan je bibliotheek worden toegevoegd</string>
+    <string name="home_recently_added">Recent toegevoegd</string>
+    <string name="home_latest_additions">Je laatste toevoegingen</string>
+    <string name="home_no_recently_added">Geen recent toegevoegde albums</string>
+    <string name="home_no_recently_added_desc">Albums die je aan je bibliotheek toevoegt, verschijnen hier</string>
+    
+    <string name="home_quote_late_night_1">Sfeer voor de late uurtjes voor de dromers 🌙</string>
+    <string name="home_quote_late_night_2">Perfecte tijd voor je nachtelijke playlist 🎧</string>
+    <string name="home_quote_late_night_3">Muziek klinkt beter rond middernacht ✨</string>
+    <string name="home_quote_late_night_4">Laat de nachtmuziek doorspelen 🌟</string>
+    
+    <string name="home_quote_morning_1">Begin je dag met de perfecte soundtrack ✨</string>
+    <string name="home_quote_morning_2">Laat muziek je ochtendroutine energie geven 🎵</string>
+    <string name="home_quote_morning_3">Elke ochtend is een nieuwe symfonie die wacht om te beginnen 🌅</string>
+    <string name="home_quote_morning_4">Koffie en muziek - de perfecte ochtendmix ☕</string>
+    
+    <string name="home_quote_afternoon_1">Zet door met je favoriete beats 🚀</string>
+    <string name="home_quote_afternoon_2">Muziek maakt alles beter 💪</string>
+    <string name="home_quote_afternoon_3">Laat het ritme je dag leiden 🎯</string>
+    <string name="home_quote_afternoon_4">Verhoog de focus met goede nummers 🔥</string>
+    
+    <string name="home_quote_evening_1">Tijd om te ontspannen met rustgevende melodieën 🌅</string>
+    <string name="home_quote_evening_2">Laat de avondsoundtrack beginnen 🎶</string>
+    <string name="home_quote_evening_3">Perfecte tijd voor je chill-playlist 😌</string>
+    <string name="home_quote_evening_4">Kom tot rust met je favoriete nummers 🌇</string>
+    
+    <string name="home_quote_night_1">De nacht is muziektijd 🌙</string>
+    <string name="home_quote_night_2">Laat de nacht je toezingen 🎵</string>
+    <string name="home_quote_night_3">Perfecte sfeer voor een rustige nacht 🌟</string>
+    <string name="home_quote_night_4">Omarm de rust van de nacht 😴</string>
+    
+    <string name="home_continue_song">Ga verder waar je gebleven was met \"%1$s\"</string>
+    <string name="home_adventure_continues">Je muzikale avontuur gaat verder</string>
+    <string name="home_discover_next_favorite">Klaar om je volgende favoriete nummer te ontdekken?</string>
+    
+    <string name="home_recommended_title">Aanbevolen voor jou</string>
+    <string name="home_recommended_subtitle">Gebaseerd op je luistergeschiedenis</string>
+    <string name="home_no_recommendations">Geen aanbevelingen</string>
+    <string name="home_no_recommendations_desc">Luister naar muziek om persoonlijke aanbevelingen te krijgen</string>
+    
+    <string name="home_listening_stats">Je luisterstatistieken</string>
+    <string name="home_listening_stats_subtitle">De muzikale reis van deze week</string>
+    <string name="home_stat_listening_time">Luistertijd</string>
+    <string name="home_stat_songs_played">Nummers afgespeeld</string>
+    <string name="home_stat_artists">Artiesten</string>
+    
+    <string name="home_mood_title">Sfeer &amp; Momenten</string>
+    <string name="home_mood_subtitle">Muziek voor elk gevoel</string>
+    <string name="home_mood_energize">Energie</string>
+    <string name="home_mood_energize_desc">Geef je energie een boost</string>
+    <string name="home_mood_relax">Ontspannen</string>
+    <string name="home_mood_relax_desc">Ontspan en haal adem</string>
+    <string name="home_mood_focus">Focus</string>
+    <string name="home_mood_focus_desc">Concentratiemodus</string>
+    
+    <string name="home_recently_played">Recent afgespeeld</string>
+    <string name="home_recently_played_subtitle">Vervolg je muzikale reis</string>
+    <string name="home_no_recent_activity">Geen recente activiteit</string>
+    <string name="home_no_recent_activity_desc">Begin met luisteren om je recent afgespeelde nummers hier te zien</string>
+    
+    <string name="ui_view_all">Alles bekijken</string>
+    <string name="ui_play_action">Speel %1$s</string>
+    <string name="ui_songs_count">%1$d nummers</string>
+    
+    <string name="update_available_cd">Update beschikbaar</string>
+    <string name="update_available_title">Update beschikbaar</string>
+    <string name="update_version">Versie %1$s</string>
+    <string name="update_whats_new">Wat is er nieuw:</string>
+    <string name="update_now">Nu updaten</string>
+    <string name="update_downloading">Downloaden…</string>
+    
+    <string name="library_title">Bibliotheek</string>
+    <string name="library_your_music">Jouw muziek</string>
+    <string name="library_your_playlists">Jouw afspeellijsten</string>
+    <string name="library_your_albums">Jouw albums</string>
+    <string name="library_your_artists">Jouw artiesten</string>
+    <string name="library_tracks_count">%1$d van %2$d nummers</string>
+    <string name="library_no_songs">Nog geen nummers</string>
+    <string name="library_no_artists">Geen artiesten gevonden</string>
+    <string name="library_no_artists_desc">Voeg muziek toe om je artiesten hier te zien</string>
+    <string name="library_start_collection">Begin met het bouwen van je muziekcollectie</string>
+    <string name="library_sort_artists">Sorteer artiesten op</string>
+    <string name="library_explore">Verkennen</string>
+    <string name="library_storage_locations">Opslaglocaties</string>
+    <string name="library_pinned_folders">Vastgemaakte mappen</string>
+    <string name="library_go_back">Ga terug</string>
+    <string name="library_home">Home</string>
+    <string name="library_tap_browse">Tik om bestanden te bladeren</string>
+    <string name="library_play_all">Alles afspelen</string>
+    <string name="library_check_permissions">Controleer opslagrechten als bestanden niet verschijnen</string>
+    <string name="library_creating_playlist">Afspeellijst maken en %1$d nummers toevoegen…</string>
+    <string name="library_playlist_name_empty">Naam van afspeellijst mag niet leeg zijn</string>
+    
+    <string name="storage_permission_required">Opslagtoestemming vereist</string>
+    <string name="storage_permission_desc">Om door je muziekbestanden te bladeren en je apparaatopslag te verkennen, heeft Rhythm toestemming nodig om toegang te krijgen tot je bestanden en media.</string>
+    <string name="storage_permission_audio_only">Dit geeft alleen toegang tot audiobestanden en mappen die muziek bevatten.</string>
+    
+    <string name="player_now_playing">NU AAN HET SPELEN</string>
+    <string name="player_loading_lyrics">Songtekst laden…</string>
+    <string name="player_shuffle">SHUFFLE</string>
+    <string name="player_lyrics">TEKST</string>
+    <string name="player_repeat">HERHALEN</string>
+    <string name="player_queue">Wachtrij</string>
+    <string name="player_playback_speed">Afspeelsnelheid</string>
+    <string name="player_playback_speed_desc">Pas de snelheid van het afspelen aan.</string>
+    <string name="playback_speed">Afspeelsnelheid</string>
+    
+    <string name="search_filter_results">Resultaten filteren</string>
+    <string name="search_results">Zoekresultaten</string>
+    <string name="search_songs">Nummers</string>
+    <string name="search_albums">Albums</string>
+    <string name="search_artists">Artiesten</string>
+    <string name="search_playlists">Afspeellijsten</string>
+    <string name="search_view_all_songs">Bekijk alle nummers</string>
+    <string name="search_see_all_songs">Bekijk alle %1$d nummers</string>
+    <string name="search_recently_searched">Recent gezocht</string>
+    <string name="search_recent_searches">Recente zoekopdrachten</string>
+    <string name="search_clear">Wissen</string>
+    <string name="search_no_recent_searches">Geen recente zoekopdrachten</string>
+    <string name="search_no_recent_searches_desc">Je zoekgeschiedenis verschijnt hier</string>
+    <string name="search_recently_played">Recent afgespeeld</string>
+    <string name="search_no_recently_played">Niet recent afgespeeld</string>
+    <string name="search_no_recently_played_desc">Nummers die je afspeelt verschijnen hier</string>
+    <string name="search_recommended">Aanbevolen voor jou</string>
+    <string name="search_recommended_desc">Gebaseerd op je luistergeschiedenis</string>
+    <string name="search_all_songs">Alle nummers (%1$d)</string>
+    <string name="search_browse_by_genre">Bladeren op genre</string>
+    <string name="search_detecting_genres">Genres detecteren…</string>
+    <string name="search_genre_suggestions">Genresuggesties verschijnen hier zodra gedetecteerd</string>
+    <string name="search_no_genres">Geen genres gedetecteerd in je bibliotheek</string>
+    <string name="search_no_recent">Geen recente zoekopdrachten</string>
+    
+    <string name="ui_play">Afspelen</string>
+    <string name="ui_or">of</string>
+    <string name="ui_skip_for_now">Overslaan voor nu</string>
+    <string name="ui_dismiss">Sluiten</string>
+    <string name="ui_retry">Opnieuw</string>
+    <string name="ui_get_started">Aan de slag</string>
+    <string name="ui_enable_updates">Updates inschakelen</string>
+    <string name="ui_check_now">Nu controleren</string>
+    <string name="ui_download_update">Update downloaden</string>
+    <string name="ui_install_update">Update installeren</string>
+    <string name="ui_cancel_download">Download annuleren</string>
+    
+    <string name="common_rhythm">Rhythm</string>
+    <string name="common_songs">Nummers</string>
+    <string name="common_home">Home</string>
+    <string name="common_library">Bibliotheek</string>
+    
+    <string name="splash_tagline">Jouw muziek, jouw ritme</string>
+    <string name="splash_loading">Muziekbibliotheek laden…</string>
+    <string name="splash_ready">Klaar om te grooven!</string>
+    
+    <string name="badge_studio_master">STUDIO MASTER</string>
+    <string name="badge_lossless">LOSSLESS</string>
+    
+    <string name="nav_no_matching_songs">Geen overeenkomende nummers gevonden</string>
+    <string name="nav_try_different">Probeer een andere zoekopdracht</string>
+    
+    <string name="updates_title">Updates</string>
+    <string name="updates_error">Fout</string>
+    <string name="updates_checking">Controleren op updates…</string>
+    <string name="updates_available">Update beschikbaar</string>
+    <string name="updates_disabled">Updates uitgeschakeld</string>
+    <string name="updates_manual_check">Alleen handmatige controle</string>
+    <string name="updates_up_to_date">Up-to-date</string>
+    <string name="updates_whats_new">Wat is er nieuw</string>
+    <string name="updates_known_issues">Bekende problemen</string>
+    <string name="updates_downloading">Update downloaden…</string>
+    <string name="updates_download_complete">Download voltooid</string>
+    <string name="updates_check_failed">Updatecontrole mislukt</string>
+    <string name="updates_settings">Update-instellingen</string>
+    <string name="updates_released">Uitgebracht: %1$s</string>
+    <string name="updates_version">Versie %1$s</string>
+    <string name="updates_enable">Updates inschakelen</string>
+    <string name="updates_check_now">Nu controleren</string>
+    <string name="updates_download_update">Update downloaden</string>
+    <string name="updates_install_update">Update installeren</string>
+    <string name="updates_cancel_download">Download annuleren</string>
+    <string name="cancel_download">Download annuleren</string>
+    <string name="download_update">Update downloaden</string>
+    <string name="updates_auto_check_disabled">Automatisch controleren op updates is uitgeschakeld. Je kunt nog steeds handmatig controleren.</string>
+    <string name="updates_disabled_desc">App-updates zijn uitgeschakeld in instellingen</string>
+    <string name="updates_smart_polling">Slim peilen actief</string>
+    <string name="updates_smart_polling_desc">Gebruik efficiënte HTTP-checks om updates te detecteren en GitHub API-aanroepen te minimaliseren. Je ontvangt direct meldingen wanneer nieuwe versies worden uitgebracht.</string>
+    <string name="updates_channel_desc">Kies welk updatekanaal je wilt volgen:</string>
+    
+    <string name="onboarding_welcome_title">Rhythm</string>
+    <string name="onboarding_welcome_subtitle">Je alles-in-één offline muziekspeler</string>
+    <string name="onboarding_welcome_desc">Personaliseer elk aspect van je luisterervaring met krachtige functies en volledige privacy. Speel je muziek offline, advertentievrij en met volledige controle.</string>
+    <string name="onboarding_get_started">Aan de slag</string>
+    <string name="onboarding_offline">Offline</string>
+    <string name="onboarding_customizable">Aanpasbaar</string>
+    <string name="onboarding_private">Privé</string>
+    <string name="onboarding_tagline">Muziekspeler • Ontworpen voor Android</string>
+    <string name="onboarding_android13_notice">Android 13+ melding</string>
+    <string name="onboarding_android13_desc">Op nieuwere Android-versies zie je meerdere toestemmingsverzoeken. Geef toegang tot audiobestanden en meldingen voor de beste ervaring.</string>
+    <string name="onboarding_granted">✓ Toegestaan</string>
+    <string name="onboarding_backup_title">Bescherm je gegevens</string>
+    <string name="onboarding_backup_desc">Houd je afspeellijsten, instellingen en voorkeuren veilig met automatische back-ups. Herstel alles bij het wisselen van apparaat of na herinstallatie - verlies nooit je muziekcollectie.</string>
+    <string name="onboarding_auto_backup">Auto-back-up</string>
+    <string name="onboarding_auto_backup_desc">Maak wekelijks automatisch een back-up van instellingen</string>
+    <string name="onboarding_backup_center">Back-up &amp; Herstelcentrum</string>
+    <string name="onboarding_backup_center_desc">Maak back-ups of herstel vanuit bestaande back-upbestanden</string>
+    <string name="onboarding_manual_backup_info">Je kunt handmatig back-ups maken in Instellingen > Back-up &amp; Herstel</string>
+    <string name="onboarding_what_backed_up">Wat wordt er in de back-up opgenomen?</string>
+    <string name="onboarding_backed_up_1">Alle instellingen, afspeellijsten, thema\'s en bibliotheekaanpassingen</string>
+    <string name="onboarding_backed_up_2">Herstel vanuit bestanden of klembord met één tik</string>
+    <string name="onboarding_backed_up_3">Back-ups worden lokaal op je apparaat opgeslagen voor privacy</string>
+    <string name="onboarding_audio_title">Audio- &amp; Afspeelervaring</string>
+    <string name="onboarding_audio_desc">Pas je audio-ervaring aan met haptische feedback, standaardscherm, volumeregeling, wachtrijgedrag, shuffle-instellingen, songtekstweergave en equalizer-instellingen.</string>
+    <string name="onboarding_lyrics_sources">API: Online teksten • Embedded: Metadata teksten • Lokaal: .lrc bestanden</string>
+    <string name="onboarding_additional_features">Extra audiofuncties</string>
+    <string name="onboarding_equalizer_desc">Equalizer: Stem audiofrequenties fijn af in Instellingen > Equalizer</string>
+    <string name="onboarding_sleep_timer_desc">Slaaptimer: Stop afspelen automatisch na ingestelde tijd (toegankelijk vanuit Nu Spelen scherm)</string>
+    <string name="onboarding_library_title">Organiseer je muziekbibliotheek</string>
+    <string name="onboarding_library_desc">Pas aan hoe je albums, artiesten en nummers worden weergegeven. Kies je voorkeurslay-out, sorteervolgorde en tabbladindeling.</string>
+    <string name="onboarding_library_how_works">Hoe bibliotheekorganisatie werkt</string>
+    <string name="onboarding_library_1">Pas de tabvolgorde in Bibliotheek aan voor snelle toegang tot je favorieten</string>
+    <string name="onboarding_library_2">Maak en beheer afspeellijsten direct vanuit het Bibliotheekscherm</string>
+    <string name="onboarding_library_3">Geavanceerde weergave- en sorteeropties beschikbaar in Instellingen > Thema-aanpassing</string>
+    <string name="onboarding_theme_title">Maak Rhythm van jou</string>
+    <string name="onboarding_theme_desc">Personaliseer het uiterlijk van Rhythm om bij jouw stijl te passen. Kies je systeemthema, lettertype of Material You dynamische kleuren (Android 12+).</string>
+    <string name="onboarding_live_preview">Live voorbeeld</string>
+    <string name="onboarding_primary">Primair</string>
+    <string name="onboarding_container">Container</string>
+    <string name="onboarding_accent">Accent</string>
+    <string name="onboarding_advanced_custom">Geavanceerde aanpassing</string>
+    <string name="onboarding_advanced_custom_desc">Aangepaste kleurenschema\'s, albumhoeskleuren en lettertypen</string>
+    <string name="onboarding_more_tuner">Meer aanpassing in Instellingen</string>
+    <string name="onboarding_tuner_1">Aangepaste kleurenschema\'s en albumhoeskleurextractie</string>
+    <string name="onboarding_tuner_2">Lettertype-aanpassing en typografie-instellingen</string>
+    <string name="onboarding_tuner_3">Geavanceerde thema-opties beschikbaar in Instellingen > Thema-aanpassing</string>
+    <string name="onboarding_step_progress">%1$d van %2$d</string>
+    <string name="onboarding_advanced_customization">Geavanceerde aanpassing</string>
+    <string name="onboarding_advanced_customization_desc">Aangepaste kleurenschema\'s, albumhoeskleuren en lettertypen</string>
+    
+    <string name="onboarding_media_scan_title">Filter je muziekbibliotheek</string>
+    <string name="onboarding_media_scan_desc">Bepaal welke audiobestanden in je bibliotheek verschijnen. Gebruik Zwarte lijst-modus om ongewenste bestanden (beltonen, meldingen) te verbergen, of Witte lijst-modus om alleen specifieke muziekmappen te tonen.</string>
+    <string name="onboarding_media_scan_configure">Mediascan configureren</string>
+    <string name="onboarding_media_scan_current_mode">Kies Zwarte lijst of Witte lijst-modus • Huidig: %1$s</string>
+    <string name="onboarding_media_scan_settings">Mediascan-instellingen</string>
+    <string name="onboarding_media_scan_blacklist">Zwarte lijst-modus: Verberg specifieke nummers en mappen (beltonen, meldingen)</string>
+    <string name="onboarding_media_scan_whitelist">Witte lijst-modus: Toon alleen nummers uit geselecteerde mappen</string>
+    <string name="onboarding_media_scan_configure_in_tuner">Configureer scannen in Instellingen > Mediascan</string>
+    <string name="onboarding_storage_title">Opslagbeheer</string>
+    <string name="onboarding_storage_desc">Beheer cachegrootte en opslag in Instellingen > Cachebeheer</string>
+    
+    <string name="onboarding_complete_title">Je bent er helemaal klaar voor!</string>
+    <string name="onboarding_complete_desc">Rhythm is klaar om te spelen! Je muziekbibliotheek wordt op de achtergrond gescand. Dit is wat er is geconfigureerd:</string>
+    <string name="onboarding_whats_next">Wat nu?</string>
+    <string name="onboarding_next_browse">Blader door je nummers, albums en artiesten</string>
+    <string name="onboarding_next_create">Maak je eerste afspeellijst</string>
+    <string name="onboarding_next_finetune">Stem audio fijn af met de Equalizer</string>
+    <string name="onboarding_next_explore">Verken meer instellingen op elk moment</string>
+    <string name="onboarding_settings_change">Alle instellingen kunnen op elk moment worden gewijzigd in Instellingen</string>
+    
+    <string name="settings_tip_theme">Pas je thema aan met kleuren, lettertypen en feestelijke effecten</string>
+    <string name="settings_tip_haptic">Schakel haptische feedback in voor tactiele reacties</string>
+    <string name="settings_tip_media_scan">Gebruik mediascan om ongewenste bestanden uit je bibliotheek te verbergen</string>
+    <string name="settings_default_screen">Standaard landingsscherm</string>
+    <string name="settings_default_screen_desc">Kies je startscherm</string>
+    <string name="settings_home_desc">Ontdek nieuwe muziek en aanbevelingen</string>
+    <string name="settings_library_desc">Snelle toegang tot je muziekcollectie</string>
+    
+    <string name="cache_current_status">Huidige cachestatus</string>
+    <string name="cache_calculating">Cachegrootte berekenen…</string>
+    <string name="cache_total_size">Totale cachegrootte:</string>
+    <string name="cache_limit">Cachelimiet:</string>
+    <string name="cache_max_size">Maximale cachegrootte</string>
+    <string name="cache_max_size_desc">Stel de maximale grootte in voor gecachete gegevens</string>
+    <string name="cache_about">Over cache</string>
+    <string name="cache_size_limit">Cachegrootte-limiet</string>
+    <string name="cache_clear_on_exit">Cache wissen bij afsluiten</string>
+    <string name="cache_clear_on_exit_desc">Wis automatisch gecachete gegevens wanneer de app sluit</string>
+    
+    <string name="lyrics_source_priority">Songtekstbron-prioriteit</string>
+    <string name="lyrics_choose_source">Kies waar te zoeken naar songteksten</string>
+    <string name="lyrics_embedded_note">Embedded songteksten worden gehaald uit ID3v2 USLT-tags in je audiobestanden. Gebruik correct getagde MP3/FLAC-bestanden voor de beste resultaten.</string>
+    
+    <string name="theme_good_to_know">Goed om te weten</string>
+    <string name="theme_tip_album_art">Albumhoeskleuren passen zich dynamisch aan je muziek aan</string>
+    <string name="theme_tip_material_you">Material You gebruikt systeemachtergrondkleuren (Android 12+)</string>
+    <string name="theme_tip_custom_fonts">Importeer aangepaste lettertypen om typografie te personaliseren</string>
+    <string name="theme_color_source">Kleurbron</string>
+    <string name="theme_color_source_desc">Kies hoe kleuren worden geëxtraheerd</string>
+    <string name="theme_font_source">Lettertypebron</string>
+    <string name="theme_font_source_desc">Kies waar lettertypen vandaan worden geladen</string>
+    <string name="theme_color_schemes">Kleurenschema\'s</string>
+    <string name="theme_color_schemes_desc">Kies uit vooraf ingestelde kleurenschema\'s</string>
+    <string name="theme_custom_picker">Aangepaste kleurenkiezer</string>
+    <string name="theme_custom_picker_desc">Maak je eigen kleurenschema</string>
+    <string name="theme_font_selection">Lettertypeselectie</string>
+    <string name="theme_font_selection_desc">Kies uit beschikbare systeemlettertypen</string>
+    
+    <string name="playlist_no_songs_yet">Nog geen nummers</string>
+    
+    <string name="backup_title">Back-up &amp; Herstel</string>
+    <string name="backup_desc">Beveilig je persoonlijke instellingen, afspeellijsten en voorkeuren. Maak handmatig back-ups of schakel automatische wekelijkse back-ups in voor gemoedsrust.</string>
+    <string name="backup_auto_weekly">Automatisch wekelijks back-up maken van instellingen</string>
+    <string name="backup_choose_save_location">Kies waar je back-upbestand wordt opgeslagen</string>
+    <string name="backup_paste_data">Back-upgegevens plakken</string>
+    <string name="backup_select_file">Selecteer back-upbestand</string>
+    <string name="backup_whats_included">Wat is inbegrepen in de back-up?</string>
+    <string name="backup_included_1">Alle instellingen, afspeellijsten, thema\'s en bibliotheekaanpassingen</string>
+    <string name="backup_included_2">Herstel vanuit bestanden of klembord met één tik</string>
+    <string name="backup_included_3">Back-ups worden lokaal op je apparaat opgeslagen voor privacy</string>
+    <string name="backup_manage">BACK-UP BEHEREN</string>
+    <string name="backup_restore">BACK-UP HERSTELLEN</string>
+    
+    <string name="blacklist_title">Zwarte lijst-beheer</string>
+    <string name="blacklist_desc">Geblokkeerde nummers en mappen verschijnen niet in zoekresultaten, aanbevelingen of autoplay-wachtrijen</string>
+    <string name="blacklist_songs">Geblokkeerde nummers</string>
+    <string name="blacklist_no_songs">Geen geblokkeerde nummers</string>
+    <string name="blacklist_all_available">Al je nummers zijn beschikbaar voor afspelen</string>
+    <string name="blacklist_add_folder">Voeg map toe aan zwarte lijst</string>
+    <string name="blacklist_folders">Geblokkeerde mappen</string>
+    <string name="blacklist_no_folders">Geen geblokkeerde mappen</string>
+    <string name="blacklist_tap_to_add">Tik op de knop hierboven om mappen aan de zwarte lijst toe te voegen</string>
+    <string name="blacklist_blocked_songs">Geblokkeerde nummers</string>
+    <string name="blacklist_available_songs">Beschikbare nummers</string>
+    
+    <string name="queue_empty">Je wachtrij is leeg</string>
+    <string name="queue_add_songs">Voeg nummers toe uit je bibliotheek om te beginnen met luisteren</string>
+    <string name="queue_no_more">Geen nummers meer in wachtrij</string>
+    <string name="queue_add_more">Voeg meer nummers toe om de muziek te laten spelen</string>
+    
+    <string name="playlist_create">Afspeellijst maken</string>
+    <string name="playlist_name_empty">Naam van afspeellijst mag niet leeg zijn</string>
+    <string name="playlist_queue_not_empty">Wachtrij niet leeg</string>
+    <string name="playlist_queue_songs">Je hebt %1$d nummer(s)%2$s in de huidige wachtrij.</string>
+    <string name="playlist_how_play">Hoe wil je \"%1$s\" afspelen?</string>
+    
+    <string name="licenses_title">Open source-licenties</string>
+    <string name="licenses_desc">Gebouwd met geweldige open source-projecten</string>
+    <string name="licenses_apache">Apache-licentie 2.0</string>
+    <string name="licenses_attribution">Alle bibliotheken staan gebruik, reproductie en distributie toe met de juiste bronvermelding</string>
+    
+    <string name="player_chip_order_title">Volgorde spelerknoppen</string>
+    <string name="player_chip_order_desc">Pas spelerknoppen aan</string>
+    <string name="player_chip_reset">Herstellen naar standaard</string>
+    
+    <string name="library_tab_order_title">Volgorde bibliotheektabbladen</string>
+    <string name="library_tab_order_desc">Volgorde wijzigen en zichtbaarheid schakelen</string>
+    
+    <string name="playback_lyrics_priority">Songtekstbron-prioriteit</string>
+    <string name="playback_lyrics_priority_desc">Kies welke bron eerst te controleren voor songteksten</string>
+    <string name="playback_settings">Afspeelinstellingen</string>
+    <string name="playback_audio_settings">Audio-instellingen</string>
+    <string name="playback_active_device">ACTIEF APPARAAT</string>
+    <string name="playback_no_device">Geen apparaat verbonden</string>
+    <string name="playback_tap_output">Tik om uitvoer te selecteren</string>
+    
+    <string name="lyrics_sync_adjustment">Sync-aanpassing</string>
+    <string name="lyrics_sync_note">Sync-aanpassing werkt alleen met tijd-gesynchroniseerde songteksten (LRC-formaat). Gebruik Reset om gesynchroniseerde songteksten op te halen indien beschikbaar.</string>
+    <string name="lyrics_placeholder">Voer songtekst hier in…\n\nJe kunt LRC-formaat gebruiken:\n[00:12.00] Regel één\n[00:17.00] Regel twee</string>
+    <string name="lyrics_editor_title">Songtekst-editor</string>
+    
+    <string name="song_info_title">Nummerinformatie</string>
+    <string name="song_info_no_metadata">Geen metadata beschikbaar</string>
+    <string name="song_info_permission">Rhythm heeft toestemming nodig om de metadata van dit audiobestand te wijzigen. Je ziet mogelijk een systeemdialoog die om toegang vraagt - sta dit toe om je wijzigingen op te slaan.</string>
+    
+    <string name="add_to_playlists">Toevoegen aan afspeellijsten</string>
+    <string name="add_to_playlist_action">Toevoegen aan afspeellijst</string>
+    <string name="playlist_create_new">Nieuwe afspeellijst maken</string>
+    <string name="playlist_create_first">Maak je eerste afspeellijst om nummers toe te voegen</string>
+    
+    <string name="cache_management">Cachebeheer</string>
+    <string name="cache_manage_desc">Beheer gecachete gegevens inclusief afbeeldingen, tijdelijke bestanden en andere app-gegevens.</string>
+    
+    <string name="beta_welcome">Welkom bij het bèta-programma!</string>
+    <string name="beta_desc">Je gebruikt momenteel de bèta-versie van Rhythm. Deze versie is nog in ontwikkeling en kan fouten, onvolledige functies of onverwacht gedrag bevatten.</string>
+    
+    <string name="equalizer_disabled">Equalizer is uitgeschakeld</string>
+    <string name="equalizer_enable_desc">Schakel de equalizer in om je audio-ervaring aan te passen.</string>
+    <string name="equalizer_open_system">Open systeem-equalizer</string>
+    
+    <string name="theme_color_schemes_unavailable">Kleurenschema\'s zijn alleen beschikbaar bij gebruik van Aangepaste kleurbron.</string>
+    <string name="theme_color_schemes_switch">Schakel over naar Aangepast in de Kleurbron-instelling om toegang te krijgen tot voorgedefinieerde schema\'s.</string>
+    <string name="theme_custom_colors_unavailable">Aangepaste kleuren zijn alleen beschikbaar bij gebruik van Aangepaste kleurbron.</string>
+    <string name="theme_custom_colors_switch">Schakel over naar Aangepast in de Kleurbron-instelling om je eigen kleuren te maken.</string>
+    <string name="theme_system_fonts_unavailable">Systeemlettertypen zijn alleen beschikbaar bij gebruik van Systeem-lettertypebron.</string>
+    <string name="theme_system_fonts_switch">Schakel over naar Systeem in de Lettertypebron-instelling om uit beschikbare lettertypen te kiezen.</string>
+    
+    <string name="backup_whats_included_placeholder">Wat is inbegrepen in de back-up?</string>
+    <string name="backup_all_settings_placeholder">Alle instellingen, afspeellijsten, thema\'s en bibliotheekaanpassingen</string>
+    <string name="backup_restore_tap_placeholder">Herstel vanuit bestanden of klembord met één tik</string>
+    <string name="backup_local_storage_placeholder">Back-ups worden lokaal op je apparaat opgeslagen voor privacy</string>
+    <string name="library_reorder_tabs">Herschik tabbladen om je bibliotheekervaring aan te passen</string>
+    <string name="external_services_desc">Beheer welke externe API-diensten actief zijn om je muziekervaring te verbeteren. Schakel diensten aan/uit om dataverbruik en functionaliteit te beheren.</string>
+    <string name="lyrics_source_priority_title">Songtekstbron-prioriteit</string>
+    <string name="lyrics_source_priority_desc_placeholder">Kies waar Rhythm eerst naar songteksten moet zoeken</string>
+    
+    <string name="now_playing">NU AAN HET SPELEN</string>
+    <string name="skip_for_now">Overslaan voor nu</string>
+    <string name="install_update_now">Update nu installeren</string>
+    <string name="audio_settings">Audio-instellingen</string>
+    <string name="active_device">ACTIEF APPARAAT</string>
+    <string name="tap_select_output">Tik om uitvoer te selecteren</string>
+    <string name="browse_library">Bibliotheek bladeren</string>
+    <string name="add_more_songs">Meer nummers toevoegen</string>
+    <string name="blocked_folders">Geblokkeerde mappen</string>
+    <string name="last_backup">Laatste back-up</string>
+    <string name="auto_backup">Auto-back-up</string>
+    <string name="manage_backup">BACK-UP BEHEREN</string>
+    <string name="restore_backup">BACK-UP HERSTELLEN</string>
+    <string name="edit_metadata">Metadata bewerken</string>
+    
+    <string name="updates_disabled_message">App-updates zijn uitgeschakeld in instellingen</string>
+    <string name="updates_auto_disabled">Automatisch controleren op updates is uitgeschakeld. Je kunt nog steeds handmatig controleren.</string>
+    <string name="updates_up_to_date_message">Je bent up-to-date!</string>
+    <string name="updates_check_frequency">Hoe vaak moet Rhythm op updates controleren?</string>
+    <string name="updates_experimental_coming">Meer experimentele functies komen binnenkort in toekomstige updates</string>
+    
+    <string name="cache_total_size_label">Totale cachegrootte:</string>
+    <string name="cache_limit_label">Cachelimiet:</string>
+    
+    <string name="theme_featured_schemes">UITGELICHTE SCHEMA\'S</string>
+    <string name="theme_more_schemes">MEER SCHEMA\'S</string>
+    <string name="theme_quick_presets">Snelle voorinstellingen</string>
+    <string name="theme_advanced_rgb">Geavanceerde RGB-bediening</string>
+    <string name="theme_font_preview">The quick brown fox jumps over the lazy dog</string>
+    
+    <string name="external_services">Externe diensten</string>
+    <string name="api_services">API-diensten</string>
+    
+    <string name="equalizer">Equalizer</string>
+    <string name="frequency_bands">Frequentiebanden</string>
+    <string name="frequency_response">Frequentierespons</string>
+    <string name="audio_effects">Audio-effecten</string>
+    <string name="virtualizer">Virtualizer</string>
+    <string name="system_equalizer">Systeem-equalizer</string>
+    <string name="system_equalizer_desc">Toegang tot de ingebouwde equalizer van je apparaat</string>
+    
+    <string name="sleep_timer">Slaaptimer</string>
+    <string name="sleep_timer_coming_soon">Slaaptimerbediening wordt hier geïmplementeerd</string>
+    <string name="sleep_timer_quick">Snelle timer</string>
+    <string name="sleep_timer_custom">Aangepaste timer</string>
+    <string name="sleep_timer_custom_desc">Stel een specifieke tijdsduur in</string>
+    <string name="sleep_timer_action">Timeractie</string>
+    <string name="sleep_timer_action_desc">Wat er gebeurt als de timer afloopt</string>
+    <string name="sleep_timer_select_duration">Selecteer timerduur</string>
+    <string name="sleep_timer_set_hours_minutes">Stel uren en minuten in voor de slaaptimer</string>
+    <string name="coming_soon">Binnenkort beschikbaar</string>
+    
+    <string name="crash_reports">Crashrapporten</string>
+    <string name="crashed_on">Gecrasht op: %1$s</string>
+    
+    <string name="about_lyrics_sources">Over songtekstbronnen</string>
+    <string name="sync_adjustment">Sync-aanpassing</string>
+    <string name="synced_lyrics_unavailable">Gesynchroniseerde songtekst niet beschikbaar voor dit formaat.</string>
+    <string name="word_by_word_unavailable">Woord-voor-woord songtekst niet beschikbaar.</string>
+    
+    <string name="exporting_playlists">Afspeellijsten exporteren…</string>
+    <string name="exporting_to_location">Afspeellijsten exporteren naar geselecteerde locatie…</string>
+    <string name="importing_playlist">Afspeellijst importeren…</string>
+    
+    <string name="restart_app">App herstarten?</string>
+    <string name="export_playlist">Afspeellijst exporteren</string>
+    <string name="export_all_playlists">Alle afspeellijsten exporteren</string>
+    <string name="export_count_playlists">Exporteer %1$d afspeellijsten naar:</string>
+    <string name="include_default_playlists">Inclusief standaard afspeellijsten (Favorieten, Recent toegevoegd, Meest gespeeld)</string>
+    <string name="import_playlist">Afspeellijst importeren</string>
+    <string name="select_playlist_file">Selecteer een afspeellijstbestand om te importeren:</string>
+    <string name="supported_formats">Ondersteunde formaten:</string>
+    <string name="may_take_moments">Dit kan even duren…</string>
+    
+    <string name="canvas_unavailable">Canvas niet beschikbaar</string>
+    <string name="canvas_couldnt_load">Canvas kon niet laden</string>
+    
+    <string name="beta_program">BÈTA-PROGRAMMA</string>
+    <string name="lets_go">Let\'s Go! 🎵</string>
+    
+    <string name="special_thanks">Speciale dank</string>
+    
+    <plurals name="playlist_count">
+        <item quantity="one">afspeellijst</item>
+        <item quantity="other">afspeellijsten</item>
+    </plurals>
+    
+    <string name="action_ok">OK</string>
+    <string name="action_cancel">Annuleren</string>
+    <string name="action_save">Opslaan</string>
+    <string name="action_create">Maken</string>
+    <string name="action_delete">Verwijderen</string>
+    <string name="action_remove">Verwijderen</string>
+    <string name="action_export">Exporteren</string>
+    <string name="action_export_all">Alles exporteren</string>
+    <string name="action_import">Importeren</string>
+    <string name="action_browse_files">Bestanden bladeren</string>
+    <string name="action_close">Sluiten</string>
+    <string name="action_reset">Resetten</string>
+    <string name="action_apply">Toepassen</string>
+    <string name="action_continue">Doorgaan</string>
+    <string name="action_proceed">Doorgaan</string>
+    <string name="action_later">Later</string>
+    <string name="action_retry">Opnieuw</string>
+    <string name="action_add">Toevoegen</string>
+    <string name="action_edit">Bewerken</string>
+    <string name="action_change">Wijzigen</string>
+    <string name="action_choose">Kiezen</string>
+    <string name="action_default">Standaard</string>
+    
+    <string name="settings_title">Instellingen</string>
+    <string name="settings_section_appearance">Uiterlijk</string>
+    <string name="settings_theme_customization">Thema-aanpassing</string>
+    <string name="settings_theme_customization_desc">Pas kleuren, lettertypen en uiterlijk aan</string>
+    <string name="settings_library_tab_order">Volgorde bibliotheektabbladen</string>
+    <string name="settings_library_tab_order_desc">Herschik tabbladen in de bibliotheek</string>
+    <string name="settings_section_user_interface">Gebruikersinterface</string>
+    <string name="settings_language">Taal</string>
+    <string name="settings_language_desc">Wijzig app-taal</string>
+    <string name="settings_haptic_feedback">Haptische feedback</string>
+    <string name="settings_haptic_feedback_desc">Trillen bij tikken op knoppen</string>
+    <string name="settings_section_audio_playback">Audio &amp; Afspelen</string>
+    <string name="settings_system_volume">Systeemvolume</string>
+    <string name="settings_system_volume_desc">Gebruik apparaatvolume voor afspelen</string>
+    <string name="settings_show_lyrics">Songtekst tonen</string>
+    <string name="settings_show_lyrics_desc">Toon songtekst indien beschikbaar</string>
+    <string name="settings_queue_playback_title">Wachtrij &amp; Afspelen</string>
+    <string name="settings_queue_playback_desc">Configureer wachtrij- en afspeelgedrag</string>
+    <string name="settings_equalizer_title">Equalizer</string>
+    <string name="settings_equalizer_desc">Pas audiofrequenties en effecten aan</string>
+    <string name="settings_sleep_timer_title">Slaaptimer</string>
+    <string name="settings_sleep_timer_desc">Stop afspelen automatisch na ingestelde tijd</string>
+    <string name="settings_section_library_content">Bibliotheek &amp; Inhoud</string>
+    <string name="settings_group_by_album_artist">Groeperen op albumartiest</string>
+    <string name="settings_group_by_album_artist_desc">Toon samenwerkingsalbums onder hoofdartiest</string>
+    <string name="settings_media_scan_title">Mediascan</string>
+    <string name="settings_media_scan_desc">Beheer zwarte lijst en mediascannen</string>
+    <string name="settings_playlists_title">Afspeellijsten</string>
+    <string name="settings_playlists_desc">Beheer je afspeellijsten</string>
+    <string name="settings_section_storage_data">Opslag &amp; Data</string>
+    <string name="settings_cache_management_title">Cachebeheer</string>
+    <string name="settings_cache_management_desc">Beheer cachegrootte en wissen</string>
+    <string name="settings_backup_restore_title">Back-up &amp; Herstel</string>
+    <string name="settings_backup_restore_desc">Beveilig instellingen en afspeellijsten</string>
+    <string name="settings_section_services">Diensten</string>
+    <string name="settings_api_management">API-beheer</string>
+    <string name="settings_api_management_desc">Configureer externe API-diensten</string>
+    <string name="settings_section_updates_info">Updates &amp; Info</string>
+    <string name="settings_updates_title">Updates</string>
+    <string name="settings_updates_desc">Controleer op app-updates</string>
+    <string name="settings_about_title">Over</string>
+    <string name="settings_about_desc">App-versie en info</string>
+    <string name="settings_section_advanced">Geavanceerd</string>
+    <string name="settings_crash_log_history">Crashlog-geschiedenis</string>
+    <string name="settings_crash_log_history_desc">Bekijk en beheer crashrapporten</string>
+    <string name="settings_experimental_features">Experimentele functies</string>
+    <string name="settings_experimental_features_desc">Probeer geavanceerde functies uit</string>
+    
+    <string name="playlist_name_label">Naam afspeellijst</string>
+    <string name="playlist_rename">Hernoem afspeellijst</string>
+    <string name="playlist_delete_title">Afspeellijst verwijderen</string>
+    <string name="playlist_remove_song">Nummer verwijderen</string>
+    <string name="playlist_export">Afspeellijst exporteren</string>
+    <string name="playlist_import">Afspeellijst importeren</string>
+    <string name="playlist_rename_action">Hernoem afspeellijst</string>
+    <string name="playlist_delete_action">Verwijder afspeellijst</string>
+    <string name="playlist_search">Zoek nummers</string>
+    <string name="playlist_search_in">Zoek nummers in afspeellijst</string>
+    <string name="playlist_no_songs_available">Geen nummers beschikbaar</string>
+    <string name="playlist_all_in_playlist">Alle nummers staan al in deze afspeellijst.</string>
+    <string name="playlist_name_field">Naam afspeellijst</string>
+    <string name="playlist_delete_confirm">Weet je zeker dat je \'%1$s\' wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.</string>
+    <string name="playlist_remove_song_confirm">Verwijder \'%1$s\' uit deze afspeellijst?</string>
+    
+    <string name="player_load_lyrics">Laad songtekst</string>
+    <string name="player_retry_canvas">Canvas opnieuw proberen</string>
+    
+    <string name="search_songs_count">Nummers (%1$d)</string>
+    <string name="search_albums_count">Albums (%1$d)</string>
+    <string name="search_artists_count">Artiesten (%1$d)</string>
+    <string name="search_playlists_count">Afspeellijsten (%1$d)</string>
+    
+    <string name="metadata_title">Titel</string>
+    <string name="metadata_artist">Artiest</string>
+    <string name="metadata_album">Album</string>
+    <string name="metadata_genre">Genre</string>
+    <string name="metadata_year">Jaar</string>
+    <string name="metadata_track">Nummer</string>
+    <string name="metadata_saving">Opslaan...</string>
+    <string name="metadata_save_changes">Wijzigingen opslaan</string>
+    <string name="metadata_irreversible_changes">Onomkeerbare wijzigingen</string>
+    <string name="metadata_media_access_required">Mediatoegang vereist</string>
+    
+    <string name="updates_check_now_action">Nu controleren</string>
+    <string name="updates_check_again">Opnieuw controleren</string>
+    <string name="updates_download">Download update</string>
+    <string name="updates_install">Installeer update</string>
+    <string name="updates_cancel">Download annuleren</string>
+    <string name="updates_enable_auto_check">Auto-check inschakelen</string>
+    <string name="updates_channel_title">Updatekanaal</string>
+    <string name="updates_check_interval_title">Updatecontrole-interval</string>
+    
+    <string name="cache_clearing">Cache wissen…</string>
+    <string name="cache_cleared">Cache gewist!</string>
+    <string name="cache_clear_all">Wis alle cache</string>
+    <string name="cache_clearing_lyrics">Songteksten wissen…</string>
+    <string name="cache_lyrics_cleared">Songtekstcache gewist!</string>
+    <string name="cache_clear_lyrics_only">Wis alleen songtekstcache</string>
+    
+    <string name="backup_created_success">Back-up succesvol gemaakt</string>
+    <string name="backup_restore_success">Herstel succesvol voltooid</string>
+    <string name="backup_restart_now">Nu herstarten</string>
+    <string name="backup_continue_without_restart">Doorgaan zonder herstart</string>
+    <string name="backup_error_title">Fout</string>
+    
+    <string name="import_export_json_format">JSON-formaat</string>
+    <string name="import_export_pls_format">PLS-afspeellijst</string>
+    <string name="import_complete_title">Importeren voltooid</string>
+    <string name="import_complete_message">Succesvol %1$d afspeellijsten geïmporteerd.\n%2$s\n\nHerstart de app om wijzigingen toe te passen.</string>
+    <string name="import_restart_app">App herstarten</string>
+    
+    <string name="sleep_timer_set_custom">Stel aangepaste tijd in</string>
+    <string name="sleep_timer_set">Stel timer in</string>
+    
+    <string name="crash_logs_clear_all">Wis alle logs</string>
+    <string name="crash_logs_test">Test crash</string>
+    <string name="crash_logs_copy">Kopieer log</string>
+    <string name="crash_logs_details_title">Crashlog-details</string>
+    
+    <string name="cd_back">Terug</string>
+    <string name="cd_navigate_back">Ga terug</string>
+    <string name="cd_play">Afspelen</string>
+    <string name="cd_play_all">Alles afspelen</string>
+    <string name="cd_shuffle">Shuffle</string>
+    <string name="cd_play_album">Album afspelen</string>
+    <string name="cd_shuffle_play">Shuffle afspelen</string>
+    <string name="cd_previous_track">Vorig nummer</string>
+    <string name="cd_next_track">Volgend nummer</string>
+    <string name="cd_seek_back">Zoek 10 seconden terug</string>
+    <string name="cd_seek_forward">Zoek 10 seconden vooruit</string>
+    <string name="cd_more_options">Meer opties</string>
+    <string name="cd_filters">Filters</string>
+    <string name="cd_clear_search">Zoekopdracht wissen</string>
+    <string name="cd_refresh">Verversen</string>
+    <string name="cd_reorder_tabs">Tabbladen herschikken</string>
+    <string name="cd_toggle_view_type">Wissel weergavetype</string>
+    <string name="cd_open_playlist">Open afspeellijst</string>
+    <string name="cd_ascending">Oplopend</string>
+    <string name="cd_descending">Aflopend</string>
+    <string name="cd_artist_image">Artiest %1$s</string>
+    <string name="cd_play_artist">Speel %1$s</string>
+    <string name="cd_storage">Opslag</string>
+    <string name="cd_pinned">Vastgemaakt</string>
+    <string name="cd_folder">Map</string>
+    <string name="cd_open_folder">Open map</string>
+    <string name="cd_folder_options">Mapopties</string>
+    <string name="cd_export_playlists">Exporteer afspeellijsten</string>
+    <string name="cd_import_playlist">Importeer afspeellijst</string>
+    <string name="cd_create_playlist">Maak afspeellijst</string>
+    <string name="cd_create_new_playlist">Maak nieuwe afspeellijst</string>
+    <string name="cd_home">Home</string>
+    <string name="cd_current_location">Huidige locatie</string>
+    <string name="cd_item_icon">%1$s pictogram</string>
+    <string name="cd_open_storage">Open opslag</string>
+    <string name="cd_minimize">Minimaliseren</string>
+    <string name="cd_song_info">Nummerinfo</string>
+    <string name="cd_album_artwork">Albumhoes voor %1$s</string>
+    <string name="cd_no_song_playing">Geen nummer aan het afspelen</string>
+    <string name="cd_toggle_shuffle">Wissel shuffle</string>
+    <string name="cd_toggle_lyrics">Wissel songtekst</string>
+    <string name="cd_toggle_repeat_mode">Wissel herhaalmodus</string>
+    <string name="cd_show_actions">Toon acties</string>
+    <string name="cd_add_to_playlist_action">Toevoegen aan afspeellijst</string>
+    <string name="cd_toggle_favorite">Wissel favoriet</string>
+    <string name="cd_playback_speed_action">Afspeelsnelheid</string>
+    <string name="cd_show_album">Toon album</string>
+    <string name="cd_show_artist">Toon artiest</string>
+    <string name="cd_reorder_chips">Herschik knoppen</string>
+    <string name="cd_search">Zoeken</string>
+    <string name="cd_view_all">Alles bekijken</string>
+    <string name="cd_albums">Albums</string>
+    <string name="cd_artists">Artiesten</string>
+    <string name="cd_songs">Nummers</string>
+    <string name="cd_selected">Geselecteerd</string>
+    <string name="cd_rhythm_splash">Rhythm</string>
+    <string name="cd_search_in_playlist">Zoek nummers in afspeellijst</string>
+    <string name="cd_shuffle_play_action">Shuffle afspelen</string>
+    <string name="cd_add_songs_to_playlist">Voeg nummers toe aan afspeellijst</string>
+    <string name="cd_remove_from_playlist">Verwijder uit afspeellijst</string>
+    <string name="cd_change_language">Taal wijzigen</string>
+    <string name="cd_permissions">Rechten</string>
+    <string name="cd_backup_restore">Back-up &amp; Herstel</string>
+    <string name="cd_open_backup_restore">Open back-up &amp; herstel</string>
+    <string name="cd_audio_playback_settings">Audio- &amp; Afspeelinstellingen</string>
+    <string name="cd_library_setup">Bibliotheekinstellingen</string>
+    <string name="cd_open_settings">Openen</string>
+    <string name="cd_theming">Thema\'s</string>
+    <string name="cd_open_theme_customization">Open thema-aanpassing</string>
+    <string name="cd_show_options">Toon opties</string>
+    <string name="cd_app_updates">App-updates</string>
+    <string name="cd_completed">Voltooid</string>
+    <string name="cd_media_scan_filtering">Mediascan-filtering</string>
+    <string name="cd_open_media_scan_settings">Open mediascan-instellingen</string>
+    <string name="cd_close">Sluiten</string>
+    <string name="cd_album_artwork_generic">Albumhoes</string>
+    <string name="cd_language">Taal</string>
+    <string name="cd_view_license">Bekijk licentie</string>
+    <string name="cd_refresh_devices">Apparaten vernieuwen</string>
+    <string name="cd_switch_device">Wissel apparaat</string>
+    <string name="cd_volume">Volume</string>
+    <string name="cd_decrease_volume">Volume verlagen</string>
+    <string name="cd_increase_volume">Volume verhogen</string>
+    <string name="cd_playback_speed">Afspeelsnelheid</string>
+    <string name="cd_playback_settings">Afspeelinstellingen</string>
+    <string name="cd_move_up">Omhoog verplaatsen</string>
+    <string name="cd_move_down">Omlaag verplaatsen</string>
+    <string name="cd_add_songs">Nummers toevoegen</string>
+    <string name="cd_clear_queue">Wachtrij wissen</string>
+    <string name="cd_now_playing">Nu aan het spelen</string>
+    <string name="cd_drag_to_reorder">Sleep om te herschikken</string>
+    <string name="cd_remove_from_queue">Verwijder uit wachtrij</string>
+    <string name="cd_edit_metadata">Metadata bewerken</string>
+    <string name="cd_reset_to_original">Herstel naar origineel</string>
+    <string name="cd_remove_from_blacklist">Verwijder van zwarte lijst</string>
+    <string name="cd_remove_folder_from_blacklist">Verwijder map van zwarte lijst</string>
+    <string name="cd_beta_program_warning">Bèta-programma waarschuwing</string>
+    <string name="cd_sort_songs">Sorteer nummers</string>
+    <string name="cd_add_selected_songs">Voeg geselecteerde nummers toe</string>
+    <string name="cd_toggle_multi_select">Wissel multi-selectie</string>
+    <string name="cd_add_song">Nummer toevoegen</string>
+    
+    <string name="audio_quality_dolby_atmos">Dolby Atmos</string>
+    <string name="audio_quality_dolby_truehd">Dolby TrueHD</string>
+    <string name="audio_quality_dolby_digital">Dolby Digital</string>
+    <string name="audio_quality_apple_lossless">Apple Lossless</string>
+    <string name="audio_quality_flac_lossless">FLAC Lossless</string>
+    <string name="audio_quality_ogg_vorbis">OGG Vorbis</string>
+    <string name="audio_quality_dts_audio">DTS Audio</string>
+    <string name="audio_quality_hi_res_lossless">Hi-Res Lossless</string>
+    <string name="audio_quality_cd_quality">CD-kwaliteit</string>
+    <string name="audio_quality_studio_master">Studio Master</string>
+    <string name="audio_quality_lossless_surround">Lossless Surround</string>
+    <string name="audio_quality_lossy_surround">Lossy Surround</string>
+    <string name="audio_quality_dolby_surround">Dolby Surround</string>
+    
+    <string name="device_phone_speaker">Telefoonluidspreker</string>
+    <string name="device_wired_headphones">Bedrade koptelefoon</string>
+    <string name="device_wired_headset">Bedrade headset</string>
+    <string name="device_bluetooth_audio">Bluetooth-audio</string>
+    <string name="device_unknown">Onbekend apparaat</string>
+    
+    <string name="fallback_unknown_artist">Onbekende artiest</string>
+    <string name="fallback_unknown_album">Onbekend album</string>
+    <string name="fallback_unknown_file">Onbekend bestand</string>
+    
+    <string name="service_app_updates">App-updates</string>
+    <string name="service_rhythm_music">Rhythm Music</string>
+    <string name="service_starting">Dienst starten…</string>
+    <string name="service_loading_settings">Instellingen laden…</string>
+    <string name="service_setup_components">Componenten instellen…</string>
+    <string name="service_initializing_player">Speler initialiseren…</string>
+    <string name="service_creating_controls">Afspeelknoppen maken…</string>
+    <string name="service_setup_media_session">Mediasessie instellen…</string>
+    <string name="service_initializing_controller">Media-controller initialiseren…</string>
+    <string name="service_ready">Dienst gereed</string>
+    <string name="service_init_failed">Initialisatie mislukt</string>
+    
+    <string name="crash_bug_report">Foutrapport</string>
+    <string name="crash_restart_app">App herstarten</string>
+    
+    <string name="genre_hip_hop">Hiphop</string>
+    
+    <string name="cache_internal">Interne cache</string>
+    <string name="cache_external">Externe cache</string>
+    <string name="cache_canvas">Canvas-cache</string>
+    
+    <string name="default_playlist_recently_added">Recent toegevoegd</string>
+    <string name="default_playlist_most_played">Meest gespeeld</string>
+    
+    <string name="ui_clear_all">Alles wissen</string>
+    <string name="ui_error_generic">Fout</string>
+</resources>

@@ -42,6 +42,7 @@ import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DockedSearchBar
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -74,6 +75,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.animation.core.tween
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -91,6 +93,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import chromahub.rhythm.app.R
 import chromahub.rhythm.app.data.Album
 import chromahub.rhythm.app.data.Artist
 import chromahub.rhythm.app.data.Playlist
@@ -110,7 +113,6 @@ import chromahub.rhythm.app.ui.components.CreatePlaylistDialog
 import chromahub.rhythm.app.ui.screens.ArtistBottomSheet
 import chromahub.rhythm.app.util.ImageUtils
 import chromahub.rhythm.app.util.HapticUtils
-import chromahub.rhythm.app.ui.screens.SettingsSectionHeader
 import chromahub.rhythm.app.ui.components.M3PlaceholderType
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -161,8 +163,8 @@ fun SearchScreen(
             else {
                 val query = searchQuery.lowercase()
                 songs.filter { song ->
-                    listOf(song.title, song.artist, song.album)
-                        .any { it.contains(query, ignoreCase = true) }
+                    listOf(song.title, song.artist, song.album, song.genre)
+                        .any { it?.contains(query, ignoreCase = true) == true }
                 }.sortedWith(compareBy<Song> { song ->
                     // Prioritize exact matches in title
                     when {
@@ -172,7 +174,9 @@ fun SearchScreen(
                         song.artist.lowercase().startsWith(query) -> 3
                         song.album.lowercase() == query -> 4
                         song.album.lowercase().startsWith(query) -> 5
-                        else -> 6
+                        song.genre?.lowercase() == query -> 6
+                        song.genre?.lowercase()?.startsWith(query) == true -> 7
+                        else -> 8
                     }
                 }.thenBy { it.title })
             }
@@ -495,7 +499,7 @@ fun SearchScreen(
                                             modifier = Modifier.padding(16.dp)
                                         ) {
                                             Text(
-                                                text = "Filter Results",
+                                                text = context.getString(R.string.search_filter_results),
                                                 style = MaterialTheme.typography.titleMedium,
                                                 color = MaterialTheme.colorScheme.onSurface,
                                                 modifier = Modifier.padding(bottom = 12.dp)
@@ -677,11 +681,12 @@ fun SearchScreen(
                 }
             )
 
-            if (!isSearchActive) {
+            if (searchQuery.isEmpty()) {
                 val recommendedSongs = remember(viewModel) {
                     viewModel.getRecommendedSongs().take(4)
                 }
                 DefaultSearchContent(
+                    songs = songs,
                     searchHistory = searchHistory,
                     recentlyPlayed = recentlyPlayed,
                     recommendedSongs = recommendedSongs,
@@ -890,7 +895,7 @@ fun SearchResults(
                     
                     Column(modifier = Modifier.padding(start = 16.dp)) {
                         Text(
-                            text = "Search Results",
+                            text = context.getString(R.string.search_results),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -925,7 +930,7 @@ fun SearchResults(
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                text = "Songs",
+                                text = context.getString(R.string.search_songs),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
@@ -975,13 +980,13 @@ fun SearchResults(
                             ) {
                                 Column {
                                     Text(
-                                        text = "View All Songs",
+                                        text = context.getString(R.string.search_view_all_songs),
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Medium,
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                     Text(
-                                        text = "See all ${songs.size} songs",
+                                        text = context.getString(R.string.search_see_all_songs, songs.size),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -1019,7 +1024,7 @@ fun SearchResults(
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                text = "Albums",
+                                text = context.getString(R.string.search_albums),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
@@ -1034,7 +1039,7 @@ fun SearchResults(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
-                        items(albums.take(10)) { album ->
+                        items(albums.take(10), key = { "album_${it.id}_${albums.take(10).indexOf(it)}" }) { album ->
                             SearchAlbumItem(
                                 album = album,
                                 onClick = { onAlbumBottomSheetClick(album) } // Use the new lambda
@@ -1065,7 +1070,7 @@ fun SearchResults(
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                text = "Artists",
+                                text = context.getString(R.string.search_artists),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
@@ -1080,7 +1085,7 @@ fun SearchResults(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
-                        items(artists.take(10)) { artist ->
+                        items(artists.take(10), key = { "artist_${it.id}_${artists.take(10).indexOf(it)}" }) { artist ->
                             SearchArtistItem(
                                 artist = artist,
                                 onClick = {
@@ -1113,7 +1118,7 @@ fun SearchResults(
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                text = "Playlists",
+                                text = context.getString(R.string.search_playlists),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
@@ -1128,7 +1133,7 @@ fun SearchResults(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
-                        items(playlists.take(10)) { playlist ->
+                        items(playlists.take(10), key = { "playlist_${it.id}_${playlists.take(10).indexOf(it)}" }) { playlist ->
                             SearchPlaylistItem(
                                 playlist = playlist,
                                 onClick = { onPlaylistClick(playlist) }
@@ -1160,6 +1165,7 @@ fun SearchBrowseContent(
     onSongClick: (Song) -> Unit = {},
     onArtistBottomSheetClick: (Artist) -> Unit = {}
 ) {
+    val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
     // Make entire content scrollable
     LazyColumn(
@@ -1178,7 +1184,7 @@ fun SearchBrowseContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Recently Searched",
+                        text = context.getString(R.string.search_recently_searched),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onBackground,
@@ -1193,7 +1199,7 @@ fun SearchBrowseContent(
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                     ) {
                         Text(
-                            text = "Clear",
+                            text = context.getString(R.string.search_clear),
                             style = MaterialTheme.typography.labelMedium
                         )
                     }
@@ -1222,7 +1228,7 @@ fun SearchBrowseContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Recently Searched",
+                        text = context.getString(R.string.search_recently_searched),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onBackground,
@@ -1254,7 +1260,7 @@ fun SearchBrowseContent(
                                 .padding(bottom = 16.dp)
                         )
                         Text(
-                            text = "No recent searches",
+                            text = context.getString(R.string.search_no_recent),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
                         )
@@ -1305,7 +1311,7 @@ fun SearchBrowseContent(
                         Spacer(modifier = Modifier.height(16.dp))
                         
                         Text(
-                            text = "No Recently Played",
+                            text = context.getString(R.string.search_no_recently_played),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -1313,7 +1319,7 @@ fun SearchBrowseContent(
                         )
                         
                         Text(
-                            text = "Songs you play will appear here",
+                            text = context.getString(R.string.search_no_recently_played_desc),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
@@ -1953,6 +1959,7 @@ private fun RecentlyPlayedSection(
     recentlyPlayed: List<Song>,
     onSongClick: (Song) -> Unit
 ) {
+    val context = LocalContext.current
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
@@ -1976,7 +1983,7 @@ private fun RecentlyPlayedSection(
                         modifier = Modifier.size(24.dp)
                     )
                     Text(
-                        text = "Recently Played",
+                        text = context.getString(R.string.search_recently_played),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -2007,7 +2014,7 @@ private fun RecentlyPlayedSection(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(vertical = 4.dp)
             ) {
-                items(recentlyPlayed.take(8)) { song ->
+                items(recentlyPlayed.take(8), key = { "recent_${it.id}_${recentlyPlayed.take(8).indexOf(it)}" }) { song ->
                     EnhancedRecentChip(song = song, onClick = { onSongClick(song) })
                 }
             }
@@ -2089,6 +2096,7 @@ private fun EnhancedRecentChip(
 
 @Composable
 private fun DefaultSearchContent(
+    songs: List<Song>,
     searchHistory: List<String>,
     recentlyPlayed: List<Song>,
     recommendedSongs: List<Song>,
@@ -2130,7 +2138,7 @@ private fun DefaultSearchContent(
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Text(
-                                    text = "Recent Searches",
+                                    text = context.getString(R.string.search_recent_searches),
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface,
@@ -2157,7 +2165,7 @@ private fun DefaultSearchContent(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             contentPadding = PaddingValues(vertical = 4.dp)
                         ) {
-                            items(searchHistory.take(6)) { query ->
+                            items(searchHistory.take(6), key = { it }) { query ->
                                 Card(
                                     onClick = {
                                         HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
@@ -2226,7 +2234,7 @@ private fun DefaultSearchContent(
                         Spacer(modifier = Modifier.height(16.dp))
                         
                         Text(
-                            text = "No Recent Searches",
+                            text = context.getString(R.string.search_no_recent_searches),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -2234,7 +2242,7 @@ private fun DefaultSearchContent(
                         )
                         
                         Text(
-                            text = "Your search history will appear here",
+                            text = context.getString(R.string.search_no_recent_searches_desc),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
@@ -2288,7 +2296,7 @@ private fun DefaultSearchContent(
                         Spacer(modifier = Modifier.height(16.dp))
                         
                         Text(
-                            text = "No Recently Played",
+                            text = context.getString(R.string.search_no_recently_played),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -2296,7 +2304,7 @@ private fun DefaultSearchContent(
                         )
                         
                         Text(
-                            text = "Songs you play will appear here",
+                            text = context.getString(R.string.search_no_recently_played_desc),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
@@ -2306,6 +2314,18 @@ private fun DefaultSearchContent(
                 }
             }
         }
+        
+        // Genre-based Search/Browse section
+        item {
+            GenreBrowseSection(
+                songs = songs,
+                musicViewModel = viewModel(),
+                onGenreClick = { genre ->
+                    onSearchQuerySelect(genre)
+                }
+            )
+        }
+        
         if (recommendedSongs.isNotEmpty()) {
             item {
                 RecommendedForYouSection(
@@ -2414,23 +2434,33 @@ private fun NoSearchResults(
             Spacer(modifier = Modifier.height(24.dp))
             
             Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                ),
-                shape = RoundedCornerShape(16.dp)
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                )
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    modifier = Modifier.padding(20.dp)
                 ) {
-                    Text(
-                        text = "💡 Search Tips",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Lightbulb,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "Search Tips",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
                     
                     val tips = listOf(
                         "Try different keywords",
@@ -2443,7 +2473,7 @@ private fun NoSearchResults(
                         Text(
                             text = "• $tip",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 2.dp)
@@ -2460,6 +2490,7 @@ private fun RecommendedForYouSection(
     songs: List<Song>,
     onSongClick: (Song) -> Unit
 ) {
+    val context = LocalContext.current
     if (songs.isEmpty()) return
     
     Column(
@@ -2474,7 +2505,7 @@ private fun RecommendedForYouSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Recommended For You",
+                text = context.getString(R.string.search_recommended),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
@@ -2492,7 +2523,7 @@ private fun RecommendedForYouSection(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "Based on your listening history",
+                    text = context.getString(R.string.search_recommended_desc),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onTertiaryContainer,
                     modifier = Modifier.padding(bottom = 16.dp)
@@ -2653,7 +2684,7 @@ private fun MoodPlaylistCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
-                    items(songs.take(5)) { song ->
+                    items(songs.take(5), key = { "mood_${it.id}_${songs.take(5).indexOf(it)}" }) { song ->
                         Card(
                             onClick = {
                                 HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
@@ -2729,7 +2760,7 @@ fun AllSongsPage(
                 Icon(RhythmIcons.Back, contentDescription = "Back")
             }
             Text(
-                text = "All Songs (${songs.size})",
+                text = context.getString(R.string.search_all_songs, songs.size),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(start = 8.dp)
@@ -2741,7 +2772,7 @@ fun AllSongsPage(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 16.dp + 80.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(songs, key = { it.id }) { song ->
+            items(songs, key = { "song_${it.id}_${songs.indexOf(it)}" }) { song ->
                 AnimateIn {
                     SearchSongItem(
                         song = song,
@@ -2749,6 +2780,163 @@ fun AllSongsPage(
                         onAddToPlaylist = { onAddSongToPlaylist(song) },
                         haptics = haptics // Pass haptics to SearchSongItem
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GenreBrowseSection(
+    songs: List<Song>,
+    musicViewModel: MusicViewModel,
+    onGenreClick: (String) -> Unit
+) {
+    val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+    
+    // Get genre detection state from ViewModel
+    val isGenreDetectionComplete by musicViewModel.isGenreDetectionComplete.collectAsState()
+    
+    // Extract unique genres from songs - recompute when songs change
+    val genres = remember(songs) {
+        songs.mapNotNull { song ->
+            song.genre?.takeIf { it.isNotBlank() && it.lowercase() != "unknown" }
+        }.distinct().sorted()
+    }
+    
+    // Determine actual loading state: show loading only if detection not complete AND no genres exist
+    // Once detection completes, always show results (genres or empty state)
+    val isActuallyLoading = !isGenreDetectionComplete && genres.isEmpty()
+    
+    // Log for debugging
+    android.util.Log.d("GenreBrowse", "State: isComplete=$isGenreDetectionComplete, genres=${genres.size}, loading=$isActuallyLoading")
+    
+    // Always show the card, but vary the content based on state
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        ),
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = RhythmIcons.Actions.Tune,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = context.getString(R.string.search_browse_by_genre),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(start = 12.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Show appropriate content based on state
+            when {
+                isActuallyLoading -> {
+                    // Loading state - only show when actively detecting AND no genres yet
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(48.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                        )
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        Text(
+                            text = context.getString(R.string.search_detecting_genres),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                        
+                        Text(
+                            text = context.getString(R.string.search_genre_suggestions),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
+                
+                genres.isEmpty() -> {
+                    // No genres found
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = context.getString(R.string.search_no_genres),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+                
+                else -> {
+                    // Show genres in a 2x2 grid layout
+                    val rowCount = (genres.size + 1) / 2 // Calculate number of rows needed
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.height((rowCount * 90).dp) // Calculate height based on rows
+                    ) {
+                        items(genres, key = { "genre_${it}_${genres.indexOf(it)}" }) { genre ->
+                            val songCount = songs.count { it.genre?.equals(genre, ignoreCase = true) == true }
+                            
+                            Card(
+                                onClick = {
+                                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                                    onGenreClick(genre)
+                                },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                                ),
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = genre,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = "$songCount songs",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

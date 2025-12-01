@@ -18,6 +18,7 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 import android.os.Environment
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Call
@@ -38,7 +39,6 @@ import kotlinx.coroutines.flow.collectLatest
 import android.content.Context
 import android.content.SharedPreferences
 import com.google.gson.Gson
-import kotlinx.coroutines.GlobalScope
 import chromahub.rhythm.app.BuildConfig
 import java.security.MessageDigest
 import kotlinx.coroutines.sync.Mutex
@@ -157,7 +157,7 @@ class AppUpdaterViewModel(application: Application) : AndroidViewModel(applicati
         AppVersion(
             versionName = BuildConfig.VERSION_NAME,
             versionCode = BuildConfig.VERSION_CODE,
-            releaseDate = "2025-10-23", // This could be generated from build time if needed
+            releaseDate = BuildConfig.BUILD_DATE, // Auto-generated from build time
             whatsNew = emptyList(),
             knownIssues = emptyList(),
             downloadUrl = "",
@@ -379,6 +379,12 @@ class AppUpdaterViewModel(application: Application) : AndroidViewModel(applicati
                     processRelease(latestSuitableRelease)
                     Log.d(TAG, "Latest version processed: ${_latestVersion.value}")
                 } else {
+                    // Log rate limit info if available
+                    val rateLimit = releasesResponse.headers()["X-RateLimit-Remaining"]
+                    val rateLimitReset = releasesResponse.headers()["X-RateLimit-Reset"]
+                    if (rateLimit != null) {
+                        Log.d(TAG, "GitHub API rate limit remaining: $rateLimit, resets at: $rateLimitReset")
+                    }
                     handleApiError(releasesResponse.code(), releasesResponse.message())
                 }
             } catch (e: Exception) {
@@ -479,19 +485,23 @@ class AppUpdaterViewModel(application: Application) : AndroidViewModel(applicati
     
     /**
      * Find the latest suitable release based on the update channel.
-     * "stable" channel: latest non-prerelease.
-     * "beta" channel: latest prerelease or stable release.
+     * "stable" channel: latest non-prerelease, non-draft release
+     * "beta" channel: latest release (including pre-releases) that is not a draft
      */
     private fun findLatestSuitableRelease(releases: List<GitHubRelease>, channel: String): GitHubRelease? {
-        return when (channel) {
-            "stable" -> releases
-                .filter { !it.draft && !it.prerelease } // Only stable, non-draft releases
-                .maxByOrNull { it.published_at }
-            "beta" -> releases
-                .filter { !it.draft } // Include pre-releases for beta channel, but exclude drafts
-                .maxByOrNull { it.published_at }
-            else -> null // Should not happen with current implementation
+        val filteredReleases = when (channel) {
+            "stable" -> releases.filter { !it.draft && !it.prerelease }
+            "beta" -> releases.filter { !it.draft } // Include all non-draft releases (stable + pre-release)
+            else -> {
+                Log.w(TAG, "Unknown channel: $channel, defaulting to stable")
+                releases.filter { !it.draft && !it.prerelease }
+            }
         }
+        
+        // Sort by published date descending and return the first (most recent)
+        return filteredReleases
+            .sortedByDescending { it.published_at }
+            .firstOrNull()
     }
     
     /**
@@ -751,8 +761,9 @@ class AppUpdaterViewModel(application: Application) : AndroidViewModel(applicati
         
         _isDownloading.value = true
         
-        // Use GlobalScope to prevent cancellation when ViewModel is cleared
-        GlobalScope.launch(Dispatchers.IO) {
+        // Use viewModelScope with IO dispatcher for background work
+        // The download continues in background even if user navigates away
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 // Use app-specific external storage instead of public Downloads
                 val context = getApplication<Application>()
@@ -1260,7 +1271,9 @@ class AppUpdaterViewModel(application: Application) : AndroidViewModel(applicati
 
     override fun onCleared() {
         super.onCleared()
-        Log.d(TAG, "ViewModel cleared, cancelling any active downloads")
+        Log.d(TAG, "ViewModel cleared")
+        // Note: Active downloads will be cancelled when ViewModel is cleared
+        // Download state is persisted and can be resumed later
         cancelDownload()
     }
 }

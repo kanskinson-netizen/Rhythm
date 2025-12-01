@@ -1,5 +1,6 @@
 package chromahub.rhythm.app.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,10 +12,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PlaylistAdd
+import androidx.compose.material.icons.filled.PlaylistPlay
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -28,8 +32,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import chromahub.rhythm.app.R
 import chromahub.rhythm.app.data.Song
 import chromahub.rhythm.app.ui.components.RhythmIcons
 
@@ -40,6 +47,7 @@ fun CreatePlaylistDialog(
     song: Song? = null,
     onConfirmWithSong: (String) -> Unit = {}
 ) {
+    val context = LocalContext.current
     var playlistName by remember { mutableStateOf("") }
     var isError by remember { mutableStateOf(false) }
     var addSong by remember { mutableStateOf(song != null) }
@@ -55,7 +63,7 @@ fun CreatePlaylistDialog(
         },
         title = {
             Text(
-                text = "Create Playlist",
+                text = context.getString(R.string.playlist_create),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
@@ -73,7 +81,7 @@ fun CreatePlaylistDialog(
                     supportingText = {
                         if (isError) {
                             Text(
-                                text = "Playlist name cannot be empty",
+                                text = context.getString(R.string.playlist_name_empty),
                                 color = MaterialTheme.colorScheme.error
                             )
                         }
@@ -139,6 +147,103 @@ fun CreatePlaylistDialog(
                 Text("Cancel")
             }
         },
+        shape = RoundedCornerShape(24.dp)
+    )
+}
+
+@Composable
+fun QueueActionDialog(
+    song: Song,
+    queueSize: Int,
+    onDismiss: () -> Unit,
+    onClearAndPlay: () -> Unit,
+    onAddToQueue: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = Icons.Default.PlaylistPlay,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
+        title = {
+            Text(
+                text = "Queue Not Empty",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "You have $queueSize song${if (queueSize > 1) "s" else ""} in the current queue.",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    text = "How would you like to play \"${song.title}\"?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Clear & Play button
+                Button(
+                    onClick = onClearAndPlay,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlaylistPlay,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text("Clear & Play", style = MaterialTheme.typography.labelLarge)
+                }
+                
+                // Add to Queue button
+                FilledTonalButton(
+                    onClick = onAddToQueue,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlaylistAdd,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text("Add to Queue", style = MaterialTheme.typography.labelLarge)
+                }
+                
+                // Cancel button
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text("Cancel", style = MaterialTheme.typography.labelLarge)
+                }
+            }
+        },
+        confirmButton = { },
+        dismissButton = { },
         shape = RoundedCornerShape(24.dp)
     )
 } 

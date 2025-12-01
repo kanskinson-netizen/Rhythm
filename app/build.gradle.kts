@@ -1,4 +1,6 @@
 import java.util.Properties
+import java.text.SimpleDateFormat
+import java.util.Date
 
 plugins {
     alias(libs.plugins.android.application)
@@ -16,8 +18,8 @@ android {
         applicationId = "chromahub.rhythm.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 29243718
-        versionName = "2.9.243.718"
+        versionCode = 31267769
+        versionName = "3.1.267.769 Beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -32,6 +34,41 @@ android {
         }
     } else {
         signingConfigs.getByName("debug")
+    }
+
+    // Load private properties for API keys
+    val privateProperties = getProperties("private.properties")
+
+    defaultConfig {
+        // Add Canvas API key to BuildConfig
+        buildConfigField(
+            "String",
+            "CANVAS_API_KEY",
+            "\"${privateProperties?.getProperty("CANVAS_API_KEY") ?: ""}\""
+        )
+        
+        // Add build date and time
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd")
+        val timestampFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+        val buildTime = Date()
+        
+        buildConfigField(
+            "String",
+            "BUILD_DATE",
+            "\"${dateFormat.format(buildTime)}\""
+        )
+        
+        buildConfigField(
+            "String",
+            "BUILD_TIMESTAMP",
+            "\"${timestampFormat.format(buildTime)}\""
+        )
+        
+        buildConfigField(
+            "long",
+            "BUILD_TIME",
+            "${buildTime.time}L"
+        )
     }
 
     buildTypes {
@@ -87,6 +124,7 @@ dependencies {
     implementation("androidx.core:core:1.17.0") // Downgrade core dependency for compatibility
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation("androidx.appcompat:appcompat:1.7.1") // For AppCompatDelegate locale support
     
     // Compose dependencies
     implementation(platform(libs.androidx.compose.bom))
@@ -110,14 +148,18 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
     implementation("androidx.palette:palette-ktx:1.0.0")
     
+    // Glance for modern widgets
+    implementation("androidx.glance:glance-appwidget:1.1.1")
+    implementation("androidx.glance:glance-material3:1.1.1")
+    
     // Physics-based animations
-    implementation("androidx.compose.animation:animation:1.9.4")
+    implementation("androidx.compose.animation:animation:1.9.5")
     //noinspection GradleDependency
     implementation("androidx.compose.animation:animation-graphics:1.8.3")
-    implementation("androidx.compose.animation:animation-core:1.9.4")
+    implementation("androidx.compose.animation:animation-core:1.9.5")
     
     // Navigation
-    implementation("androidx.navigation:navigation-compose:2.9.5")
+    implementation("androidx.navigation:navigation-compose:2.9.6")
     
     // Permissions
     implementation("com.google.accompanist:accompanist-permissions:0.37.3")
@@ -137,8 +179,8 @@ dependencies {
     // Network
     implementation("com.squareup.retrofit2:retrofit:3.0.0")
     implementation("com.squareup.retrofit2:converter-gson:3.0.0")
-    implementation("com.squareup.okhttp3:okhttp:5.2.1")
-    implementation("com.squareup.okhttp3:logging-interceptor:5.2.1")
+    implementation("com.squareup.okhttp3:okhttp:5.3.2")
+    implementation("com.squareup.okhttp3:logging-interceptor:5.3.2")
     implementation("com.google.code.gson:gson:2.13.2")
 //    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 //    implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")

@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import chromahub.rhythm.app.R
 import chromahub.rhythm.app.util.PlaylistImportExportUtils
 import androidx.compose.animation.core.*
 import androidx.compose.animation.core.VectorConverter
@@ -42,6 +43,8 @@ fun AppRestartDialog(
     onRestart: () -> Unit,
     onContinue: () -> Unit
 ) {
+    val context = LocalContext.current
+    
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = {
@@ -53,7 +56,7 @@ fun AppRestartDialog(
         },
         title = {
             Text(
-                text = "Restart App?",
+                text = context.getString(R.string.restart_app),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
@@ -104,6 +107,7 @@ fun PlaylistExportDialog(
     onExport: (PlaylistImportExportUtils.PlaylistExportFormat) -> Unit,
     onExportToCustomLocation: (PlaylistImportExportUtils.PlaylistExportFormat, Uri) -> Unit
 ) {
+    val context = LocalContext.current
     var selectedFormat by remember { mutableStateOf(PlaylistImportExportUtils.PlaylistExportFormat.JSON) }
     var showLocationOptions by remember { mutableStateOf(false) }
     
@@ -127,7 +131,7 @@ fun PlaylistExportDialog(
         },
         title = {
             Text(
-                text = "Export Playlist",
+                text = context.getString(R.string.export_playlist),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
@@ -254,6 +258,7 @@ fun BulkPlaylistExportDialog(
     onExport: (PlaylistImportExportUtils.PlaylistExportFormat, Boolean) -> Unit,
     onExportToCustomLocation: (PlaylistImportExportUtils.PlaylistExportFormat, Boolean, Uri) -> Unit
 ) {
+    val context = LocalContext.current
     var selectedFormat by remember { mutableStateOf(PlaylistImportExportUtils.PlaylistExportFormat.JSON) }
     var includeDefaultPlaylists by remember { mutableStateOf(false) }
     var showLocationOptions by remember { mutableStateOf(false) }
@@ -278,7 +283,7 @@ fun BulkPlaylistExportDialog(
         },
         title = {
             Text(
-                text = "Export All Playlists",
+                text = context.getString(R.string.export_all_playlists),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
@@ -344,7 +349,7 @@ fun BulkPlaylistExportDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         
                         Text(
-                            text = "Include default playlists (Favorites, Recently Added, Most Played)",
+                            text = context.getString(R.string.include_default_playlists),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -426,7 +431,7 @@ fun PlaylistImportDialog(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let { selectedUri ->
-            // Pass a dummy onResult and onRestartRequired for now, will be replaced by actual implementation in PlaylistManagementBottomSheet
+            // Pass a dummy onResult and onRestartRequired for now
             onImport(selectedUri, { /* no-op */ }, { /* no-op */ })
         }
         onDismiss()
@@ -443,7 +448,7 @@ fun PlaylistImportDialog(
         },
         title = {
             Text(
-                text = "Import Playlist",
+                text = context.getString(R.string.import_playlist),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
@@ -451,7 +456,7 @@ fun PlaylistImportDialog(
         text = {
             Column {
                 Text(
-                    text = "Select a playlist file to import:",
+                    text = context.getString(R.string.select_playlist_file),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -467,7 +472,7 @@ fun PlaylistImportDialog(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = "Supported formats:",
+                            text = context.getString(R.string.supported_formats),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -539,6 +544,7 @@ fun PlaylistOperationProgressDialog(
     operation: String, // "Importing" or "Exporting"
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
     Dialog(
         onDismissRequest = { /* Prevent dismissal during operation */ },
         properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
@@ -574,7 +580,7 @@ fun PlaylistOperationProgressDialog(
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Text(
-                    text = "This may take a few moments...",
+                    text = context.getString(R.string.may_take_moments),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center

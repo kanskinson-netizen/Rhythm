@@ -82,12 +82,14 @@ fun MediaScanLoader(
     musicViewModel: MusicViewModel = viewModel(),
     onScanComplete: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val songs by musicViewModel.songs.collectAsState()
     val albums by musicViewModel.albums.collectAsState()
     val artists by musicViewModel.artists.collectAsState()
+    val scanProgress by musicViewModel.scanProgress.collectAsState()
     
     // Track scanning progress
-    var scanProgress by remember { mutableStateOf(0f) }
+    var displayProgress by remember { mutableStateOf(0f) }
     var currentStep by remember { mutableStateOf("Initializing...") }
     var songsFound by remember { mutableIntStateOf(0) }
     var albumsFound by remember { mutableIntStateOf(0) }
@@ -119,7 +121,7 @@ fun MediaScanLoader(
     
     // Animated progress
     val animatedProgress by animateFloatAsState(
-        targetValue = scanProgress,
+        targetValue = displayProgress,
         animationSpec = spring(
             dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
             stiffness = androidx.compose.animation.core.Spring.StiffnessMedium
@@ -127,57 +129,67 @@ fun MediaScanLoader(
         label = "progressAnimation"
     )
     
-    // Enhanced monitoring with better completion logic
-    LaunchedEffect(songs.size, albums.size, artists.size) {
+    // Update display based on real scan progress
+    LaunchedEffect(scanProgress) {
         songsFound = songs.size
         albumsFound = albums.size
         artistsFound = artists.size
         
-        // Enhanced progress logic with better completion detection
-        when {
-            songs.isEmpty() && albums.isEmpty() && artists.isEmpty() -> {
-                scanProgress = 0.1f
-                currentStep = "Searching for music files..."
+        // Use real scan progress from repository
+        when (scanProgress.stage) {
+            "Idle" -> {
+                displayProgress = 0f
+                currentStep = "Initializing..."
             }
-            songs.isNotEmpty() && albums.isEmpty() -> {
-                scanProgress = 0.4f
-                currentStep = "Organizing songs..."
+            "Songs" -> {
+                // Calculate progress based on current/total
+                val progress = if (scanProgress.total > 0) {
+                    (scanProgress.current.toFloat() / scanProgress.total.toFloat()).coerceIn(0f, 0.85f)
+                } else {
+                    0.1f
+                }
+                displayProgress = progress
+                currentStep = "Scanning: ${scanProgress.current} of ${scanProgress.total} files..."
             }
-            albums.isNotEmpty() && artists.isEmpty() -> {
-                scanProgress = 0.7f
-                currentStep = "Building album library..."
+            "Incremental" -> {
+                val progress = if (scanProgress.total > 0) {
+                    0.5f + (scanProgress.current.toFloat() / scanProgress.total.toFloat() * 0.35f)
+                } else {
+                    0.5f
+                }
+                displayProgress = progress
+                currentStep = "Checking for new music: ${scanProgress.current} of ${scanProgress.total}..."
             }
-            // Complete when we have artists OR when we have substantial content without artists
-            artists.isNotEmpty() || (songs.size >= 10 && albums.size >= 3) -> {
-                scanProgress = 0.9f
-                currentStep = if (artists.isNotEmpty()) "Finalizing artist collection..." else "Finalizing media library..."
-                
-                // Wait a bit more to ensure everything is properly loaded
-                delay(1500)
-                scanProgress = 1.0f
-                currentStep = "Media scan complete!"
-                
-                // Mark as complete and trigger completion after animation
-                delay(1000)
-                isComplete = true
+            "Complete" -> {
+                displayProgress = 0.95f
+                currentStep = "Finalizing scan (${scanProgress.estimatedTimeMs}ms)..."
                 delay(500)
-                onScanComplete()
-            }
-            // Handle case where we have some content but not enough for the above condition
-            songs.isNotEmpty() || albums.isNotEmpty() -> {
-                scanProgress = 0.8f
-                currentStep = "Processing media files..."
-                
-                // Give additional time for processing, then complete
-                delay(3000)
+                displayProgress = 1.0f
+                currentStep = "Media scan complete!"
+                delay(1000)
                 if (!isComplete) {
-                    scanProgress = 1.0f
-                    currentStep = "Media scan complete!"
+                    isComplete = true
+                    delay(500)
+                    onScanComplete()
+                }
+            }
+            "Error" -> {
+                displayProgress = 0.5f
+                currentStep = "Error during scan - using cached data..."
+                delay(2000)
+                if (!isComplete) {
+                    displayProgress = 1.0f
+                    currentStep = "Continuing with available media..."
                     delay(1000)
                     isComplete = true
                     delay(500)
                     onScanComplete()
                 }
+            }
+            else -> {
+                // Fallback to old behavior for unknown stages
+                displayProgress = 0.3f
+                currentStep = "Processing media..."
             }
         }
     }
@@ -187,7 +199,7 @@ fun MediaScanLoader(
         delay(90000) // 1.5 minutes maximum wait time (reduced from 2 minutes)
         if (!isComplete) {
             Log.w("MediaScanLoader", "Media scan timeout reached. Completing with current state: songs=${songs.size}, albums=${albums.size}, artists=${artists.size}")
-            scanProgress = 1.0f
+            displayProgress = 1.0f
             currentStep = if (songs.isEmpty() && albums.isEmpty() && artists.isEmpty()) {
                 "No media files found - continuing..."
             } else {
@@ -251,10 +263,11 @@ fun MediaScanLoader(
                     )
                     Spacer(modifier = Modifier.width(3.dp))
                     Text(
-                        text = "Rhythm",
-                        style = MaterialTheme.typography.displaySmall,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Bold
+                        text = context.getString(R.string.common_rhythm),
+                        style = MaterialTheme.typography.displayMedium.copy(
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Bold
+                        )
                     )
                 }
                 

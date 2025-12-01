@@ -2,10 +2,14 @@ package chromahub.rhythm.app.data
 
 import android.content.ContentUris
 import android.content.Context
+import android.database.ContentObserver
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
+import android.util.LruCache
 import chromahub.rhythm.app.network.NetworkClient
 import chromahub.rhythm.app.network.DeezerApiService
 import chromahub.rhythm.app.network.DeezerArtist
@@ -32,11 +36,65 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
 import java.net.URL
 import chromahub.rhythm.app.data.LyricsData
 import java.lang.ref.WeakReference
 import chromahub.rhythm.app.util.AudioFormatDetector
+import chromahub.rhythm.app.util.LyricsParser
+import chromahub.rhythm.app.util.EnhancedLyricLine
+import chromahub.rhythm.app.util.EnhancedWord
+// AppleMusicLyricsParser import removed - kept for future re-implementation
+import android.content.SharedPreferences
+
+/**
+ * Scan progress data class for real-time updates
+ */
+data class ScanProgress(
+    val current: Int,
+    val total: Int,
+    val stage: String, // "Songs", "Albums", "Artists", "Metadata"
+    val estimatedTimeMs: Long = 0
+)
+
+/**
+ * Scan statistics for tracking library state
+ */
+data class ScanStatistics(
+    val lastScanTime: Long,
+    val scanDuration: Long,
+    val totalSongs: Int,
+    val filteredSongs: Int,
+    val totalAlbums: Int,
+    val totalArtists: Int,
+    val storageUsedBytes: Long,
+    val averageBitrate: Int,
+    val duplicatesFound: Int
+)
+
+/**
+ * Scan history entry
+ */
+data class ScanHistoryEntry(
+    val timestamp: Long,
+    val songsAdded: Int,
+    val songsRemoved: Int,
+    val duration: Long,
+    val errorCount: Int
+)
+
+/**
+ * Folder suggestion for smart blacklisting
+ */
+data class FolderSuggestion(
+    val path: String,
+    val reason: String,
+    val songCount: Int,
+    val confidence: Double
+)
 
 class MusicRepository(context: Context) {
     private val TAG = "MusicRepository"
@@ -46,6 +104,26 @@ class MusicRepository(context: Context) {
         get() = contextRef.get() ?: throw IllegalStateException("Context has been garbage collected")
     
     private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    
+    // Genre cache using SharedPreferences
+    private val genrePrefs: SharedPreferences by lazy { context.getSharedPreferences("genre_cache", Context.MODE_PRIVATE) }
+    
+    // Scan progress tracking
+    private val _scanProgress = MutableStateFlow(ScanProgress(0, 0, "Idle"))
+    val scanProgress: StateFlow<ScanProgress> = _scanProgress.asStateFlow()
+    
+    // Scan history
+    private val _scanHistory = MutableStateFlow<List<ScanHistoryEntry>>(emptyList())
+    val scanHistory: StateFlow<List<ScanHistoryEntry>> = _scanHistory.asStateFlow()
+    
+    // Song cache to avoid duplicate MediaStore queries
+    private var cachedSongs: List<Song>? = null
+    private var cacheTimestamp: Long = 0
+    private val CACHE_VALIDITY_MS = 60_000 // 1 minute
+    
+    // ContentObserver for automatic updates
+    private var mediaStoreObserver: ContentObserver? = null
+    private var onMediaStoreChangeCallback: (() -> Unit)? = null
 
     /**
      * API Fallback Strategy:
@@ -72,8 +150,46 @@ class MusicRepository(context: Context) {
     private val deezerApiService = NetworkClient.deezerApiService
     private val lrclibApiService = NetworkClient.lrclibApiService
     private val ytmusicApiService = NetworkClient.ytmusicApiService
-    private val appleMusicApiService = NetworkClient.appleMusicApiService
+    // Apple Music API service removed - can be re-added in future
     private val genericHttpClient = NetworkClient.genericHttpClient
+
+    /**
+     * Register ContentObserver to monitor MediaStore changes
+     */
+    fun registerMediaStoreObserver(onChange: () -> Unit) {
+        if (mediaStoreObserver != null) {
+            Log.d(TAG, "ContentObserver already registered")
+            return
+        }
+        
+        onMediaStoreChangeCallback = onChange
+        mediaStoreObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean) {
+                super.onChange(selfChange)
+                Log.d(TAG, "MediaStore changed, triggering callback")
+                onChange()
+            }
+        }
+        
+        context.contentResolver.registerContentObserver(
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+            true,
+            mediaStoreObserver!!
+        )
+        Log.d(TAG, "ContentObserver registered for MediaStore changes")
+    }
+    
+    /**
+     * Unregister ContentObserver
+     */
+    fun unregisterMediaStoreObserver() {
+        mediaStoreObserver?.let {
+            context.contentResolver.unregisterContentObserver(it)
+            mediaStoreObserver = null
+            onMediaStoreChangeCallback = null
+            Log.d(TAG, "ContentObserver unregistered")
+        }
+    }
 
     // LRU caches for artist images, album artwork, and lyrics to avoid memory leaks
     private val artistImageCache = object : LinkedHashMap<String, Uri?>(16, 0.75f, true) {
@@ -148,9 +264,29 @@ class MusicRepository(context: Context) {
         }
     }
 
-    suspend fun loadSongs(): List<Song> = withContext(Dispatchers.IO) {
+    suspend fun loadSongs(
+        forceRefresh: Boolean = false,
+        allowedFormats: Set<String>? = null,
+        minimumBitrate: Int = 0,
+        minimumDuration: Long = 0L
+    ): List<Song> = withContext(Dispatchers.IO) {
+        // Check cache first
+        if (!forceRefresh && 
+            cachedSongs != null && 
+            System.currentTimeMillis() - cacheTimestamp < CACHE_VALIDITY_MS) {
+            Log.d(TAG, "Returning cached songs (${cachedSongs!!.size})")
+            return@withContext cachedSongs!!
+        }
+        
         val startTime = System.currentTimeMillis()
         val songs = mutableListOf<Song>()
+        val errors = mutableListOf<Pair<Int, Exception>>()
+        val seenIds = mutableSetOf<String>()
+        val seenPaths = mutableSetOf<String>()
+        var duplicatesFound = 0
+        var filteredByFormat = 0
+        var filteredByQuality = 0
+        
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -168,7 +304,8 @@ class MusicRepository(context: Context) {
             MediaStore.Audio.Media.YEAR,
             MediaStore.Audio.Media.DATE_ADDED,
             MediaStore.Audio.Media.SIZE,
-            MediaStore.Audio.Media.GENRE
+            MediaStore.Audio.Media.GENRE,
+            MediaStore.Audio.Media.DATA // For path-based duplicate detection
         )
 
         // Improved selection to filter out very short files and invalid entries
@@ -176,6 +313,8 @@ class MusicRepository(context: Context) {
         val sortOrder = "${MediaStore.Audio.Media.DATE_ADDED} DESC"
 
         try {
+            _scanProgress.value = ScanProgress(0, 0, "Songs", 0)
+            
             context.contentResolver.query(
                 collection,
                 projection,
@@ -185,6 +324,7 @@ class MusicRepository(context: Context) {
             )?.use { cursor ->
                 val count = cursor.count
                 Log.d(TAG, "Found $count audio files to process")
+                _scanProgress.value = ScanProgress(0, count, "Songs", 0)
                 
                 if (count == 0) {
                     Log.w(TAG, "No audio files found in MediaStore")
@@ -214,39 +354,233 @@ class MusicRepository(context: Context) {
                     )
                 } catch (e: IllegalArgumentException) {
                     Log.e(TAG, "Required column not found in MediaStore", e)
+                    _scanProgress.value = ScanProgress(0, 0, "Error", 0)
                     return@withContext emptyList()
                 }
 
                 var processedCount = 0
-                val batchSize = 1000
+                val batchSize = 100
+                val pathColumnIndex = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
                 
                 while (cursor.moveToNext()) {
                     try {
                         val song = createSongFromCursor(cursor, columnIndices)
                         if (song != null) {
+                            // Duplicate detection by ID
+                            if (seenIds.contains(song.id)) {
+                                Log.d(TAG, "Skipping duplicate ID: ${song.id} - ${song.title}")
+                                duplicatesFound++
+                                processedCount++
+                                continue
+                            }
+                            
+                            // Duplicate detection by path
+                            if (pathColumnIndex >= 0) {
+                                val path = cursor.getString(pathColumnIndex)
+                                if (path != null && seenPaths.contains(path)) {
+                                    Log.d(TAG, "Skipping duplicate path: $path - ${song.title}")
+                                    duplicatesFound++
+                                    processedCount++
+                                    continue
+                                }
+                                
+                                // Format filtering
+                                if (allowedFormats != null && path.isNotEmpty()) {
+                                    val extension = path.substringAfterLast('.', "").lowercase()
+                                    if (extension.isNotEmpty() && !allowedFormats.contains(extension)) {
+                                        filteredByFormat++
+                                        processedCount++
+                                        continue
+                                    }
+                                }
+                                
+                                seenPaths.add(path)
+                            }
+                            
+                            // Duration filtering (quality check)
+                            if (minimumDuration > 0 && song.duration < minimumDuration) {
+                                filteredByQuality++
+                                processedCount++
+                                continue
+                            }
+                            
+                            // Note: Bitrate filtering is done later since we need to extract metadata
+                            // For now, we add the song and can filter in post-processing if needed
+                            
+                            seenIds.add(song.id)
                             songs.add(song)
                         }
                         
                         processedCount++
+                        
+                        // Update progress periodically
+                        if (processedCount % 10 == 0) {
+                            _scanProgress.value = ScanProgress(processedCount, count, "Songs", 0)
+                        }
+                        
                         // Yield control periodically to avoid blocking
                         if (processedCount % batchSize == 0) {
                             yield()
                         }
                     } catch (e: Exception) {
                         Log.w(TAG, "Error processing song at position ${cursor.position}", e)
+                        errors.add(cursor.position to e)
+                        processedCount++
                         continue
                     }
                 }
                 
                 val endTime = System.currentTimeMillis()
-                Log.d(TAG, "Loaded ${songs.size} songs in ${endTime - startTime}ms")
+                val duration = endTime - startTime
+                Log.d(TAG, "Loaded ${songs.size} songs in ${duration}ms")
+                Log.d(TAG, "Filtering stats - Duplicates: $duplicatesFound, Format: $filteredByFormat, Quality: $filteredByQuality, Errors: ${errors.size}")
+                
+                // Update cache
+                cachedSongs = songs
+                cacheTimestamp = System.currentTimeMillis()
+                
+                // Update scan progress to complete
+                _scanProgress.value = ScanProgress(songs.size, count, "Complete", duration)
+                
+                // Log errors if any
+                if (errors.isNotEmpty()) {
+                    Log.w(TAG, "Scan completed with ${errors.size} errors. First error: ${errors.first().second.message}")
+                }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error querying MediaStore for songs", e)
-            return@withContext emptyList()
+            Log.e(TAG, "Critical error during song scan", e)
+            _scanProgress.value = ScanProgress(0, 0, "Error", 0)
+            // Return partial results if available
+            return@withContext songs
         }
 
         return@withContext songs
+    }
+    
+    /**
+     * Perform incremental scan for newly added songs only
+     */
+    suspend fun performIncrementalScan(
+        lastScanTimestamp: Long,
+        allowedFormats: Set<String>? = null,
+        minimumBitrate: Int = 0,
+        minimumDuration: Long = 0L
+    ): List<Song> = withContext(Dispatchers.IO) {
+        Log.d(TAG, "Starting incremental scan since timestamp: $lastScanTimestamp")
+        val startTime = System.currentTimeMillis()
+        val newSongs = mutableListOf<Song>()
+        var filteredByFormat = 0
+        var filteredByQuality = 0
+        
+        val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+        } else {
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+        }
+
+        val projection = arrayOf(
+            MediaStore.Audio.Media._ID,
+            MediaStore.Audio.Media.TITLE,
+            MediaStore.Audio.Media.ARTIST,
+            MediaStore.Audio.Media.ALBUM,
+            MediaStore.Audio.Media.ALBUM_ID,
+            MediaStore.Audio.Media.DURATION,
+            MediaStore.Audio.Media.TRACK,
+            MediaStore.Audio.Media.YEAR,
+            MediaStore.Audio.Media.DATE_ADDED,
+            MediaStore.Audio.Media.SIZE,
+            MediaStore.Audio.Media.GENRE
+        )
+
+        // Only scan songs added after last scan
+        val selection = "${MediaStore.Audio.Media.IS_MUSIC} = 1 AND ${MediaStore.Audio.Media.DURATION} > 10000 AND ${MediaStore.Audio.Media.DATE_ADDED} > ?"
+        val selectionArgs = arrayOf((lastScanTimestamp / 1000).toString())
+        val sortOrder = "${MediaStore.Audio.Media.DATE_ADDED} DESC"
+
+        try {
+            context.contentResolver.query(
+                collection,
+                projection,
+                selection,
+                selectionArgs,
+                sortOrder
+            )?.use { cursor ->
+                val count = cursor.count
+                Log.d(TAG, "Found $count new audio files")
+                _scanProgress.value = ScanProgress(0, count, "Incremental", 0)
+                
+                if (count == 0) {
+                    return@withContext emptyList()
+                }
+
+                val columnIndices = try {
+                    ColumnIndices(
+                        id = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID),
+                        title = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE),
+                        artist = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST),
+                        album = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM),
+                        albumId = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID),
+                        duration = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION),
+                        track = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK),
+                        year = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR),
+                        dateAdded = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED),
+                        size = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.SIZE),
+                        genre = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.GENRE),
+                        albumArtist = cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ARTIST)
+                    )
+                } catch (e: IllegalArgumentException) {
+                    Log.e(TAG, "Required column not found in MediaStore", e)
+                    return@withContext emptyList()
+                }
+
+                var processedCount = 0
+                val pathColumnIndex = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
+                
+                while (cursor.moveToNext()) {
+                    try {
+                        val song = createSongFromCursor(cursor, columnIndices)
+                        if (song != null) {
+                            // Format filtering
+                            if (allowedFormats != null && pathColumnIndex >= 0) {
+                                val path = cursor.getString(pathColumnIndex)
+                                if (path != null && path.isNotEmpty()) {
+                                    val extension = path.substringAfterLast('.', "").lowercase()
+                                    if (extension.isNotEmpty() && !allowedFormats.contains(extension)) {
+                                        filteredByFormat++
+                                        processedCount++
+                                        continue
+                                    }
+                                }
+                            }
+                            
+                            // Duration filtering
+                            if (minimumDuration > 0 && song.duration < minimumDuration) {
+                                filteredByQuality++
+                                processedCount++
+                                continue
+                            }
+                            
+                            newSongs.add(song)
+                        }
+                        processedCount++
+                        if (processedCount % 10 == 0) {
+                            _scanProgress.value = ScanProgress(processedCount, count, "Incremental", 0)
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Error processing new song at position ${cursor.position}", e)
+                    }
+                }
+                
+                val duration = System.currentTimeMillis() - startTime
+                Log.d(TAG, "Incremental scan complete: ${newSongs.size} new songs in ${duration}ms")
+                Log.d(TAG, "Filtering stats - Format: $filteredByFormat, Quality: $filteredByQuality")
+                _scanProgress.value = ScanProgress(newSongs.size, count, "Complete", duration)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error during incremental scan", e)
+        }
+
+        return@withContext newSongs
     }
     
     private data class ColumnIndices(
@@ -303,6 +637,17 @@ class MusicRepository(context: Context) {
                 albumId
             )
 
+            // Load cached genre if available
+            val cachedGenre = try {
+                genrePrefs.getString("genre_$id", null)?.takeIf { it.isNotBlank() }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to load cached genre for song ID $id", e)
+                null
+            }
+            if (cachedGenre != null) {
+                Log.d(TAG, "Loaded cached genre '$cachedGenre' for song ID $id: $title")
+            }
+
             // Note: Audio metadata extraction moved to background task to avoid blocking initial scan
             // Use extractAudioMetadata() separately when needed for detailed info
 
@@ -318,7 +663,7 @@ class MusicRepository(context: Context) {
                 trackNumber = track,
                 year = year,
                 dateAdded = dateAdded,
-                genre = null, // Genre will be detected in background
+                genre = cachedGenre, // Use cached genre if available
                 albumArtist = albumArtist,
                 bitrate = null, // Will be extracted lazily when needed
                 sampleRate = null,
@@ -755,58 +1100,79 @@ class MusicRepository(context: Context) {
      * This groups by track artist, showing collaborations as separate entries
      */
     private suspend fun loadArtistsFromMediaStore(): List<Artist> = withContext(Dispatchers.IO) {
-        val artists = mutableListOf<Artist>()
-        val collection = MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI
-
-        val projection = arrayOf(
-            MediaStore.Audio.Artists._ID,
-            MediaStore.Audio.Artists.ARTIST,
-            MediaStore.Audio.Artists.NUMBER_OF_ALBUMS,
-            MediaStore.Audio.Artists.NUMBER_OF_TRACKS
-        )
-
-        val selection = "${MediaStore.Audio.Artists.ARTIST} != ''"
-        val sortOrder = "${MediaStore.Audio.Artists.ARTIST} ASC"
-
-        context.contentResolver.query(
-            collection,
-            projection,
-            selection,
-            null,
-            sortOrder
-        )?.use { cursor ->
-            // Cache column indices
-            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists._ID)
-            val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.ARTIST)
-            val albumsColumn =
-                cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.NUMBER_OF_ALBUMS)
-            val tracksColumn =
-                cursor.getColumnIndexOrThrow(MediaStore.Audio.Artists.NUMBER_OF_TRACKS)
-
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(idColumn)
-                var name = cursor.getString(artistColumn)
-                val numAlbums = cursor.getInt(albumsColumn)
-                val numTracks = cursor.getInt(tracksColumn)
-
-                // Clean up artist name
-                if (name.isNullOrBlank() || name.equals("<unknown>", ignoreCase = true)) {
-                    // Try to find a better name from the artist's tracks
-                    name = findBetterArtistName(id.toString()) ?: "Unknown Artist"
+        // Load all songs to properly count tracks/albums for split artists
+        val allSongs = loadSongs()
+        val artistMap = mutableMapOf<String, MutableList<Song>>()
+        val albumsByArtist = mutableMapOf<String, MutableSet<String>>()
+        
+        // Group songs by individual track artists (splitting collaborations)
+        for (song in allSongs) {
+            // Split artist names on common separators
+            val artistNames = splitArtistNames(song.artist)
+            
+            for (artistName in artistNames) {
+                val cleanName = artistName.trim()
+                
+                // Skip invalid artist names
+                if (cleanName.isBlank() || cleanName.equals("<unknown>", ignoreCase = true)) {
+                    continue
                 }
-
-                val artist = Artist(
-                    id = id.toString(),
-                    name = name,
-                    numberOfAlbums = numAlbums,
-                    numberOfTracks = numTracks
-                )
-                artists.add(artist)
+                
+                // Add song to artist's collection
+                artistMap.getOrPut(cleanName) { mutableListOf() }.add(song)
+                
+                // Track unique albums for this artist
+                if (song.album.isNotBlank()) {
+                    albumsByArtist.getOrPut(cleanName) { mutableSetOf() }.add(song.album)
+                }
             }
         }
+        
+        // Create Artist objects from grouped data
+        val artists = artistMap.map { (artistName, songs) ->
+            val albums = albumsByArtist[artistName] ?: emptySet()
+            Artist(
+                id = "track_artist_${artistName.hashCode()}", // Generate unique ID based on name
+                name = artistName,
+                numberOfAlbums = albums.size,
+                numberOfTracks = songs.size
+            )
+        }.sortedBy { it.name.lowercase() }
 
-        Log.d(TAG, "Loaded ${artists.size} artists from MediaStore")
+        Log.d(TAG, "Loaded ${artists.size} artists from track artists (split collaborations)")
         artists
+    }
+    
+    /**
+     * Splits artist names on common collaboration separators.
+     * Returns a list of individual artist names.
+     */
+    fun splitArtistNames(artistName: String): List<String> {
+        // Common separators for collaborations
+        val separators = listOf(
+            " & ",
+            " and ",
+            ", ",
+            " feat. ",
+            " feat ",
+            " ft. ",
+            " ft ",
+            " featuring ",
+            " x ",
+            " X ",
+            " vs ",
+            " vs. ",
+            " with "
+        )
+        
+        var names = listOf(artistName)
+        
+        // Split on each separator
+        for (separator in separators) {
+            names = names.flatMap { it.split(separator, ignoreCase = true) }
+        }
+        
+        return names.map { it.trim() }.filter { it.isNotBlank() }
     }
     
     /**
@@ -899,10 +1265,102 @@ class MusicRepository(context: Context) {
         // and provide fresh data. The ViewModel will then update its StateFlows.
         // No need to return anything here, as the ViewModel will call these methods
         // and collect the results.
-        loadSongs()
+        loadSongs(forceRefresh = true)
         loadAlbums()
         loadArtists()
         Log.d(TAG, "Music data refresh complete.")
+    }
+    
+    /**
+     * Suggest folders to blacklist based on common patterns
+     */
+    suspend fun suggestFoldersToBlacklist(songs: List<Song>): List<FolderSuggestion> = withContext(Dispatchers.IO) {
+        Log.d(TAG, "Analyzing folders for blacklist suggestions...")
+        val suggestions = mutableListOf<FolderSuggestion>()
+        
+        // Get folder statistics
+        val folderStats = mutableMapOf<String, MutableList<Song>>()
+        songs.forEach { song ->
+            try {
+                val uri = song.uri
+                val projection = arrayOf(MediaStore.Audio.Media.DATA)
+                context.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val dataIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
+                        val path = cursor.getString(dataIndex)
+                        val folder = path.substringBeforeLast("/")
+                        folderStats.getOrPut(folder) { mutableListOf() }.add(song)
+                    }
+                }
+            } catch (e: Exception) {
+                // Skip songs we can't get path for
+            }
+        }
+        
+        // Common system folders to suggest blacklisting
+        val systemFolders = listOf(
+            "Ringtones", "ringtones", "Notifications", "notifications",  
+            "Alarms", "alarms", "WhatsApp", "Telegram", "ui", "system"
+        )
+        
+        folderStats.forEach { (folder, folderSongs) ->
+            // Check for system folder names
+            systemFolders.forEach { sysFolder ->
+                if (folder.contains(sysFolder, ignoreCase = true)) {
+                    suggestions.add(FolderSuggestion(
+                        path = folder,
+                        reason = "System folder: $sysFolder",
+                        songCount = folderSongs.size,
+                        confidence = 0.9
+                    ))
+                }
+            }
+            
+            // Check for folders with very short files (likely ringtones/notifications)
+            val avgDuration = folderSongs.mapNotNull { it.duration }.average()
+            if (avgDuration < 30000) { // Less than 30 seconds
+                suggestions.add(FolderSuggestion(
+                    path = folder,
+                    reason = "Contains short audio files (avg ${(avgDuration / 1000).toInt()}s)",
+                    songCount = folderSongs.size,
+                    confidence = 0.8
+                ))
+            }
+        }
+        
+        Log.d(TAG, "Generated ${suggestions.size} folder suggestions")
+        return@withContext suggestions.distinctBy { it.path }.sortedByDescending { it.confidence }
+    }
+    
+    /**
+     * Calculate comprehensive scan statistics
+     */
+    fun calculateScanStatistics(
+        allSongs: List<Song>,
+        filteredSongs: List<Song>,
+        albums: List<Album>,
+        artists: List<Artist>,
+        lastScanTime: Long,
+        lastScanDuration: Long
+    ): ScanStatistics {
+        // Note: storageUsed set to 0 since Song doesn't track file size
+        // Would require additional file system access to calculate
+        val storageUsed = 0L
+        val bitrates = allSongs.mapNotNull { it.bitrate }
+        val avgBitrate = if (bitrates.isNotEmpty()) bitrates.average().toInt() else 0
+        val duplicatesRemoved = allSongs.size - filteredSongs.size
+        
+        return ScanStatistics(
+            lastScanTime = lastScanTime,
+            scanDuration = lastScanDuration,
+            totalSongs = allSongs.size,
+            filteredSongs = filteredSongs.size,
+            totalAlbums = albums.size,
+            totalArtists = artists.size,
+            storageUsedBytes = storageUsed,
+            averageBitrate = avgBitrate,
+            duplicatesFound = duplicatesRemoved
+        )
     }
 
     /**
@@ -1121,251 +1579,928 @@ class MusicRepository(context: Context) {
             updatedArtists
         }
     /**
-     * Extracts embedded lyrics from audio file metadata
+     * Extracts embedded lyrics from audio file metadata - REDONE FROM SCRATCH
      * 
-     * This method attempts multiple strategies to extract lyrics:
-     * 1. MediaMetadataRetriever with common metadata keys
-     * 2. Direct file reading for ID3v2 USLT (Unsynchronized Lyrics) frames
-     * 
-     * Note: Android's MediaMetadataRetriever has limited lyrics support.
-     * ID3v2.3/v2.4 tags with USLT frames are the most reliable format.
+     * Improved extraction with:
+     * 1. Better ID3v2.3/v2.4 USLT frame parsing
+     * 2. Proper synchsafe integer handling
+     * 3. Multiple charset support (ISO-8859-1, UTF-16, UTF-8)
+     * 4. Safety checks to prevent hangs and crashes
+     * 5. Support for both synced LRC and plain text lyrics
+     * 6. Fallback to MediaMetadataRetriever for FLAC/other formats
      */
     private fun getEmbeddedLyrics(songUri: Uri): LyricsData? {
-        try {
-            // Try MediaMetadataRetriever first (fastest)
-            val retrieverLyrics = extractLyricsViaRetriever(songUri)
-            if (retrieverLyrics != null) return retrieverLyrics
+        return try {
+            Log.d(TAG, "===== GET EMBEDDED LYRICS START: $songUri =====")
             
-            // Try direct file reading for ID3 tags with timeout to prevent hanging
-            val id3Lyrics = try {
-                // Use a timeout to prevent infinite loading
-                val result = kotlin.runCatching {
-                    extractLyricsFromID3(songUri)
-                }
-                result.getOrNull()
-            } catch (e: Exception) {
-                Log.w(TAG, "ID3 extraction failed: ${e.message}")
-                null
+            // Primary method: Direct ID3v2 tag parsing (for MP3)
+            val id3Lyrics = extractLyricsFromID3v2(songUri)
+            if (id3Lyrics != null) {
+                Log.d(TAG, "===== FOUND LYRICS VIA ID3V2 =====")
+                return id3Lyrics
             }
             
-            if (id3Lyrics != null) return id3Lyrics
+            // Fallback: MediaMetadataRetriever (for FLAC, M4A, etc.)
+            Log.d(TAG, "===== TRYING MediaMetadataRetriever =====")
+            val retrieverLyrics = extractLyricsViaRetriever(songUri)
+            if (retrieverLyrics != null) {
+                Log.d(TAG, "===== FOUND LYRICS VIA RETRIEVER =====")
+                return retrieverLyrics
+            }
             
-            return null
+            Log.d(TAG, "===== NO EMBEDDED LYRICS FOUND =====")
+            null
         } catch (e: Exception) {
-            Log.w(TAG, "Error extracting embedded lyrics: ${e.message}")
-            return null
+            Log.w(TAG, "===== EMBEDDED LYRICS EXTRACTION FAILED: ${e.message} =====")
+            null
         }
     }
     
     /**
-     * Attempts to extract lyrics using MediaMetadataRetriever
+     * Extract lyrics using MediaMetadataRetriever (works for FLAC, M4A, etc.)
+     * For FLAC: Checks Vorbis comments (LYRICS/UNSYNCEDLYRICS tags)
      */
     private fun extractLyricsViaRetriever(songUri: Uri): LyricsData? {
-        var retriever: android.media.MediaMetadataRetriever? = null
-        try {
-            retriever = android.media.MediaMetadataRetriever()
-            retriever.setDataSource(context, songUri)
+        return try {
+            Log.d(TAG, "===== extractLyricsViaRetriever START: $songUri =====")
+            val retriever = android.media.MediaMetadataRetriever()
+            retriever.use {
+                context.contentResolver.openFileDescriptor(songUri, "r")?.use { pfd ->
+                    it.setDataSource(pfd.fileDescriptor)
+                    
+                    // Try different metadata keys that might contain lyrics
+                    // FLAC uses custom Vorbis comments, but Android exposes some through standard keys
+                    val possibleKeys = listOf(
+                        android.media.MediaMetadataRetriever.METADATA_KEY_WRITER,  // Sometimes contains lyrics
+                        android.media.MediaMetadataRetriever.METADATA_KEY_COMPOSER, // Fallback
+                    )
+                    
+                    for (key in possibleKeys) {
+                        val value = it.extractMetadata(key)
+                        if (value != null && value.isNotBlank() && value.length > 50) { // Likely lyrics if > 50 chars
+                            Log.d(TAG, "Found potential lyrics in metadata key $key (${value.length} chars)")
+                            val parsed = parseLyricsData(value)
+                            if (parsed != null) return@use parsed
+                        }
+                    }
+                    
+                    // For FLAC files, try direct Vorbis comment parsing
+                    val filePath = getFilePathFromUri(songUri)
+                    Log.d(TAG, "===== Resolved file path: $filePath =====")
+                    
+                    if (filePath?.endsWith(".flac", ignoreCase = true) == true) {
+                        Log.d(TAG, "===== Detected FLAC file, trying FLAC extraction =====")
+                        return@use extractLyricsFromFLAC(filePath)
+                    }
+                    
+                    // For M4A files, try direct iTunes metadata parsing
+                    if (filePath?.endsWith(".m4a", ignoreCase = true) == true) {
+                        Log.d(TAG, "===== Detected M4A file, trying M4A extraction =====")
+                        return@use extractLyricsFromM4A(filePath)
+                    }
+                    
+                    // For OGG files, try direct Vorbis comment parsing
+                    if (filePath?.endsWith(".ogg", ignoreCase = true) == true || 
+                        filePath?.endsWith(".oga", ignoreCase = true) == true) {
+                        Log.d(TAG, "===== Detected OGG/Vorbis file, trying OGG extraction =====")
+                        return@use extractLyricsFromOGG(filePath)
+                    }
+                    
+                    Log.d(TAG, "===== No specific format handler matched =====")
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "===== extractLyricsViaRetriever FAILED: ${e.message} =====")
+            e.printStackTrace()
+            null
+        }
+    }
+    
+    /**
+     * Extract lyrics from FLAC Vorbis comments
+     */
+    private fun extractLyricsFromFLAC(filePath: String): LyricsData? {
+        return try {
+            val file = java.io.File(filePath)
+            if (!file.exists() || !file.canRead()) return null
             
-            // Try common metadata keys that might contain lyrics
-            // Note: Standard key codes documented in MediaMetadataRetriever
-            val potentialLyricsKeys = listOf(
-                // Some devices/implementations may use these keys for lyrics
-                android.media.MediaMetadataRetriever.METADATA_KEY_WRITER, 
-                android.media.MediaMetadataRetriever.METADATA_KEY_COMPOSER,
-                // Try some numeric codes (vendor-specific, may work on some devices)
-                1000, 1001, 1002, 1003
+            java.io.RandomAccessFile(file, "r").use { raf ->
+                // Check FLAC signature
+                val signature = ByteArray(4)
+                if (raf.read(signature) != 4) return@use null
+                if (String(signature, Charsets.ISO_8859_1) != "fLaC") {
+                    Log.d(TAG, "Not a valid FLAC file")
+                    return@use null
+                }
+                
+                // Read metadata blocks
+                var lastBlock = false
+                while (!lastBlock && raf.filePointer < file.length()) {
+                    val blockHeader = raf.read()
+                    if (blockHeader == -1) break
+                    
+                    lastBlock = (blockHeader and 0x80) != 0
+                    val blockType = blockHeader and 0x7F
+                    
+                    // Read block length (24-bit big-endian)
+                    val length = ((raf.read() and 0xFF) shl 16) or
+                               ((raf.read() and 0xFF) shl 8) or
+                               (raf.read() and 0xFF)
+                    
+                    if (length <= 0 || length > 16_777_215) break // Max 16MB block
+                    
+                    // Block type 4 = VORBIS_COMMENT
+                    if (blockType == 4) {
+                        val commentData = ByteArray(length)
+                        if (raf.read(commentData) != length) break
+                        
+                        val lyrics = parseVorbisComments(commentData)
+                        if (lyrics != null) {
+                            Log.d(TAG, "Found lyrics in FLAC Vorbis comments")
+                            return@use lyrics
+                        }
+                    } else {
+                        // Skip this block
+                        raf.seek(raf.filePointer + length)
+                    }
+                }
+                
+                Log.d(TAG, "No LYRICS tag found in FLAC Vorbis comments")
+                null
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "FLAC lyrics extraction failed: ${e.message}")
+            null
+        }
+    }
+    
+    /**
+     * Parse Vorbis comments to extract LYRICS or UNSYNCEDLYRICS tags
+     */
+    private fun parseVorbisComments(data: ByteArray): LyricsData? {
+        try {
+            var pos = 0
+            
+            // Read vendor string length (little-endian 32-bit)
+            if (pos + 4 > data.size) return null
+            val vendorLength = (data[pos].toInt() and 0xFF) or
+                             ((data[pos + 1].toInt() and 0xFF) shl 8) or
+                             ((data[pos + 2].toInt() and 0xFF) shl 16) or
+                             ((data[pos + 3].toInt() and 0xFF) shl 24)
+            pos += 4
+            
+            // Skip vendor string
+            if (vendorLength < 0 || pos + vendorLength > data.size) return null
+            pos += vendorLength
+            
+            // Read number of comments
+            if (pos + 4 > data.size) return null
+            val commentCount = (data[pos].toInt() and 0xFF) or
+                             ((data[pos + 1].toInt() and 0xFF) shl 8) or
+                             ((data[pos + 2].toInt() and 0xFF) shl 16) or
+                             ((data[pos + 3].toInt() and 0xFF) shl 24)
+            pos += 4
+            
+            if (commentCount < 0 || commentCount > 10000) return null // Safety limit
+            
+            // Parse each comment
+            for (i in 0 until commentCount) {
+                if (pos + 4 > data.size) break
+                
+                val commentLength = (data[pos].toInt() and 0xFF) or
+                                  ((data[pos + 1].toInt() and 0xFF) shl 8) or
+                                  ((data[pos + 2].toInt() and 0xFF) shl 16) or
+                                  ((data[pos + 3].toInt() and 0xFF) shl 24)
+                pos += 4
+                
+                if (commentLength < 0 || pos + commentLength > data.size) break
+                
+                val commentBytes = data.copyOfRange(pos, pos + commentLength)
+                val comment = String(commentBytes, Charsets.UTF_8)
+                pos += commentLength
+                
+                // Check if this is a lyrics tag
+                val parts = comment.split("=", limit = 2)
+                if (parts.size == 2) {
+                    val key = parts[0].uppercase()
+                    val value = parts[1]
+                    
+                    if ((key == "LYRICS" || key == "UNSYNCEDLYRICS") && value.isNotBlank()) {
+                        Log.d(TAG, "Found $key tag in Vorbis comments (${value.length} chars)")
+                        return parseLyricsData(value)
+                    }
+                }
+            }
+            
+            return null
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to parse Vorbis comments: ${e.message}")
+            return null
+        }
+    }
+    
+    /**
+     * Extract lyrics from OGG/Vorbis files
+     * OGG uses the same Vorbis comment format as FLAC
+     */
+    private fun extractLyricsFromOGG(filePath: String): LyricsData? {
+        return try {
+            val file = java.io.File(filePath)
+            if (!file.exists() || !file.canRead()) return null
+            
+            java.io.RandomAccessFile(file, "r").use { raf ->
+                // Check OGG signature
+                val signature = ByteArray(4)
+                if (raf.read(signature) != 4) return@use null
+                if (String(signature, Charsets.ISO_8859_1) != "OggS") {
+                    Log.d(TAG, "Not a valid OGG file")
+                    return@use null
+                }
+                
+                // OGG files are organized into pages
+                // Vorbis comments are typically in the second page (after the identification header)
+                var foundCommentHeader = false
+                var attemptCount = 0
+                val maxAttempts = 100 // Prevent infinite loops
+                
+                // Reset to beginning
+                raf.seek(0)
+                
+                while (raf.filePointer < file.length() && attemptCount < maxAttempts) {
+                    attemptCount++
+                    
+                    // Read OGG page header
+                    val pageSignature = ByteArray(4)
+                    if (raf.read(pageSignature) != 4) break
+                    if (String(pageSignature, Charsets.ISO_8859_1) != "OggS") {
+                        // Try to resync - search for next OggS
+                        val nextOggS = findNextOggSPage(raf)
+                        if (nextOggS == -1L) break
+                        raf.seek(nextOggS)
+                        continue
+                    }
+                    
+                    // Skip version (1 byte) and header type (1 byte)
+                    raf.skipBytes(2)
+                    
+                    // Skip granule position (8 bytes), serial number (4 bytes), 
+                    // sequence number (4 bytes), checksum (4 bytes)
+                    raf.skipBytes(20)
+                    
+                    // Read number of page segments
+                    val numSegments = raf.read()
+                    if (numSegments == -1 || numSegments < 0) break
+                    
+                    // Read segment table
+                    val segmentTable = ByteArray(numSegments)
+                    if (raf.read(segmentTable) != numSegments) break
+                    
+                    // Calculate total page payload size
+                    val pageSize = segmentTable.sumOf { (it.toInt() and 0xFF) }
+                    
+                    // Read the page data
+                    if (pageSize > 0 && pageSize < 1_000_000) { // Safety limit: 1MB max page
+                        val pageData = ByteArray(pageSize)
+                        if (raf.read(pageData) != pageSize) break
+                        
+                        // Check if this is a Vorbis comment header
+                        // Vorbis comment header starts with packet type 0x03 followed by "vorbis"
+                        if (pageData.size >= 7 && 
+                            pageData[0] == 0x03.toByte() &&
+                            String(pageData.copyOfRange(1, 7), Charsets.ISO_8859_1) == "vorbis") {
+                            
+                            Log.d(TAG, "Found Vorbis comment header in OGG file")
+                            foundCommentHeader = true
+                            
+                            // Parse the Vorbis comments (skip the 7-byte header)
+                            val commentData = pageData.copyOfRange(7, pageData.size)
+                            val lyrics = parseVorbisComments(commentData)
+                            if (lyrics != null) {
+                                Log.d(TAG, "Found lyrics in OGG Vorbis comments")
+                                return@use lyrics
+                            }
+                        }
+                    } else {
+                        // Skip invalid or too-large page
+                        if (pageSize > 0) {
+                            raf.seek(raf.filePointer + pageSize)
+                        }
+                    }
+                    
+                    // If we found the comment header but no lyrics, we can stop
+                    if (foundCommentHeader) break
+                }
+                
+                Log.d(TAG, "No LYRICS tag found in OGG Vorbis comments (checked $attemptCount pages)")
+                null
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "OGG lyrics extraction failed: ${e.message}")
+            e.printStackTrace()
+            null
+        }
+    }
+    
+    /**
+     * Helper function to find the next OggS page signature in the file
+     */
+    private fun findNextOggSPage(raf: java.io.RandomAccessFile): Long {
+        val buffer = ByteArray(4096)
+        var bytesRead: Int
+        val targetPattern = "OggS".toByteArray(Charsets.ISO_8859_1)
+        
+        while (raf.filePointer < raf.length()) {
+            bytesRead = raf.read(buffer)
+            if (bytesRead == -1) return -1
+            
+            for (i in 0 until bytesRead - 3) {
+                if (buffer[i] == targetPattern[0] &&
+                    buffer[i + 1] == targetPattern[1] &&
+                    buffer[i + 2] == targetPattern[2] &&
+                    buffer[i + 3] == targetPattern[3]) {
+                    return raf.filePointer - bytesRead + i
+                }
+            }
+        }
+        return -1
+    }
+    
+    /**
+     * Extract lyrics from M4A iTunes metadata (©lyr atom and alternatives)
+     */
+    private fun extractLyricsFromM4A(filePath: String): LyricsData? {
+        return try {
+            val file = java.io.File(filePath)
+            if (!file.exists() || !file.canRead()) return null
+            
+            java.io.RandomAccessFile(file, "r").use { raf ->
+                // M4A files use MP4/QuickTime container format with atoms
+                // We need to find the 'moov' atom, then 'udta', then 'meta', then 'ilst', then lyrics atoms
+                
+                // Try multiple possible lyrics atom names (different taggers use different formats)
+                val lyricsAtomNames = listOf(
+                    "©lyr",  // Standard iTunes lyrics
+                    "\u00a9lyr", // Alternative encoding of ©
+                    "lyr ",  // Alternative with space
+                    "lyr\u0000",  // Null-terminated variant
+                    "USLT",  // Unsynchronized lyrics (ID3-style)
+                    "©day",  // Some taggers incorrectly use this
+                    "----",  // Custom freeform atom (may contain lyrics)
+                    "desc",  // Description field sometimes used
+                    "©des",  // Description variant
+                    "©cmt",  // Comment field (sometimes contains lyrics)
+                    "©CMT"   // Comment uppercase variant
+                )
+                
+                for (atomName in lyricsAtomNames) {
+                    val lyricsAtom = findM4AAtom(raf, atomName)
+                    if (lyricsAtom != null && lyricsAtom.isNotBlank()) {
+                        Log.d(TAG, "Found text in M4A atom '$atomName' (length: ${lyricsAtom.length}): ${lyricsAtom.take(100)}...")
+                        val parsed = parseLyricsData(lyricsAtom)
+                        if (parsed != null) {
+                            Log.d(TAG, "✓ Accepted lyrics from atom '$atomName'")
+                            return@use parsed
+                        } else {
+                            Log.d(TAG, "✗ Text from atom '$atomName' was rejected as not lyrics-like")
+                        }
+                    }
+                }
+                
+                // Last resort: scan all text atoms and look for lyrics-like content
+                Log.d(TAG, "Attempting comprehensive M4A atom scan for lyrics-like content")
+                val allTextAtoms = findAllTextAtoms(raf)
+                Log.d(TAG, "Found ${allTextAtoms.size} text atoms in M4A file")
+                
+                for ((atomName, content) in allTextAtoms) {
+                    Log.d(TAG, "Checking text atom '$atomName' (length: ${content.length}): ${content.take(100)}...")
+                    if (content.length > 100 && looksLikeLyrics(content)) {
+                        Log.d(TAG, "Text atom '$atomName' passed lyrics validation")
+                        val parsed = parseLyricsData(content)
+                        if (parsed != null) {
+                            Log.d(TAG, "✓ Accepted lyrics from comprehensive scan atom '$atomName'")
+                            return@use parsed
+                        }
+                    } else {
+                        Log.d(TAG, "Text atom '$atomName' rejected: length=${content.length}, looksLikeLyrics=${looksLikeLyrics(content)}")
+                    }
+                }
+                
+                Log.d(TAG, "No lyrics atoms found in M4A file (checked: ${lyricsAtomNames.joinToString(", ")}, scanned ${allTextAtoms.size} text atoms)")
+                null
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "M4A lyrics extraction failed: ${e.message}")
+            null
+        }
+    }
+    
+    /**
+     * Find and extract a specific atom from M4A file
+     */
+    private fun findM4AAtom(raf: java.io.RandomAccessFile, targetAtom: String): String? {
+        try {
+            // Recursively search for atoms
+            return searchM4AAtoms(raf, 0, raf.length(), targetAtom, 0)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to search M4A atoms: ${e.message}")
+            return null
+        }
+    }
+    
+    /**
+     * Scan M4A file and collect all text atoms (for debugging and fallback lyrics search)
+     */
+    private fun findAllTextAtoms(raf: java.io.RandomAccessFile): Map<String, String> {
+        val textAtoms = mutableMapOf<String, String>()
+        try {
+            collectTextAtoms(raf, 0, raf.length(), 0, textAtoms)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to collect text atoms: ${e.message}")
+        }
+        return textAtoms
+    }
+    
+    /**
+     * Recursively collect all text-containing atoms
+     */
+    private fun collectTextAtoms(
+        raf: java.io.RandomAccessFile,
+        offset: Long,
+        endOffset: Long,
+        depth: Int,
+        results: MutableMap<String, String>
+    ) {
+        if (depth > 10 || results.size > 50) return // Prevent excessive recursion/results
+        
+        var pos = offset
+        val atomsAtThisLevel = mutableListOf<String>()
+        
+        while (pos < endOffset - 8) {
+            try {
+                raf.seek(pos)
+                
+                // Read atom size and type
+                val sizeBytes = ByteArray(4)
+                if (raf.read(sizeBytes) != 4) break
+                var atomSize = ((sizeBytes[0].toInt() and 0xFF) shl 24) or
+                              ((sizeBytes[1].toInt() and 0xFF) shl 16) or
+                              ((sizeBytes[2].toInt() and 0xFF) shl 8) or
+                              (sizeBytes[3].toInt() and 0xFF)
+                
+                val typeBytes = ByteArray(4)
+                if (raf.read(typeBytes) != 4) break
+                val atomType = String(typeBytes, Charsets.ISO_8859_1)
+                
+                if (atomSize <= 0 || atomSize > 100_000_000) break
+                
+                // Track atoms for debugging
+                atomsAtThisLevel.add("$atomType($atomSize)")
+                
+                // Look for 'data' atoms that contain text
+                if (atomType == "data" && atomSize > 16 && atomSize < 500_000) {
+                    raf.seek(pos + 16)
+                    val dataBytes = ByteArray((atomSize - 16).coerceAtMost(100_000))
+                    if (raf.read(dataBytes) == dataBytes.size) {
+                        val text = String(dataBytes, Charsets.UTF_8).trim('\u0000', ' ', '\n', '\r')
+                        if (text.length > 10 && text.any { it.isLetter() }) {
+                            Log.d(TAG, "Found text in 'data' atom at depth $depth: ${text.take(50)}...")
+                            results["data_${pos}_${depth}"] = text
+                        }
+                    }
+                }
+                
+                // Try to extract text from ANY atom with reasonable size
+                if (atomSize > 20 && atomSize < 500_000 && atomType.length == 4) {
+                    raf.seek(pos + 8)
+                    val contentBytes = ByteArray((atomSize - 8).coerceAtMost(100_000))
+                    if (raf.read(contentBytes) == contentBytes.size) {
+                        // Skip binary data (check for text-like content)
+                        val possibleText = String(contentBytes, Charsets.UTF_8)
+                        val alphaCount = possibleText.count { it.isLetter() }
+                        if (alphaCount > 50 && alphaCount > possibleText.length * 0.3) {
+                            val text = possibleText.trim('\u0000', ' ', '\n', '\r')
+                            if (text.length > 100 && looksLikeLyrics(text)) {
+                                Log.d(TAG, "Found lyrics-like text in '$atomType' atom at depth $depth: ${text.take(50)}...")
+                                results["${atomType}_${pos}_${depth}"] = text
+                            }
+                        }
+                    }
+                }
+                
+                // Special handling for 'meta' atom (has 4 bytes version/flags before children)
+                var childOffset = pos + 8
+                if (atomType == "meta") {
+                    childOffset = pos + 12 // Skip version/flags
+                }
+                
+                // Recurse into container atoms
+                if (atomType == "moov" || atomType == "udta" || atomType == "meta" || 
+                    atomType == "ilst" || atomType.startsWith("©") || atomType == "----") {
+                    collectTextAtoms(raf, childOffset, pos + atomSize, depth + 1, results)
+                }
+                
+                pos += atomSize
+                if (atomSize < 8) break
+            } catch (e: Exception) {
+                Log.w(TAG, "Error scanning atom at pos $pos, depth $depth: ${e.message}")
+                pos += 8 // Skip problematic atom
+            }
+        }
+        
+        // Log atoms found at this level
+        if (atomsAtThisLevel.isNotEmpty() && depth <= 5) {
+            Log.d(TAG, "M4A depth $depth atoms: ${atomsAtThisLevel.take(10).joinToString(", ")}${if (atomsAtThisLevel.size > 10) "... (${atomsAtThisLevel.size} total)" else ""}")
+        }
+    }
+    
+    /**
+     * Recursively search through M4A atom hierarchy
+     */
+    private fun searchM4AAtoms(
+        raf: java.io.RandomAccessFile,
+        offset: Long,
+        endOffset: Long,
+        targetAtom: String,
+        depth: Int
+    ): String? {
+        if (depth > 10) return null // Prevent infinite recursion
+        
+        var pos = offset
+        val foundAtoms = mutableListOf<String>() // Track what we find for debugging
+        
+        while (pos < endOffset - 8) {
+            raf.seek(pos)
+            
+            // Read atom size (big-endian 32-bit)
+            val sizeBytes = ByteArray(4)
+            if (raf.read(sizeBytes) != 4) break
+            var atomSize = ((sizeBytes[0].toInt() and 0xFF) shl 24) or
+                          ((sizeBytes[1].toInt() and 0xFF) shl 16) or
+                          ((sizeBytes[2].toInt() and 0xFF) shl 8) or
+                          (sizeBytes[3].toInt() and 0xFF)
+            
+            // Read atom type (4 ASCII chars)
+            val typeBytes = ByteArray(4)
+            if (raf.read(typeBytes) != 4) break
+            val atomType = String(typeBytes, Charsets.ISO_8859_1)
+            
+            // Log atoms at interesting depths (metadata level) - more inclusive pattern
+            if (depth >= 2 && atomType.isNotEmpty()) {
+                val isPrintable = atomType.all { it.isLetterOrDigit() || it in "©@- _" }
+                if (isPrintable) {
+                    foundAtoms.add(atomType)
+                }
+            }
+            
+            // Handle extended size (size = 1 means 64-bit size follows)
+            if (atomSize == 1) {
+                val extSizeBytes = ByteArray(8)
+                if (raf.read(extSizeBytes) != 8) break
+                atomSize = 0 // Skip large atoms for safety
+            }
+            
+            if (atomSize <= 0 || atomSize > 100_000_000) break // Max 100MB per atom
+            
+            // Check if this is our target atom
+            if (atomType == targetAtom) {
+                // For ©lyr, data is usually in a nested 'data' atom
+                val dataAtom = searchM4AAtoms(raf, pos + 8, pos + atomSize, "data", depth + 1)
+                if (dataAtom != null) return dataAtom
+                
+                // If no 'data' atom, try reading directly
+                if (atomSize > 16 && atomSize < 1_000_000) {
+                    val dataBytes = ByteArray(atomSize - 8)
+                    raf.seek(pos + 8)
+                    raf.read(dataBytes)
+                    val text = String(dataBytes, Charsets.UTF_8).trim('\u0000')
+                    if (text.isNotBlank()) return text
+                }
+            }
+            
+            // Check if this is a 'data' atom (contains actual text)
+            if (atomType == "data" && atomSize > 16 && atomSize < 1_000_000) {
+                // Read data type flag (at position 8-11)
+                raf.seek(pos + 8)
+                val typeFlag = ByteArray(4)
+                raf.read(typeFlag)
+                val dataType = ((typeFlag[0].toInt() and 0xFF) shl 24) or
+                              ((typeFlag[1].toInt() and 0xFF) shl 16) or
+                              ((typeFlag[2].toInt() and 0xFF) shl 8) or
+                              (typeFlag[3].toInt() and 0xFF)
+                
+                // Type 1 = UTF-8 text, Type 0 = binary/implicit
+                // Skip 16 bytes total (8 for size+type, 8 for version+flags+reserved)
+                raf.seek(pos + 16)
+                val dataBytes = ByteArray(atomSize - 16)
+                if (raf.read(dataBytes) == dataBytes.size) {
+                    // Try both UTF-8 and ISO-8859-1 encodings
+                    var text = String(dataBytes, Charsets.UTF_8).trim('\u0000', ' ', '\n', '\r')
+                    
+                    // If UTF-8 decode fails or looks wrong, try ISO-8859-1
+                    if (text.isEmpty() || text.any { it == '\uFFFD' }) {
+                        text = String(dataBytes, Charsets.ISO_8859_1).trim('\u0000', ' ', '\n', '\r')
+                    }
+                    
+                    if (text.isNotBlank() && text.length > 5) { // Reasonable lyrics length
+                        Log.d(TAG, "Extracted text from 'data' atom (type: $dataType, length: ${text.length})")
+                        return text
+                    }
+                }
+            }
+            
+            // Recurse into container atoms
+            // Special handling for 'meta' atom which has 4 bytes version/flags before children
+            val childOffset = if (atomType == "meta") pos + 12 else pos + 8
+            
+            if (atomType == "moov" || atomType == "udta" || atomType == "meta" || 
+                atomType == "ilst" || atomType.startsWith("©")) {
+                val result = searchM4AAtoms(raf, childOffset, pos + atomSize, targetAtom, depth + 1)
+                if (result != null) return result
+            }
+            
+            // Move to next atom
+            pos += atomSize
+            if (atomSize < 8) break // Prevent infinite loop on malformed files
+        }
+        
+        // Log what atoms we found at metadata level (helps debugging)
+        if (foundAtoms.isNotEmpty() && depth >= 2) {
+            Log.d(TAG, "M4A atoms found at depth $depth: ${foundAtoms.take(20).joinToString(", ")}${if (foundAtoms.size > 20) "..." else ""}")
+        }
+        
+        return null
+    }
+    
+    /**
+     * NEW: Extract lyrics from ID3v2 tags with improved parsing
+     * Supports ID3v2.3 and ID3v2.4 with synchsafe integers
+     */
+    private fun extractLyricsFromID3v2(songUri: Uri): LyricsData? {
+        val filePath = getFilePathFromUri(songUri)
+        
+        if (filePath == null) {
+            Log.d(TAG, "Could not resolve file path from URI")
+            return null
+        }
+        
+        val file = java.io.File(filePath)
+        
+        if (!file.exists()) {
+            Log.d(TAG, "File does not exist: $filePath")
+            return null
+        }
+        
+        if (!file.canRead()) {
+            Log.d(TAG, "Cannot read file: $filePath")
+            return null
+        }
+        
+        // Check if file is MP3 (ID3 tags only work for MP3)
+        if (!filePath.endsWith(".mp3", ignoreCase = true)) {
+            Log.d(TAG, "Not an MP3 file, skipping ID3v2 parsing: $filePath")
+            return null
+        }
+        
+        Log.d(TAG, "Parsing ID3v2 tags from: $filePath")
+        
+        return java.io.RandomAccessFile(file, "r").use { raf ->
+            // Read and validate ID3v2 header
+            val header = ByteArray(10)
+            if (raf.read(header) != 10) return@use null
+            
+            // Check ID3v2 signature
+            if (header[0] != 'I'.code.toByte() || 
+                header[1] != 'D'.code.toByte() || 
+                header[2] != '3'.code.toByte()) {
+                return@use null
+            }
+            
+            val majorVersion = header[3].toInt() and 0xFF
+            val minorVersion = header[4].toInt() and 0xFF
+            val flags = header[5].toInt() and 0xFF
+            
+            Log.d(TAG, "ID3v2.$majorVersion.$minorVersion detected, flags: $flags")
+            
+            // Only support v2.3 and v2.4
+            if (majorVersion < 3 || majorVersion > 4) {
+                Log.d(TAG, "Unsupported ID3 version: $majorVersion")
+                return@use null
+            }
+            
+            // Parse synchsafe integer for tag size
+            val tagSize = decodeSynchsafe(
+                header[6].toInt() and 0xFF,
+                header[7].toInt() and 0xFF,
+                header[8].toInt() and 0xFF,
+                header[9].toInt() and 0xFF
             )
             
-            for (key in potentialLyricsKeys) {
-                try {
-                    val metadata = retriever.extractMetadata(key)
-                    if (!metadata.isNullOrBlank() && looksLikeLyrics(metadata)) {
-                        Log.d(TAG, "Found embedded lyrics via retriever key: $key")
-                        return parseLyricsData(metadata)
-                    }
-                } catch (e: Exception) {
-                    // Key not supported, continue
-                    continue
-                }
+            // Validate tag size (max 10MB)
+            if (tagSize <= 0 || tagSize > 10_485_760) {
+                Log.w(TAG, "Invalid tag size: $tagSize")
+                return@use null
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "MediaMetadataRetriever extraction failed: ${e.message}")
-        } finally {
-            try {
-                retriever?.release()
-            } catch (e: Exception) {
-                Log.w(TAG, "Error releasing MediaMetadataRetriever: ${e.message}")
+            
+            // Read tag data
+            val tagData = ByteArray(tagSize)
+            val bytesRead = raf.read(tagData)
+            if (bytesRead != tagSize) {
+                Log.w(TAG, "Failed to read complete tag data")
+                return@use null
             }
+            
+            // Parse frames and find USLT
+            parseID3v2Frames(tagData, majorVersion)
         }
-        return null
     }
     
     /**
-     * Attempts to extract lyrics by reading ID3v2 tags directly from file
-     * Specifically looks for USLT (Unsynchronized Lyrics) frames
+     * NEW: Decode synchsafe integer (ID3v2 size encoding)
      */
-    private fun extractLyricsFromID3(songUri: Uri): LyricsData? {
-        try {
-            // Get file path from URI
-            val filePath = getFilePathFromUri(songUri) ?: return null
-            val file = java.io.File(filePath)
-            
-            if (!file.exists() || !file.canRead()) {
-                Log.d(TAG, "Cannot read file for ID3 extraction: $filePath")
-                return null
-            }
-            
-            // Read ID3v2 tag
-            java.io.RandomAccessFile(file, "r").use { raf ->
-                // Check for ID3v2 header
-                val header = ByteArray(10)
-                raf.read(header)
-                
-                if (header[0] == 'I'.code.toByte() && 
-                    header[1] == 'D'.code.toByte() && 
-                    header[2] == '3'.code.toByte()) {
-                    
-                    // ID3v2 tag found
-                    val version = header[3].toInt()
-                    Log.d(TAG, "Found ID3v2.$version tag")
-                    
-                    // Calculate tag size (synchsafe integer)
-                    val tagSize = ((header[6].toInt() and 0x7F) shl 21) or
-                                 ((header[7].toInt() and 0x7F) shl 14) or
-                                 ((header[8].toInt() and 0x7F) shl 7) or
-                                 (header[9].toInt() and 0x7F)
-                    
-                    // Read tag data
-                    val tagData = ByteArray(tagSize)
-                    raf.read(tagData)
-                    
-                    // Search for USLT frame
-                    val lyrics = findUSLTFrame(tagData)
-                    if (lyrics != null) {
-                        Log.d(TAG, "Found USLT lyrics in ID3 tag (length: ${lyrics.length})")
-                        return parseLyricsData(lyrics)
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.w(TAG, "ID3 tag extraction failed: ${e.message}")
-        }
-        return null
+    private fun decodeSynchsafe(b1: Int, b2: Int, b3: Int, b4: Int): Int {
+        return ((b1 and 0x7F) shl 21) or
+               ((b2 and 0x7F) shl 14) or
+               ((b3 and 0x7F) shl 7) or
+               (b4 and 0x7F)
     }
     
     /**
-     * Searches for USLT (Unsynchronized Lyrics) frame in ID3v2 tag data with safety checks
+     * NEW: Parse ID3v2 frames and extract USLT (lyrics) frame
      */
-    private fun findUSLTFrame(tagData: ByteArray): String? {
+    private fun parseID3v2Frames(tagData: ByteArray, version: Int): LyricsData? {
         var pos = 0
-        var searchAttempts = 0
-        val maxSearchAttempts = 10000 // Prevent infinite loops
+        var frameCount = 0
+        val maxFrames = 1000 // Safety limit
         
-        while (pos < tagData.size - 10 && searchAttempts < maxSearchAttempts) {
-            searchAttempts++
-            try {
-                // Check for USLT frame header
-                if (tagData[pos] == 'U'.code.toByte() &&
-                    tagData[pos + 1] == 'S'.code.toByte() &&
-                    tagData[pos + 2] == 'L'.code.toByte() &&
-                    tagData[pos + 3] == 'T'.code.toByte()) {
-                    
-                    // Frame size (4 bytes after frame ID)
-                    val frameSize = ((tagData[pos + 4].toInt() and 0xFF) shl 24) or
-                                   ((tagData[pos + 5].toInt() and 0xFF) shl 16) or
-                                   ((tagData[pos + 6].toInt() and 0xFF) shl 8) or
-                                   (tagData[pos + 7].toInt() and 0xFF)
-                    
-                    // Validate frame size to prevent out of bounds
-                    if (frameSize > 0 && frameSize < tagData.size - pos && frameSize < 1048576) { // Max 1MB
-                        // Get encoding byte (byte after flags, position 10)
-                        val encoding = tagData[pos + 10].toInt()
-                        
-                        // Skip frame header (10 bytes) + encoding (1 byte) + language (3 bytes) + descriptor
-                        var dataPos = pos + 14
-                        
-                        // Skip descriptor (null-terminated string) with bounds check
-                        var descriptorSkips = 0
-                        while (dataPos < pos + frameSize && 
-                               dataPos < tagData.size && 
-                               tagData[dataPos] != 0.toByte() &&
-                               descriptorSkips < 256) { // Limit descriptor length
-                            dataPos++
-                            descriptorSkips++
-                        }
-                        dataPos++ // Skip null terminator
-                        
-                        // Extract lyrics text with bounds check
-                        val endPos = (pos + 10 + frameSize).coerceAtMost(tagData.size)
-                        val lyricsLength = endPos - dataPos
-                        if (lyricsLength > 0 && lyricsLength < 524288 && dataPos < tagData.size) { // Max 512KB lyrics
-                            val lyricsBytes = tagData.copyOfRange(dataPos, endPos)
-                            
-                            // Decode using proper charset based on encoding byte
-                            val charset = when (encoding) {
-                                0 -> Charsets.ISO_8859_1  // ISO-8859-1 (Latin-1)
-                                1 -> Charsets.UTF_16      // UTF-16 with BOM
-                                2 -> Charsets.UTF_16BE    // UTF-16BE without BOM
-                                3 -> Charsets.UTF_8       // UTF-8
-                                else -> Charsets.UTF_8    // Default to UTF-8
-                            }
-                            
-                            val lyrics = try {
-                                String(lyricsBytes, charset).trim()
-                            } catch (e: Exception) {
-                                // Fallback to UTF-8 if decoding fails
-                                String(lyricsBytes, Charsets.UTF_8).trim()
-                            }
-                            
-                            if (lyrics.isNotBlank()) {
-                                return lyrics
-                            }
-                        }
-                    }
-                }
-                pos++
-            } catch (e: Exception) {
-                // Log and continue searching
-                if (searchAttempts % 1000 == 0) {
-                    Log.w(TAG, "ID3 search exception at position $pos: ${e.message}")
-                }
-                pos++
+        while (pos < tagData.size - 10 && frameCount < maxFrames) {
+            frameCount++
+            
+            // Check for padding (null bytes indicate end of frames)
+            if (tagData[pos] == 0.toByte()) break
+            
+            // Read frame header
+            val frameId = String(tagData.copyOfRange(pos, pos + 4), Charsets.ISO_8859_1)
+            
+            // Calculate frame size (different for v2.3 and v2.4)
+            val frameSize = if (version == 4) {
+                // v2.4 uses synchsafe integers
+                decodeSynchsafe(
+                    tagData[pos + 4].toInt() and 0xFF,
+                    tagData[pos + 5].toInt() and 0xFF,
+                    tagData[pos + 6].toInt() and 0xFF,
+                    tagData[pos + 7].toInt() and 0xFF
+                )
+            } else {
+                // v2.3 uses regular 32-bit integer
+                ((tagData[pos + 4].toInt() and 0xFF) shl 24) or
+                ((tagData[pos + 5].toInt() and 0xFF) shl 16) or
+                ((tagData[pos + 6].toInt() and 0xFF) shl 8) or
+                (tagData[pos + 7].toInt() and 0xFF)
             }
+            
+            // Validate frame size
+            if (frameSize <= 0 || frameSize > tagData.size - pos - 10 || frameSize > 2_097_152) {
+                Log.w(TAG, "Invalid frame size: $frameSize for $frameId")
+                break
+            }
+            
+            // Check if this is a USLT frame
+            if (frameId == "USLT") {
+                val lyricsData = parseUSLTFrame(tagData, pos + 10, frameSize)
+                if (lyricsData != null) {
+                    Log.d(TAG, "Successfully extracted USLT lyrics")
+                    return lyricsData
+                }
+            }
+            
+            // Move to next frame
+            pos += 10 + frameSize
         }
         
-        if (searchAttempts >= maxSearchAttempts) {
-            Log.w(TAG, "ID3 USLT search aborted after $maxSearchAttempts attempts")
-        }
         return null
+    }
+    
+    /**
+     * NEW: Parse USLT frame content
+     */
+    private fun parseUSLTFrame(data: ByteArray, offset: Int, size: Int): LyricsData? {
+        try {
+            if (size < 4) return null
+            
+            // USLT frame structure:
+            // - Text encoding (1 byte)
+            // - Language (3 bytes, ISO-639-2)
+            // - Content descriptor (null-terminated string)
+            // - Lyrics text (rest of frame)
+            
+            val encoding = data[offset].toInt() and 0xFF
+            // Skip language (3 bytes)
+            var pos = offset + 4
+            
+            // Skip content descriptor (null-terminated)
+            val terminator = if (encoding == 1 || encoding == 2) 2 else 1 // UTF-16 uses 2-byte null
+            var nullCount = 0
+            while (pos < offset + size && nullCount < terminator) {
+                if (data[pos] == 0.toByte()) nullCount++
+                pos++
+                if (pos - offset > 256) break // Safety: max 256 bytes for descriptor
+            }
+            
+            // Extract lyrics text
+            val lyricsEnd = offset + size
+            if (pos >= lyricsEnd) return null
+            
+            val lyricsBytes = data.copyOfRange(pos, lyricsEnd)
+            
+            // Decode based on encoding
+            val charset = when (encoding) {
+                0 -> Charsets.ISO_8859_1
+                1 -> Charsets.UTF_16  // UTF-16 with BOM
+                2 -> Charsets.UTF_16BE
+                3 -> Charsets.UTF_8
+                else -> Charsets.UTF_8
+            }
+            
+            val lyricsText = String(lyricsBytes, charset)
+                .trim()
+                .replace("\u0000", "") // Remove null characters
+            
+            if (lyricsText.isBlank()) return null
+            
+            return parseLyricsData(lyricsText)
+            
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to parse USLT frame: ${e.message}")
+            return null
+        }
     }
     
     /**
      * Helper to determine if text looks like lyrics
      */
     private fun looksLikeLyrics(text: String): Boolean {
-        val hasMultipleLines = text.contains("\n")
+        val trimmed = text.trim()
+        
+        // Reject if too short (likely just metadata)
+        if (trimmed.length < 50) return false
+        
+        // Reject if it's just a single line (likely song title or metadata)
+        val lines = trimmed.lines().filter { it.trim().isNotEmpty() }
+        if (lines.size < 3) return false
+        
+        // Accept if has LRC timestamps
         val hasTimestamp = text.contains(Regex("\\[\\d{2}:\\d{2}"))
-        val isLongEnough = text.length > 50
-        val hasCommonLyricsWords = text.lowercase().let { 
-            it.contains("verse") || it.contains("chorus") || it.contains("bridge")
+        if (hasTimestamp) return true
+        
+        // Reject common metadata patterns
+        val lowerText = trimmed.lowercase()
+        val metadataKeywords = listOf(
+            "track", "album", "artist", "genre", "year", "composer",
+            "copyright", "encoded", "encoder", "itunes", "id3"
+        )
+        val hasMetadataKeywords = metadataKeywords.any { lowerText.contains(it) }
+        
+        // Check for common lyrics structure markers
+        val hasCommonLyricsWords = lowerText.let { 
+            it.contains("verse") || it.contains("chorus") || it.contains("bridge") ||
+            it.contains("refrain") || it.contains("intro") || it.contains("outro")
         }
         
-        return hasMultipleLines || hasTimestamp || (isLongEnough && !hasCommonLyricsWords)
+        // Calculate how "lyrics-like" the text is
+        val avgLineLength = lines.map { it.length }.average()
+        val hasRepeatingPatterns = lines.distinct().size < lines.size * 0.8 // Some repetition expected
+        val isProseLength = avgLineLength in 20.0..80.0 // Typical lyrics line length
+        
+        // Accept if it has multiple qualities of lyrics
+        return (lines.size >= 5 && isProseLength && !hasMetadataKeywords) || 
+               (hasCommonLyricsWords && lines.size >= 3) ||
+               (hasRepeatingPatterns && lines.size >= 8 && avgLineLength < 100)
     }
     
     /**
      * Parses lyrics text into LyricsData with proper format detection and cleaning
      */
-    private fun parseLyricsData(lyrics: String): LyricsData {
+    private fun parseLyricsData(lyrics: String): LyricsData? {
         if (lyrics.isBlank()) {
-            return LyricsData("No lyrics available", null, null)
+            return null
         }
+        
+        // Log the first 200 characters to see what we're parsing
+        Log.d(TAG, "Parsing lyrics data: ${lyrics.take(200)}${if (lyrics.length > 200) "..." else ""}")
         
         // Clean up the lyrics text
         val cleanedLyrics = lyrics
             .trim()
             .replace("\r\n", "\n") // Normalize line endings
             .replace("\r", "\n")
+        
+        // Check if this looks like just a song title or metadata
+        val lines = cleanedLyrics.lines().filter { it.trim().isNotEmpty() }
+        if (lines.size == 1) {
+            Log.w(TAG, "Rejected lyrics: single line detected (likely metadata): ${cleanedLyrics.take(100)}")
+            return null
+        }
         
         // Check if lyrics are synced (contain LRC-style timestamps)
         // Support multiple timestamp formats: [mm:ss.xx], [mm:ss.xxx], [mm:ss]
@@ -1379,10 +2514,40 @@ class MusicRepository(context: Context) {
             }
             
             if (hasLyricsContent) {
+                // Check for Enhanced LRC format with word-level timestamps <mm:ss.xx>
+                val hasWordTimestamps = LyricsParser.hasWordTimestamps(cleanedLyrics)
+                
+                if (hasWordTimestamps) {
+                    Log.d(TAG, "Detected Enhanced LRC format with word-level timestamps")
+                    
+                    // Parse Enhanced LRC and convert to word-by-word format
+                    val enhancedLines = LyricsParser.parseEnhancedLRC(cleanedLyrics)
+                    
+                    if (enhancedLines.isNotEmpty()) {
+                        // Convert to Apple Music word-by-word format (JSON)
+                        val wordByWordJson = convertEnhancedLRCToWordByWord(enhancedLines)
+                        
+                        // Also extract plain text and line-synced LRC
+                        val plainText = enhancedLines.joinToString("\n") { line: EnhancedLyricLine ->
+                            line.words.joinToString(" ") { word: EnhancedWord -> word.text }
+                        }
+                        
+                        val syncedLrc = enhancedLines.joinToString("\n") { line: EnhancedLyricLine ->
+                            val timestamp = formatLRCTimestamp(line.lineTimestamp)
+                            val text = line.words.joinToString(" ") { word: EnhancedWord -> word.text }
+                            "[$timestamp]$text"
+                        }
+                        
+                        Log.d(TAG, "Successfully converted Enhanced LRC to word-by-word format (${enhancedLines.size} lines)")
+                        return LyricsData(plainText, syncedLrc, wordByWordJson)
+                    }
+                }
+                
+                // Standard LRC format (line-by-line only)
                 LyricsData(null, cleanedLyrics, null)
             } else {
                 // Empty synced lyrics
-                LyricsData("No lyrics content found", null, null)
+                null
             }
         } else {
             // Plain text lyrics - validate it's not just metadata
@@ -1398,8 +2563,90 @@ class MusicRepository(context: Context) {
             if (meaningfulLines.isNotEmpty()) {
                 LyricsData(cleanedLyrics, null, null)
             } else {
-                LyricsData("No valid lyrics found", null, null)
+                null
             }
+        }
+    }
+    
+    /**
+     * Convert Enhanced LRC format to Apple Music word-by-word JSON format
+     */
+    private fun convertEnhancedLRCToWordByWord(enhancedLines: List<EnhancedLyricLine>): String {
+        val appleMusicLines = enhancedLines.map { line: EnhancedLyricLine ->
+            val words = line.words.map { word: EnhancedWord ->
+                mapOf(
+                    "text" to word.text,
+                    "part" to false, // Not syllables, just words
+                    "timestamp" to word.timestamp,
+                    "endtime" to word.endtime
+                )
+            }
+            
+            mapOf(
+                "text" to words,
+                "background" to false,
+                "timestamp" to line.lineTimestamp,
+                "endtime" to line.lineEndtime
+            )
+        }
+        
+        return com.google.gson.Gson().toJson(appleMusicLines)
+    }
+    
+    /**
+     * Format timestamp to LRC format [mm:ss.xx]
+     */
+    private fun formatLRCTimestamp(milliseconds: Long): String {
+        val totalSeconds = milliseconds / 1000
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+        val millis = (milliseconds % 1000) / 10
+        return String.format("%02d:%02d.%02d", minutes, seconds, millis)
+    }
+    
+    // TODO: Implement export functionality for Enhanced LRC format
+    /**
+     * Export word-by-word lyrics to Enhanced LRC format
+     * @param lyricsData Lyrics data containing word-by-word JSON
+     * @return Enhanced LRC formatted string, or null if not available
+     */
+    fun exportToEnhancedLRC(lyricsData: LyricsData): String? {
+        val wordByWordJson = lyricsData.wordByWordLyrics ?: return null
+        
+        try {
+            // Parse the word-by-word JSON directly
+            val gson = com.google.gson.Gson()
+            val listType = object : com.google.gson.reflect.TypeToken<List<Map<String, Any>>>() {}.type
+            val parsedLines: List<Map<String, Any>> = gson.fromJson(wordByWordJson, listType)
+            
+            if (parsedLines.isEmpty()) return null
+            
+            // Convert to Enhanced LRC format
+            val enhancedLines = parsedLines.mapNotNull { lineMap ->
+                @Suppress("UNCHECKED_CAST")
+                val wordsData = lineMap["text"] as? List<Map<String, Any>> ?: return@mapNotNull null
+                val lineTimestamp = (lineMap["timestamp"] as? Number)?.toLong() ?: 0L
+                val lineEndtime = (lineMap["endtime"] as? Number)?.toLong() ?: 0L
+                
+                val words = wordsData.map { wordMap ->
+                    EnhancedWord(
+                        text = wordMap["text"] as? String ?: "",
+                        timestamp = (wordMap["timestamp"] as? Number)?.toLong() ?: 0L,
+                        endtime = (wordMap["endtime"] as? Number)?.toLong() ?: 0L
+                    )
+                }
+                
+                EnhancedLyricLine(
+                    words = words,
+                    lineTimestamp = lineTimestamp,
+                    lineEndtime = lineEndtime
+                )
+            }
+            
+            return LyricsParser.toEnhancedLRC(enhancedLines)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error exporting to Enhanced LRC: ${e.message}", e)
+            return null
         }
     }
     
@@ -1436,14 +2683,18 @@ class MusicRepository(context: Context) {
      * @param songId Optional song ID for cache key - prevents wrong lyrics for songs with similar names
      * @param songUri Optional song URI for embedded lyrics extraction
      * @param sourcePreference User's preferred lyrics source order
+     * @param forceRefresh If true, bypasses cache and forces fresh extraction
      */
     suspend fun fetchLyrics(
         artist: String, 
         title: String, 
         songId: String? = null,
         songUri: Uri? = null,
-        sourcePreference: LyricsSourcePreference = LyricsSourcePreference.API_FIRST
+        sourcePreference: LyricsSourcePreference = LyricsSourcePreference.API_FIRST,
+        forceRefresh: Boolean = false
     ): LyricsData? = withContext(Dispatchers.IO) {
+        Log.d(TAG, "===== FETCH LYRICS START: $artist - $title (songId=$songId, forceRefresh=$forceRefresh, source=$sourcePreference) =====")
+        
         if (artist.isBlank() || title.isBlank())
             return@withContext LyricsData("No lyrics available for this song", null, null)
 
@@ -1454,9 +2705,18 @@ class MusicRepository(context: Context) {
             "$artist:$title".lowercase()
         }
         
-        lyricsCache[cacheKey]?.let { 
-            Log.d(TAG, "Returning cached lyrics for: $artist - $title")
-            return@withContext it 
+        Log.d(TAG, "===== Cache key: $cacheKey, Cache size: ${lyricsCache.size} =====")
+        
+        // Check cache unless force refresh is requested
+        if (!forceRefresh) {
+            lyricsCache[cacheKey]?.let { cached ->
+                val lyricLength = cached.plainLyrics?.length ?: cached.syncedLyrics?.length ?: 0
+                Log.d(TAG, "===== RETURNING IN-MEMORY CACHED LYRICS ($lyricLength chars) =====")
+                return@withContext cached
+            }
+            Log.d(TAG, "===== NO IN-MEMORY CACHE HIT, proceeding to fetch =====")
+        } else {
+            Log.d(TAG, "===== FORCE REFRESH - BYPASSING IN-MEMORY CACHE =====")
         }
 
         // Define source fetchers
@@ -1514,7 +2774,7 @@ class MusicRepository(context: Context) {
     }
     
     /**
-     * Fetches lyrics from online APIs (Apple Music, LRCLib, etc.)
+     * Fetches lyrics from online APIs (LRCLib, etc.)
      * Extracted as a separate method for cleaner code
      */
     private suspend fun fetchLyricsFromAPIs(artist: String, title: String): LyricsData? {
@@ -1524,116 +2784,6 @@ class MusicRepository(context: Context) {
         var plainLyrics: String? = null
         var syncedLyrics: String? = null
         var wordByWordLyrics: String? = null
-
-            // ---- Apple Music (Word-by-word synchronized lyrics - highest priority) ----
-            if (NetworkClient.isAppleMusicApiEnabled()) {
-                try {
-                    Log.d(TAG, "Attempting Apple Music lyrics search for: $cleanTitle by $cleanArtist")
-                    
-                    // Try multiple search strategies
-                    var searchResults = appleMusicApiService.searchSongs("$cleanTitle $cleanArtist")
-                    
-                    // If no results, try with simplified names (remove featuring artists)
-                    if (searchResults.isEmpty()) {
-                        val simplifiedArtist = cleanArtist.split(" feat.", " ft.", " featuring", " &", " x ", " X ").first().trim()
-                        val simplifiedTitle = cleanTitle.split(" feat.", " ft.", " featuring", " \\(", " \\[").first().trim()
-                        searchResults = appleMusicApiService.searchSongs("$simplifiedTitle $simplifiedArtist")
-                        Log.d(TAG, "Trying simplified search: $simplifiedTitle by $simplifiedArtist")
-                    }
-                    
-                    // If still no results, try title only
-                    if (searchResults.isEmpty()) {
-                        searchResults = appleMusicApiService.searchSongs(cleanTitle)
-                        Log.d(TAG, "Trying title-only search: $cleanTitle")
-                    }
-                    
-                    if (searchResults.isNotEmpty()) {
-                        // Find best match using improved similarity scoring
-                        fun calculateSimilarity(str1: String, str2: String): Double {
-                            val s1 = str1.lowercase().trim()
-                            val s2 = str2.lowercase().trim()
-                            
-                            // Exact match
-                            if (s1 == s2) return 1.0
-                            
-                            // Contains match
-                            if (s1.contains(s2) || s2.contains(s1)) return 0.8
-                            
-                            // Word overlap
-                            val words1 = s1.split(" ", "-", "_").filter { it.length > 2 }
-                            val words2 = s2.split(" ", "-", "_").filter { it.length > 2 }
-                            val commonWords = words1.intersect(words2.toSet()).size
-                            val totalWords = maxOf(words1.size, words2.size)
-                            
-                            return if (totalWords > 0) commonWords.toDouble() / totalWords else 0.0
-                        }
-                        
-                        val bestMatch = searchResults.maxByOrNull { result ->
-                            val artistSim = calculateSimilarity(result.artistName ?: "", cleanArtist)
-                            val titleSim = calculateSimilarity(result.songName ?: "", cleanTitle)
-                            // Weight title similarity more heavily
-                            (titleSim * 0.6) + (artistSim * 0.4)
-                        }
-                        
-                        bestMatch?.let { match ->
-                            Log.d(TAG, "Found Apple Music match: ${match.songName} by ${match.artistName} (ID: ${match.id})")
-                            try {
-                                val lyricsResponse = appleMusicApiService.getLyrics(match.id)
-                                
-                                // Check if track has time-synced lyrics flag
-                                val hasTimeSyncedLyrics = lyricsResponse.track?.hasTimeSyncedLyrics == true
-                                Log.d(TAG, "Apple Music track hasTimeSyncedLyrics: $hasTimeSyncedLyrics, type: ${lyricsResponse.type}")
-                                
-                                // Check if we have word-by-word lyrics (Syllable type) or line-synced lyrics
-                                if (!lyricsResponse.content.isNullOrEmpty() && hasTimeSyncedLyrics) {
-                                    
-                                    // Extract plain text from lyrics content
-                                    val plainText = lyricsResponse.content.mapNotNull { line ->
-                                        line.text?.joinToString(" ") { word -> word.text }
-                                    }.joinToString("\n")
-                                    
-                                    if (plainText.isNotEmpty()) {
-                                        plainLyrics = plainText
-                                    }
-                                    
-                                    // Check for word-by-word (Syllable) lyrics
-                                    if (lyricsResponse.type == "Syllable") {
-                                        // Convert to JSON string to store in LyricsData
-                                        wordByWordLyrics = com.google.gson.Gson().toJson(lyricsResponse.content)
-                                        Log.d(TAG, "Apple Music word-by-word lyrics found (${lyricsResponse.content.size} lines)")
-                                    } else {
-                                        // Fall back to line-synced lyrics format
-                                        val syncedLyricsText = lyricsResponse.content.mapNotNull { line ->
-                                            val timestamp = line.timestamp ?: return@mapNotNull null
-                                            val text = line.text?.joinToString(" ") { word -> word.text } ?: return@mapNotNull null
-                                            val minutes = timestamp / 60000
-                                            val seconds = (timestamp % 60000) / 1000
-                                            val millis = (timestamp % 1000) / 10
-                                            String.format("[%02d:%02d.%02d]%s", minutes, seconds, millis, text)
-                                        }.joinToString("\n")
-                                        
-                                        if (syncedLyricsText.isNotEmpty()) {
-                                            syncedLyrics = syncedLyricsText
-                                            Log.d(TAG, "Apple Music line-synced lyrics found (${lyricsResponse.content.size} lines)")
-                                        }
-                                    }
-                                    
-                                    val lyricsData = LyricsData(plainLyrics, syncedLyrics, wordByWordLyrics)
-                                    return lyricsData
-                                } else {
-                                    Log.d(TAG, "Apple Music lyrics not time-synced or empty for: ${match.songName}")
-                                }
-                            } catch (e: Exception) {
-                                Log.e(TAG, "Error fetching Apple Music lyrics for ID ${match.id}: ${e.message}", e)
-                            }
-                        }
-                    } else {
-                        Log.d(TAG, "No Apple Music results found for: $cleanTitle by $cleanArtist")
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Apple Music lyrics search failed: ${e.message}", e)
-                }
-            }
 
             // ---- LRCLib (Enhanced search with multiple strategies - line-by-line synced) ----
             if (NetworkClient.isLrcLibApiEnabled()) {
@@ -1702,11 +2852,13 @@ class MusicRepository(context: Context) {
      * Supports both .lrc files (in music folder) and .json cache files (in app folder)
      */
     private fun findLocalLyrics(artist: String, title: String): LyricsData? {
+        Log.d(TAG, "===== findLocalLyrics START: $artist - $title =====")
+        
         // First, check for .lrc file next to the music file
         try {
             val lrcLyrics = findLrcFileForSong(artist, title)
             if (lrcLyrics != null) {
-                Log.d(TAG, "Found local .lrc file for: $artist - $title")
+                Log.d(TAG, "===== FOUND LOCAL .LRC FILE =====")
                 return lrcLyrics
             }
         } catch (e: Exception) {
@@ -1716,11 +2868,15 @@ class MusicRepository(context: Context) {
         // Second, check for cached JSON lyrics in app's files directory
         val fileName = "${artist}_${title}.json".replace(Regex("[^a-zA-Z0-9._-]"), "_")
         val file = File(context.filesDir, "lyrics/$fileName")
+        Log.d(TAG, "===== Checking for saved JSON file: $fileName (exists=${file.exists()}) =====")
         return try {
             if (file.exists()) {
                 val json = file.readText()
-                Gson().fromJson(json, LyricsData::class.java)
+                val data = Gson().fromJson(json, LyricsData::class.java)
+                Log.d(TAG, "===== LOADED LYRICS FROM SAVED JSON FILE (THIS IS THE OLD CACHE!) =====")
+                data
             } else {
+                Log.d(TAG, "===== NO SAVED JSON FILE FOUND =====")
                 null
             }
         } catch (e: Exception) {
@@ -1798,6 +2954,36 @@ class MusicRepository(context: Context) {
             // Pattern to match LRC timestamps [mm:ss.xx] or [mm:ss]
             val timestampPattern = Regex("\\[(\\d{2}):(\\d{2})(?:\\.(\\d{2,3}))?\\](.*)") 
             
+            // Check for Enhanced LRC format with word-level timestamps
+            val hasWordTimestamps = LyricsParser.hasWordTimestamps(lrcContent)
+            
+            if (hasWordTimestamps) {
+                Log.d(TAG, "Detected Enhanced LRC format in .lrc file with word-level timestamps")
+                
+                // Parse Enhanced LRC and convert to word-by-word format
+                val enhancedLines = LyricsParser.parseEnhancedLRC(lrcContent)
+                
+                if (enhancedLines.isNotEmpty()) {
+                    // Convert to Apple Music word-by-word format (JSON)
+                    val wordByWordJson = convertEnhancedLRCToWordByWord(enhancedLines)
+                    
+                    // Also extract plain text and line-synced LRC
+                    val plainText = enhancedLines.joinToString("\n") { line: EnhancedLyricLine ->
+                        line.words.joinToString(" ") { word: EnhancedWord -> word.text }
+                    }
+                    
+                    val syncedLrc = enhancedLines.joinToString("\n") { line: EnhancedLyricLine ->
+                        val timestamp = formatLRCTimestamp(line.lineTimestamp)
+                        val text = line.words.joinToString(" ") { word: EnhancedWord -> word.text }
+                        "[$timestamp]$text"
+                    }
+                    
+                    Log.d(TAG, "Successfully converted Enhanced LRC from .lrc file to word-by-word format (${enhancedLines.size} lines)")
+                    return LyricsData(plainText, syncedLrc, wordByWordJson)
+                }
+            }
+            
+            // Standard LRC format (line-by-line only)
             for (line in lines) {
                 val trimmedLine = line.trim()
                 if (trimmedLine.isEmpty()) continue
@@ -1833,6 +3019,7 @@ class MusicRepository(context: Context) {
     }
 
     /**
+
      * Saves lyrics to a local file
      */
     private fun saveLocalLyrics(artist: String, title: String, lyricsData: LyricsData) {
@@ -2264,13 +3451,15 @@ class MusicRepository(context: Context) {
         Log.d("MusicRepository", "Found artist: ${artist.name} (ID: $artistId, groupByAlbumArtist=$groupByAlbumArtist)")
 
         // Filter songs that match the artist's name
-        // When grouping by album artist, check album artist first, then fall back to track artist
         val artistSongs = allSongs.filter { song ->
             if (groupByAlbumArtist) {
+                // When grouping by album artist, match exactly against album artist (with fallback to track artist)
                 val songArtistName = (song.albumArtist?.takeIf { it.isNotBlank() } ?: song.artist).trim()
                 songArtistName == artist.name
             } else {
-                song.artist == artist.name
+                // When not grouping, check if artist name appears in the track artist field (exact or as part of collaboration)
+                val artistNames = splitArtistNames(song.artist)
+                artistNames.any { it.equals(artist.name, ignoreCase = true) }
             }
         }
 
@@ -2297,17 +3486,21 @@ class MusicRepository(context: Context) {
         Log.d("MusicRepository", "Found artist: ${artist.name} (ID: $artistId, groupByAlbumArtist=$groupByAlbumArtist)")
 
         // Filter albums that match the artist's name
-        // When grouping by album artist, check if any song in the album has matching album artist
         val artistAlbums = allAlbums.filter { album ->
             if (groupByAlbumArtist) {
-                // Check if any song from this album has the artist as album artist
+                // When grouping by album artist, check if any song in the album has matching album artist
                 allSongs.any { song ->
                     song.album == album.title &&
                     song.albumId == album.id &&
                     (song.albumArtist?.takeIf { it.isNotBlank() } ?: song.artist).trim() == artist.name
                 }
             } else {
-                album.artist == artist.name
+                // When not grouping, check if artist appears in any song's track artist field for this album
+                allSongs.any { song ->
+                    song.album == album.title &&
+                    song.albumId == album.id &&
+                    splitArtistNames(song.artist).any { it.equals(artist.name, ignoreCase = true) }
+                }
             }
         }
 
@@ -2410,6 +3603,35 @@ class MusicRepository(context: Context) {
             Log.d(TAG, "Cleared all in-memory caches (artist images, album images, lyrics)")
         } catch (e: Exception) {
             Log.e(TAG, "Error clearing in-memory caches", e)
+        }
+    }
+    
+    /**
+     * Clears only the lyrics cache
+     */
+    fun clearLyricsCache() {
+        try {
+            synchronized(lyricsCache) {
+                val count = lyricsCache.size
+                lyricsCache.clear()
+                Log.d(TAG, "===== CLEARED IN-MEMORY LYRICS CACHE ($count entries) =====")
+            }
+            
+            // Also delete all saved local lyrics files
+            try {
+                val lyricsDir = File(context.filesDir, "lyrics")
+                if (lyricsDir.exists() && lyricsDir.isDirectory) {
+                    val files = lyricsDir.listFiles()
+                    val deletedCount = files?.count { it.delete() } ?: 0
+                    Log.d(TAG, "===== DELETED $deletedCount SAVED LYRICS FILES FROM DISK =====")
+                } else {
+                    Log.d(TAG, "===== NO LYRICS DIRECTORY FOUND ON DISK =====")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Error deleting saved lyrics files: ${e.message}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error clearing lyrics cache", e)
         }
     }
     
@@ -2562,66 +3784,97 @@ class MusicRepository(context: Context) {
         onProgress: ((Int, Int) -> Unit)? = null,
         onComplete: ((List<Song>) -> Unit)? = null
     ) = withContext(Dispatchers.IO) {
-        val songsWithoutGenres = songs.filter { it.genre == null }
-        if (songsWithoutGenres.isEmpty()) {
-            Log.d(TAG, "All songs already have genres, skipping background detection")
-            onComplete?.invoke(songs)
-            return@withContext
-        }
+        try {
+            val songsWithoutGenres = songs.filter { 
+                it.genre == null || it.genre.isBlank() || it.genre.equals("unknown", ignoreCase = true) 
+            }
+            
+            if (songsWithoutGenres.isEmpty()) {
+                Log.d(TAG, "All songs already have genres, skipping background detection")
+                onComplete?.invoke(songs)
+                return@withContext
+            }
 
-        Log.d(TAG, "Starting background genre detection for ${songsWithoutGenres.size} songs")
-        val updatedSongs = mutableListOf<Song>()
-        val batchSize = 50 // Process in smaller batches for better responsiveness
-        var processedCount = 0
+            Log.d(TAG, "Starting background genre detection for ${songsWithoutGenres.size} songs out of ${songs.size} total")
+            val updatedSongs = mutableListOf<Song>()
+            val batchSize = 50 // Process in smaller batches for better responsiveness
+            var processedCount = 0
 
-        songsWithoutGenres.chunked(batchSize).forEach { batch ->
-            val batchStartTime = System.currentTimeMillis()
+            songsWithoutGenres.chunked(batchSize).forEach { batch ->
+                val batchStartTime = System.currentTimeMillis()
 
-            batch.forEach { song ->
-                try {
-                    val songId = song.id.toLongOrNull() ?: return@forEach
-                    val contentUri = song.uri
-                    val genre = getGenreForSong(context, contentUri, songId.toInt())
+                batch.forEach { song ->
+                    try {
+                        val songId = song.id.toLongOrNull()
+                        if (songId == null) {
+                            Log.w(TAG, "Invalid song ID for ${song.title}, skipping")
+                            updatedSongs.add(song)
+                            processedCount++
+                            onProgress?.invoke(processedCount, songsWithoutGenres.size)
+                            return@forEach
+                        }
+                        
+                        val contentUri = song.uri
+                        val genre = getGenreForSong(context, contentUri, songId.toInt())
 
-                    if (genre != null) {
-                        val updatedSong = song.copy(genre = genre)
-                        updatedSongs.add(updatedSong)
-                        Log.d(TAG, "Detected genre '$genre' for song: ${song.title}")
-                    } else {
-                        // Keep the original song if no genre was found
-                        updatedSongs.add(song)
+                        if (genre != null && genre.isNotBlank() && !genre.equals("unknown", ignoreCase = true)) {
+                            val updatedSong = song.copy(genre = genre)
+                            updatedSongs.add(updatedSong)
+                            // Cache the detected genre
+                            try {
+                                val success = genrePrefs.edit().putString("genre_$songId", genre).commit()
+                                if (success) {
+                                    Log.d(TAG, "Detected and cached genre '$genre' for song ID $songId: ${song.title}")
+                                } else {
+                                    Log.e(TAG, "Failed to commit genre cache for song ID $songId")
+                                }
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Failed to cache genre for song ID $songId", e)
+                            }
+                        } else {
+                            // Keep the original song if no valid genre was found
+                            updatedSongs.add(song)
+                        }
+
+                        processedCount++
+                        onProgress?.invoke(processedCount, songsWithoutGenres.size)
+
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Error detecting genre for song ${song.title}", e)
+                        updatedSongs.add(song) // Keep original song on error
+                        processedCount++
+                        onProgress?.invoke(processedCount, songsWithoutGenres.size)
                     }
+                }
 
-                    processedCount++
-                    onProgress?.invoke(processedCount, songsWithoutGenres.size)
+                val batchEndTime = System.currentTimeMillis()
+                val batchDuration = batchEndTime - batchStartTime
+                Log.d(TAG, "Processed batch of ${batch.size} songs in ${batchDuration}ms")
 
-                } catch (e: Exception) {
-                    Log.w(TAG, "Error detecting genre for song ${song.title}", e)
-                    updatedSongs.add(song) // Keep original song on error
-                    processedCount++
-                    onProgress?.invoke(processedCount, songsWithoutGenres.size)
+                // Yield control to allow other coroutines to run
+                yield()
+
+                // Small delay between batches to prevent overwhelming the system
+                if (batchDuration < 100) { // If batch processed quickly, add a small delay
+                    delay(50)
                 }
             }
 
-            val batchEndTime = System.currentTimeMillis()
-            val batchDuration = batchEndTime - batchStartTime
-            Log.d(TAG, "Processed batch of ${batch.size} songs in ${batchDuration}ms")
-
-            // Yield control to allow other coroutines to run
-            yield()
-
-            // Small delay between batches to prevent overwhelming the system
-            if (batchDuration < 100) { // If batch processed quickly, add a small delay
-                delay(50)
+            val finalSongs = songs.map { originalSong ->
+                updatedSongs.find { it.id == originalSong.id } ?: originalSong
             }
-        }
 
-        val finalSongs = songs.map { originalSong ->
-            updatedSongs.find { it.id == originalSong.id } ?: originalSong
+            val genreCount = finalSongs.count { song -> 
+                song.genre != null && song.genre.isNotBlank() && !song.genre.equals("unknown", ignoreCase = true)
+            }
+            Log.d(TAG, "Background genre detection complete. $genreCount out of ${finalSongs.size} songs now have genres")
+            onComplete?.invoke(finalSongs)
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Critical error during genre detection", e)
+            // Always invoke onComplete to prevent hanging UI
+            onComplete?.invoke(songs)
         }
-
-        Log.d(TAG, "Background genre detection complete. Updated ${updatedSongs.size} songs with genres")
-        onComplete?.invoke(finalSongs)
     }
     
     /**

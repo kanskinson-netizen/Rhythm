@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 16 Glance Widget Preview - 3x3 Large Layout -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="250dp"
+    android:height="250dp"
+    android:viewportWidth="250"
+    android:viewportHeight="250">
+    
+    <!-- Widget background - Android 16 translucent with larger rounded corners -->
+    <path
+        android:fillColor="#DD1C1B1F"
+        android:pathData="M24,0 L226,0 Q250,0 250,24 L250,226 Q250,250 226,250 L24,250 Q0,250 0,226 L0,24 Q0,0 24,0 Z"/>
+    
+    <!-- Album art placeholder with rounded corners -->
+    <path
+        android:fillColor="#E8DEF8"
+        android:pathData="M30,30 L220,30 Q235,30 235,45 L235,125 Q235,140 220,140 L30,140 Q20,140 20,130 L20,40 Q20,30 30,30 Z"/>
+    
+    <!-- Music note icon - Android 16 primary vibrant -->
+    <!-- <path
+        android:fillColor="#9B7DFF"
+        android:pathData="M125,60 L125,100 Q125,110 115,110 Q105,110 105,100 Q105,90 115,90 Q120,90 125,95 L125,60 L145,60 L145,70 L125,70 Z"/> -->
+    
+    <!-- Song title - high contrast white -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M35,160 L215,160 L215,170 L35,170 Z"/>
+    
+    <!-- Artist name - medium emphasis -->
+    <path
+        android:fillColor="#C9C5CA"
+        android:pathData="M35,180 L190,180 L190,188 L35,188 Z"/>
+    
+    <!-- Album name - lower emphasis -->
+    <path
+        android:fillColor="#938F96"
+        android:pathData="M35,196 L170,196 L170,202 L35,202 Z"/>
+    
+    <!-- Previous button - rounded secondary container -->
+    <path
+        android:fillColor="#4A3F5C"
+        android:pathData="M68,215 Q88,215 88,228 Q88,241 68,241 Q48,241 48,228 Q48,215 68,215 Z"/>
+    <!-- Rounded skip previous icon -->
+    <path
+        android:fillColor="#E8DEF8"
+        android:pathData="M74.5,222.5 L67,228 L74.5,233.5 Q75.5,234 75.5,233 L75.5,223 Q75.5,222 74.5,222.5 Z M64,224 Q63,224 63,225 L63,231 Q63,232 64,232 Q65,232 65,231 L65,225 Q65,224 64,224 Z"/>
+    
+    <!-- Play button - vibrant primary Android 16 -->
+    <path
+        android:fillColor="#9B7DFF"
+        android:pathData="M125,210 Q148,210 148,228 Q148,246 125,246 Q102,246 102,228 Q102,210 125,210 Z"/>
+    <!-- Rounded play icon -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M119,220 Q118.5,219.5 119,219 L132,226.5 Q133,227.5 132,228.5 L119,236 Q118.5,236.5 118.5,236 L118.5,220.5 Q118.5,220 119,220 Z"/>
+    
+    <!-- Next button - rounded secondary container -->
+    <path
+        android:fillColor="#4A3F5C"
+        android:pathData="M182,215 Q202,215 202,228 Q202,241 182,241 Q162,241 162,228 Q162,215 182,215 Z"/>
+    <!-- Rounded skip next icon -->
+    <path
+        android:fillColor="#E8DEF8"
+        android:pathData="M175.5,222.5 L183,228 L175.5,233.5 Q174.5,234 174.5,233 L174.5,223 Q174.5,222 175.5,222.5 Z M186,224 Q185,224 185,225 L185,231 Q185,232 186,232 Q187,232 187,231 L187,225 Q187,224 186,224 Z"/>
+</vector>

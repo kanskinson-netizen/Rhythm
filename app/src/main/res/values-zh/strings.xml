@@ -1,0 +1,969 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Rhythm</string>
+    
+    <string name="media3_notification_channel_name">Rhythm 音乐</string>
+    <string name="media3_notification_channel_description">媒体播放控制</string>
+    
+    <string name="widget_description">Rhythm 音乐小部件 - 支持 2x1 到 5x5 网格大小的响应式播放控制</string>
+    <string name="widget_description_glance">Rhythm 音乐 - 拥有 9 种响应式布局、Material 3 设计和实时状态更新的播放控制</string>
+    <string name="widget_name_glance">Rhythm 音乐</string>
+    <string name="no_song_playing">暂无歌曲播放</string>
+    <string name="unknown_artist">未知艺术家</string>
+    <string name="unknown_album">未知专辑</string>
+    <string name="album_art">专辑封面</string>
+    <string name="play_pause">播放/暂停</string>
+    <string name="skip_next">下一首</string>
+    <string name="skip_previous">上一首</string>
+    
+    <string name="cd_navigate">导航</string>
+    <string name="cd_configure">配置</string>
+    <string name="cd_delete_playlist">删除播放列表</string>
+    <string name="cd_remove">移除</string>
+    <string name="cd_rhythm_logo">Rhythm 图标</string>
+    <string name="cd_view_github_profile">查看 GitHub 个人主页</string>
+    <string name="cd_report_bug">报告 Bug</string>
+    <string name="cd_telegram_support">Telegram 支持</string>
+    
+    <string name="settings_notifications">通知</string>
+    <string name="settings_notification_style">通知样式</string>
+    <string name="settings_custom_notifications">自定义通知</string>
+    <string name="settings_custom_notifications_desc">使用应用自定义的通知样式，而非系统媒体通知</string>
+    
+    <string name="settings_queue_playback">队列与播放</string>
+    <string name="settings_queue_behavior">队列行为</string>
+    <string name="settings_use_exoplayer_shuffle">使用 ExoPlayer 随机播放</string>
+    <string name="settings_use_exoplayer_shuffle_desc">让媒体播放器处理随机播放（推荐：手动随机播放时设为关闭）</string>
+    <string name="settings_auto_queue">自动队列</string>
+    <string name="settings_auto_queue_desc">播放时自动将相关歌曲添加到队列</string>
+    <string name="settings_clear_queue_on_new_song">播放新歌时清空队列</string>
+    <string name="settings_clear_queue_on_new_song_desc">直接播放新歌时清空当前队列</string>
+    <string name="settings_playback_persistence">播放持久性</string>
+    <string name="settings_remember_repeat_mode">记住重复模式</string>
+    <string name="settings_remember_repeat_mode_desc">重启应用后保留重复模式（关闭/全部/单曲）</string>
+    <string name="settings_remember_shuffle_mode">记住随机模式</string>
+    <string name="settings_remember_shuffle_mode_desc">重启应用后保留随机播放开启/关闭状态</string>
+    
+    <string name="settings_playlists">播放列表</string>
+    <string name="settings_playlists_overview">概览</string>
+    <string name="settings_playlists_management">管理</string>
+    <string name="settings_create_new_playlist">新建播放列表</string>
+    <string name="settings_create_new_playlist_desc">添加一个新的自定义播放列表</string>
+    <string name="settings_import_playlists">导入播放列表</string>
+    <string name="settings_import_playlists_desc">从 JSON, M3U 或 PLS 文件导入</string>
+    <string name="settings_export_all_playlists">导出所有播放列表</string>
+    <string name="settings_export_all_playlists_desc">将所有播放列表备份到文件</string>
+    <string name="settings_cleanup_empty_playlists">清理空播放列表</string>
+    <string name="settings_cleanup_empty_playlists_desc">移除 %1$d 个空播放列表%2$s</string>
+    <string name="settings_default_playlists">默认播放列表</string>
+    <string name="settings_no_default_playlists">无默认播放列表</string>
+    <string name="settings_no_default_playlists_desc">默认播放列表会自动创建</string>
+    <string name="settings_my_playlists">我的播放列表</string>
+    <string name="settings_no_custom_playlists">无自定义播放列表</string>
+    <string name="settings_no_custom_playlists_desc">创建你的第一个播放列表以开始使用</string>
+    <string name="settings_total">总计</string>
+    <string name="settings_custom">自定义</string>
+    <string name="settings_default">默认</string>
+    
+    <string name="operation_exporting_playlists">正在导出播放列表…</string>
+    <string name="operation_exporting_playlists_location">正在导出播放列表到选中位置…</string>
+    <string name="operation_importing_playlist">正在导入播放列表…</string>
+    
+    <string name="dialog_cleanup_empty_playlists_title">清理空播放列表？</string>
+    <string name="dialog_cleanup_empty_playlists_message">这将永久删除 %1$d 个空播放列表%2$s。此操作无法撤销。</string>
+    <string name="dialog_delete_playlist_title">删除播放列表？</string>
+    <string name="dialog_delete_playlist_message">确定要删除“%1$s”吗？此操作无法撤销。</string>
+    <string name="dialog_delete">删除</string>
+    <string name="dialog_cancel">取消</string>
+    <string name="dialog_save">保存</string>
+    
+    <string name="settings_media_scan">媒体扫描</string>
+    <string name="settings_mode_selection">模式选择</string>
+    <string name="settings_blacklist_mode">黑名单模式</string>
+    <string name="settings_blacklist_mode_desc">从媒体库中隐藏特定的歌曲和文件夹</string>
+    <string name="settings_whitelist_mode">白名单模式</string>
+    <string name="settings_whitelist_mode_desc">仅显示选中文件夹中的歌曲</string>
+    <string name="settings_song_management">歌曲管理</string>
+    <string name="settings_manage_songs">管理歌曲</string>
+    <string name="settings_manage_songs_desc">%1$d 首%2$s歌曲</string>
+    <string name="settings_blocked">已屏蔽</string>
+    <string name="settings_whitelisted">已白名单</string>
+    <string name="settings_clear_all_songs">清空所有歌曲</string>
+    <string name="settings_clear_all_songs_desc">移除所有%1$s歌曲</string>
+    <string name="settings_folder_management">文件夹管理</string>
+    <string name="settings_manage_folders">管理文件夹</string>
+    <string name="settings_manage_folders_desc">%1$d 个%2$s文件夹</string>
+    <string name="settings_add_folder">添加文件夹</string>
+    <string name="settings_add_folder_desc">选择一个文件夹以%1$s</string>
+    <string name="settings_block">屏蔽</string>
+    <string name="settings_whitelist">白名单</string>
+    <string name="settings_clear_all_folders">清空所有文件夹</string>
+    <string name="settings_clear_all_folders_desc">移除所有%1$s文件夹</string>
+    <string name="settings_quick_tips">快速提示</string>
+    <string name="settings_quick_tip_blacklist">黑名单模式会从你的媒体库中隐藏特定的歌曲和文件夹</string>
+    <string name="settings_quick_tip_whitelist">白名单模式仅显示选中文件夹内的歌曲</string>
+    <string name="settings_quick_tip_folder">使用文件夹管理来组织你的音乐收藏</string>
+    <string name="settings_blocked_songs">已屏蔽歌曲</string>
+    <string name="settings_whitelisted_songs">白名单歌曲</string>
+    <string name="settings_blocked_folders">已屏蔽文件夹</string>
+    <string name="settings_whitelisted_folders">白名单文件夹</string>
+    <string name="settings_total_songs">歌曲总数</string>
+    <string name="settings_clear_all_button">清空所有%1$s歌曲</string>
+    <string name="settings_add_folder_button">添加文件夹</string>
+    <string name="settings_clear_all_button_short">全部清空</string>
+    <string name="settings_root">根目录</string>
+    
+    <string name="settings_spotify_canvas">Spotify Canvas</string>
+    <string name="settings_spotify_api_config">Spotify API 配置</string>
+    <string name="settings_spotify_api_config_desc">输入你的 Spotify API 凭据以启用歌曲搜索和 Canvas 视频。</string>
+    <string name="settings_spotify_default_keys_warning">你当前正在使用应用默认的 Spotify 密钥。为了获得完整功能并避免速率限制，请输入你自己的 Client ID 和 Secret。</string>
+    <string name="settings_spotify_client_id">Client ID</string>
+    <string name="settings_spotify_client_id_placeholder">你的 Spotify Client ID</string>
+    <string name="settings_spotify_client_secret">Client Secret</string>
+    <string name="settings_spotify_client_secret_placeholder">你的 Spotify Client Secret</string>
+    <string name="settings_spotify_test_connection">测试连接</string>
+    <string name="settings_spotify_testing">正在测试…</string>
+    <string name="settings_spotify_error">错误: %1$s</string>
+    <string name="settings_spotify_instructions">获取 Spotify API 凭据的方法：\n• 访问 developer.spotify.com\n• 创建一个新应用 (App)\n• 复制 Client ID 和 Client Secret</string>
+    
+    <string name="settings_about">关于</string>
+    <string name="settings_about_music_player">音乐播放器</string>
+    <string name="settings_about_version">v%1$s</string>
+    <string name="settings_about_description">一款现代、功能丰富的 Android 音乐播放器</string>
+    <string name="settings_about_project_details">项目详情</string>
+    <string name="settings_about_version_label">版本</string>
+    <string name="settings_about_build">构建版本</string>
+    <string name="settings_about_target_sdk">目标 SDK</string>
+    <string name="settings_about_architecture">架构</string>
+    <string name="settings_about_architecture_value">ARM64 &amp; ARM32</string>
+    <string name="settings_about_built_with">基于现代 Android 技术和 Material Design 3 构建</string>
+    <string name="settings_about_credits">致谢</string>
+    <string name="settings_about_developer_name">Anjishnu Nandi</string>
+    <string name="settings_about_developer_role">首席开发者 &amp; 项目架构师</string>
+    <string name="settings_about_team">ChromaHub 团队</string>
+    <string name="settings_about_team_desc">一群热衷于创造创新体验的开发者</string>
+    <string name="settings_about_team_chromahub">ChromaHub 团队</string>
+    <string name="settings_about_special_thanks">特别鸣谢</string>
+    <string name="settings_about_community">社区</string>
+    <string name="settings_about_community_desc">特别感谢我们出色的社区成员，他们通过测试、反馈、建议和协作，让 Rhythm 变得更好。</string>
+    <string name="settings_about_contributor_izzy_name">Izzy</string>
+    <string name="settings_about_contributor_izzy_role">管理 IzzyOnDroid 上的更新</string>
+    <string name="settings_about_contributor_christian_name">Christian</string>
+    <string name="settings_about_contributor_christian_role">协作 &amp; Project Booming 首席开发</string>
+    <string name="settings_about_contributor_alex_name">Alex</string>
+    <string name="settings_about_contributor_alex_role">Spotify Canvas API 集成</string>
+    <string name="settings_about_want_featured">想在这里展示？</string>
+    <string name="settings_about_contribute">通过测试、反馈或代码贡献来支持 Rhythm，加入我们精彩的社区！</string>
+    <string name="settings_about_open_source_libraries">开源库</string>
+    <string name="settings_about_open_source_libs">开源库</string>
+    <string name="settings_about_view_dependencies">查看依赖项</string>
+    <string name="settings_about_view_licenses">查看所有依赖和许可证</string>
+    <string name="settings_about_actions">操作</string>
+    <string name="settings_about_check_updates">检查更新</string>
+    <string name="settings_about_visit_website">访问网站</string>
+    <string name="settings_about_view_github">在 GitHub 上查看</string>
+    <string name="settings_about_report_bug">报告 Bug 或建议功能</string>
+    <string name="settings_about_telegram_support">Telegram 支持群组</string>
+    
+    <string name="settings_updates">更新</string>
+    <string name="settings_updates_error">错误</string>
+    <string name="settings_updates_checking">正在检查…</string>
+    <string name="settings_updates_available">有可用更新</string>
+    <string name="settings_updates_disabled">更新已禁用</string>
+    <string name="settings_updates_manual_check">手动检查</string>
+    <string name="settings_updates_up_to_date">已是最新</string>
+    
+    <string name="status_disabled">已禁用</string>
+    
+    <string name="home_title">Rhythm</string>
+    <string name="home_settings_cd">设置</string>
+    <string name="home_greeting_night">晚安</string>
+    <string name="home_greeting_morning">早上好</string>
+    <string name="home_greeting_afternoon">下午好</string>
+    <string name="home_greeting_evening">晚上好</string>
+    <string name="home_discover_albums">发现专辑</string>
+    <string name="home_explore_music">探索美妙音乐</string>
+    <string name="home_no_featured_albums">暂无精选专辑</string>
+    <string name="home_no_featured_albums_desc">添加一些专辑到你的媒体库以查看精选内容</string>
+    <string name="home_artists">艺术家</string>
+    <string name="home_explore_musicians">探索你喜爱的音乐人</string>
+    <string name="home_no_artists">未找到艺术家</string>
+    <string name="home_no_artists_desc">添加一些音乐到你的媒体库以查看艺术家</string>
+    <string name="home_new_releases">新发布</string>
+    <string name="home_fresh_music">为你准备的新鲜音乐</string>
+    <string name="home_no_new_releases">暂无新发布</string>
+    <string name="home_no_new_releases_desc">添加到媒体库的新专辑将显示在这里</string>
+    <string name="home_recently_added">最近添加</string>
+    <string name="home_latest_additions">你最新添加的曲目</string>
+    <string name="home_no_recently_added">暂无最近添加的专辑</string>
+    <string name="home_no_recently_added_desc">你添加到媒体库的专辑将显示在这里</string>
+    
+    <string name="home_quote_late_night_1">深夜，致梦想家 🌙</string>
+    <string name="home_quote_late_night_2">是时候来点深夜歌单了 🎧</string>
+    <string name="home_quote_late_night_3">午夜的旋律最动听 ✨</string>
+    <string name="home_quote_late_night_4">让夜曲继续播放 🌟</string>
+    
+    <string name="home_quote_morning_1">用完美的旋律开启新的一天 ✨</string>
+    <string name="home_quote_morning_2">让音乐唤醒你的清晨时光 🎵</string>
+    <string name="home_quote_morning_3">每个清晨都是一首等待奏响的交响曲 🌅</string>
+    <string name="home_quote_morning_4">咖啡与音乐，清晨绝配 ☕</string>
+    
+    <string name="home_quote_afternoon_1">伴着你喜爱的节拍全力以赴 🚀</string>
+    <string name="home_quote_afternoon_2">音乐让一切变得更好 💪</string>
+    <string name="home_quote_afternoon_3">让节奏指引你的一天 🎯</string>
+    <string name="home_quote_afternoon_4">好歌相伴，专注力满分 🔥</string>
+    
+    <string name="home_quote_evening_1">伴着舒缓的旋律放松身心 🌅</string>
+    <string name="home_quote_evening_2">开启夜间音乐模式 🎶</string>
+    <string name="home_quote_evening_3">现在最适合听你的放松歌单 😌</string>
+    <string name="home_quote_evening_4">在你喜爱的曲调中卸下疲惫 🌇</string>
+    
+    <string name="home_quote_night_1">夜晚是音乐的时刻 🌙</string>
+    <string name="home_quote_night_2">让夜色为你演奏小夜曲 🎵</string>
+    <string name="home_quote_night_3">宁静夜晚的完美氛围 🌟</string>
+    <string name="home_quote_night_4">拥抱夜晚的宁静 😴</string>
+    
+    <string name="home_continue_song">继续播放“%1$s”</string>
+    <string name="home_adventure_continues">你的音乐冒险仍在继续</string>
+    <string name="home_discover_next_favorite">准备好发现你的下一首最爱了吗？</string>
+    
+    <string name="home_recommended_title">为你推荐</string>
+    <string name="home_recommended_subtitle">基于你的收听历史</string>
+    <string name="home_no_recommendations">暂无推荐</string>
+    <string name="home_no_recommendations_desc">多听听音乐，获取个性化推荐</string>
+    
+    <string name="home_listening_stats">你的收听统计</string>
+    <string name="home_listening_stats_subtitle">本周的音乐旅程</string>
+    <string name="home_stat_listening_time">收听时长</string>
+    <string name="home_stat_songs_played">播放歌曲</string>
+    <string name="home_stat_artists">艺术家</string>
+    
+    <string name="home_mood_title">心情与时刻</string>
+    <string name="home_mood_subtitle">适合每种心情的音乐</string>
+    <string name="home_mood_energize">活力</string>
+    <string name="home_mood_energize_desc">提升你的能量</string>
+    <string name="home_mood_relax">放松</string>
+    <string name="home_mood_relax_desc">舒缓身心，深呼吸</string>
+    <string name="home_mood_focus">专注</string>
+    <string name="home_mood_focus_desc">专注模式</string>
+    
+    <string name="home_recently_played">最近播放</string>
+    <string name="home_recently_played_subtitle">继续你的音乐旅程</string>
+    <string name="home_no_recent_activity">暂无近期活动</string>
+    <string name="home_no_recent_activity_desc">开始听歌，最近播放的歌曲将显示在这里</string>
+    
+    <string name="ui_view_all">查看全部</string>
+    <string name="ui_play_action">播放 %1$s</string>
+    <string name="ui_songs_count">%1$d 首歌曲</string>
+    
+    <string name="update_available_cd">有可用更新</string>
+    <string name="update_available_title">更新可用</string>
+    <string name="update_version">版本 %1$s</string>
+    <string name="update_whats_new">更新内容：</string>
+    <string name="update_now">立即更新</string>
+    <string name="update_downloading">正在下载…</string>
+    
+    <string name="library_title">媒体库</string>
+    <string name="library_your_music">你的音乐</string>
+    <string name="library_your_playlists">你的播放列表</string>
+    <string name="library_your_albums">你的专辑</string>
+    <string name="library_your_artists">你的艺术家</string>
+    <string name="library_tracks_count">%1$d / %2$d 首曲目</string>
+    <string name="library_no_songs">暂无歌曲</string>
+    <string name="library_no_artists">未找到艺术家</string>
+    <string name="library_no_artists_desc">添加一些音乐以在这里查看你的艺术家</string>
+    <string name="library_start_collection">开始建立你的音乐收藏</string>
+    <string name="library_sort_artists">艺术家排序方式</string>
+    <string name="library_explore">探索</string>
+    <string name="library_storage_locations">存储位置</string>
+    <string name="library_pinned_folders">置顶文件夹</string>
+    <string name="library_go_back">返回</string>
+    <string name="library_home">主页</string>
+    <string name="library_tap_browse">点击浏览文件</string>
+    <string name="library_play_all">全部播放</string>
+    <string name="library_check_permissions">如果文件未显示，请检查存储权限</string>
+    <string name="library_creating_playlist">正在创建播放列表并添加 %1$d 首歌曲…</string>
+    <string name="library_playlist_name_empty">播放列表名称不能为空</string>
+    
+    <string name="storage_permission_required">需要存储权限</string>
+    <string name="storage_permission_desc">为了浏览你的音乐文件并探索设备存储，Rhythm 需要访问文件和媒体的权限。</string>
+    <string name="storage_permission_audio_only">这仅允许访问音频文件和包含音乐的文件夹。</string>
+    
+    <string name="player_now_playing">正在播放</string>
+    <string name="player_loading_lyrics">正在加载歌词…</string>
+    <string name="player_shuffle">随机</string>
+    <string name="player_lyrics">歌词</string>
+    <string name="player_repeat">重复</string>
+    <string name="player_queue">队列</string>
+    <string name="player_playback_speed">播放速度</string>
+    <string name="player_playback_speed_desc">调整音频播放速度。</string>
+    <string name="playback_speed">播放速度</string>
+    
+    <string name="search_filter_results">筛选结果</string>
+    <string name="search_results">搜索结果</string>
+    <string name="search_songs">歌曲</string>
+    <string name="search_albums">专辑</string>
+    <string name="search_artists">艺术家</string>
+    <string name="search_playlists">播放列表</string>
+    <string name="search_view_all_songs">查看所有歌曲</string>
+    <string name="search_see_all_songs">查看所有 %1$d 首歌曲</string>
+    <string name="search_recently_searched">最近搜索</string>
+    <string name="search_recent_searches">最近搜索记录</string>
+    <string name="search_clear">清除</string>
+    <string name="search_no_recent_searches">暂无最近搜索</string>
+    <string name="search_no_recent_searches_desc">你的搜索历史将显示在这里</string>
+    <string name="search_recently_played">最近播放</string>
+    <string name="search_no_recently_played">暂无最近播放</string>
+    <string name="search_no_recently_played_desc">你播放的歌曲将显示在这里</string>
+    <string name="search_recommended">为你推荐</string>
+    <string name="search_recommended_desc">基于你的收听历史</string>
+    <string name="search_all_songs">所有歌曲 (%1$d)</string>
+    <string name="search_browse_by_genre">按流派浏览</string>
+    <string name="search_detecting_genres">正在检测流派…</string>
+    <string name="search_genre_suggestions">检测到流派建议后将显示在这里</string>
+    <string name="search_no_genres">你的媒体库中未检测到流派</string>
+    <string name="search_no_recent">暂无最近搜索</string>
+    
+    <string name="ui_play">播放</string>
+    <string name="ui_or">或</string>
+    <string name="ui_skip_for_now">暂时跳过</string>
+    <string name="ui_dismiss">忽略</string>
+    <string name="ui_retry">重试</string>
+    <string name="ui_get_started">开始使用</string>
+    <string name="ui_enable_updates">启用更新</string>
+    <string name="ui_check_now">立即检查</string>
+    <string name="ui_download_update">下载更新</string>
+    <string name="ui_install_update">安装更新</string>
+    <string name="ui_cancel_download">取消下载</string>
+    
+    <string name="common_rhythm">Rhythm</string>
+    <string name="common_songs">歌曲</string>
+    <string name="common_home">主页</string>
+    <string name="common_library">媒体库</string>
+    
+    <string name="splash_tagline">你的音乐，你的节奏</string>
+    <string name="splash_loading">正在加载音乐库…</string>
+    <string name="splash_ready">准备好开始律动！</string>
+    
+    <string name="badge_studio_master">录音室母带</string>
+    <string name="badge_lossless">无损</string>
+    
+    <string name="nav_no_matching_songs">未找到匹配的歌曲</string>
+    <string name="nav_try_different">尝试不同的搜索词</string>
+    
+    <string name="updates_title">更新</string>
+    <string name="updates_error">错误</string>
+    <string name="updates_checking">正在检查更新…</string>
+    <string name="updates_available">有可用更新</string>
+    <string name="updates_disabled">更新已禁用</string>
+    <string name="updates_manual_check">仅手动检查</string>
+    <string name="updates_up_to_date">已是最新</string>
+    <string name="updates_whats_new">更新内容</string>
+    <string name="updates_known_issues">已知问题</string>
+    <string name="updates_downloading">正在下载更新…</string>
+    <string name="updates_download_complete">下载完成</string>
+    <string name="updates_check_failed">更新检查失败</string>
+    <string name="updates_settings">更新设置</string>
+    <string name="updates_released">发布于: %1$s</string>
+    <string name="updates_version">版本 %1$s</string>
+    <string name="updates_enable">启用更新</string>
+    <string name="updates_check_now">立即检查</string>
+    <string name="updates_download_update">下载更新</string>
+    <string name="updates_install_update">安装更新</string>
+    <string name="updates_cancel_download">取消下载</string>
+    <string name="cancel_download">取消下载</string>
+    <string name="download_update">下载更新</string>
+    <string name="updates_auto_check_disabled">自动更新检查已禁用。你仍然可以手动检查。</string>
+    <string name="updates_disabled_desc">应用更新已在设置中禁用</string>
+    <string name="updates_smart_polling">智能轮询已激活</string>
+    <string name="updates_smart_polling_desc">使用高效的 HTTP 检查来检测更新，同时最小化 GitHub API 调用。新版本发布时你将收到即时通知。</string>
+    <string name="updates_channel_desc">选择要关注的更新频道：</string>
+    
+    <string name="onboarding_welcome_title">Rhythm</string>
+    <string name="onboarding_welcome_subtitle">你的一站式离线音乐播放器</string>
+    <string name="onboarding_welcome_desc">通过强大的功能和完全的隐私保护，个性化你收听体验的方方面面。离线、无广告、全权掌控地播放你的音乐。</string>
+    <string name="onboarding_get_started">开始使用</string>
+    <string name="onboarding_offline">离线</string>
+    <string name="onboarding_customizable">可定制</string>
+    <string name="onboarding_private">隐私</string>
+    <string name="onboarding_tagline">音乐播放器 • 专为 Android 设计</string>
+    <string name="onboarding_android13_notice">Android 13+ 提示</string>
+    <string name="onboarding_android13_desc">在较新的 Android 版本上，你会看到多个权限请求。请授予音频文件和通知访问权限以获得最佳体验。</string>
+    <string name="onboarding_granted">✓ 已授予</string>
+    <string name="onboarding_backup_title">保护你的数据</string>
+    <string name="onboarding_backup_desc">通过自动备份保护你的播放列表、设置和偏好。切换设备或重装后可恢复一切 - 再也不会丢失你的音乐收藏。</string>
+    <string name="onboarding_auto_backup">自动备份</string>
+    <string name="onboarding_auto_backup_desc">每周自动备份设置</string>
+    <string name="onboarding_backup_center">备份与恢复中心</string>
+    <string name="onboarding_backup_center_desc">创建备份或从现有备份文件恢复</string>
+    <string name="onboarding_manual_backup_info">你可以随时在“设置 &gt; 备份与恢复”中手动创建备份</string>
+    <string name="onboarding_what_backed_up">什么会被备份？</string>
+    <string name="onboarding_backed_up_1">所有设置、播放列表、主题和媒体库定制</string>
+    <string name="onboarding_backed_up_2">一键从文件或剪贴板恢复</string>
+    <string name="onboarding_backed_up_3">备份存储在本地设备上以保护隐私</string>
+    <string name="onboarding_audio_title">音频与播放体验</string>
+    <string name="onboarding_audio_desc">定制你的音频体验，包括触觉反馈、默认屏幕、音量控制、队列行为、随机播放设置、歌词显示和均衡器设置。</string>
+    <string name="onboarding_lyrics_sources">API: 在线歌词 • 嵌入式: 元数据歌词 • 本地: .lrc 文件</string>
+    <string name="onboarding_additional_features">其他音频功能</string>
+    <string name="onboarding_equalizer_desc">均衡器：在“设置 &gt; 均衡器”中微调音频频率</string>
+    <string name="onboarding_sleep_timer_desc">睡眠定时器：设定时间后自动停止播放（从“正在播放”屏幕访问）</string>
+    <string name="onboarding_library_title">组织你的音乐库</string>
+    <string name="onboarding_library_desc">自定义专辑、艺术家和歌曲的显示方式。选择你偏好的布局、排序顺序和标签页排列。</string>
+    <string name="onboarding_library_how_works">媒体库组织方式</string>
+    <string name="onboarding_library_1">自定义媒体库中的标签页顺序以快速访问你的最爱</string>
+    <string name="onboarding_library_2">直接从媒体库屏幕创建和管理播放列表</string>
+    <string name="onboarding_library_3">高级显示和排序选项可在“设置 &gt; 主题定制”中找到</string>
+    <string name="onboarding_theme_title">打造专属 Rhythm</string>
+    <string name="onboarding_theme_desc">个性化 Rhythm 的外观以匹配你的风格。选择系统主题、字体或 Material You 动态取色 (Android 12+)。</string>
+    <string name="onboarding_live_preview">实时预览</string>
+    <string name="onboarding_primary">主要</string>
+    <string name="onboarding_container">容器</string>
+    <string name="onboarding_accent">强调</string>
+    <string name="onboarding_advanced_custom">高级定制</string>
+    <string name="onboarding_advanced_custom_desc">自定义配色方案、专辑封面取色和字体</string>
+    <string name="onboarding_more_tuner">更多定制选项请见设置</string>
+    <string name="onboarding_tuner_1">自定义配色方案和专辑封面颜色提取</string>
+    <string name="onboarding_tuner_2">字体定制和排版设置</string>
+    <string name="onboarding_tuner_3">高级主题选项可在“设置 &gt; 主题定制”中找到</string>
+    <string name="onboarding_step_progress">%1$d / %2$d</string>
+    <string name="onboarding_advanced_customization">高级定制</string>
+    <string name="onboarding_advanced_customization_desc">自定义配色方案、专辑封面取色和字体</string>
+    
+    <string name="onboarding_media_scan_title">筛选你的音乐库</string>
+    <string name="onboarding_media_scan_desc">控制哪些音频文件出现在你的媒体库中。使用黑名单模式隐藏不需要的文件（铃声、通知音），或使用白名单模式仅显示特定的音乐文件夹。</string>
+    <string name="onboarding_media_scan_configure">配置媒体扫描</string>
+    <string name="onboarding_media_scan_current_mode">选择黑名单或白名单模式 • 当前: %1$s</string>
+    <string name="onboarding_media_scan_settings">媒体扫描设置</string>
+    <string name="onboarding_media_scan_blacklist">黑名单模式：隐藏特定的歌曲和文件夹（铃声、通知音）</string>
+    <string name="onboarding_media_scan_whitelist">白名单模式：仅显示选中文件夹中的歌曲</string>
+    <string name="onboarding_media_scan_configure_in_tuner">在“设置 &gt; 媒体扫描”中配置</string>
+    <string name="onboarding_storage_title">存储管理</string>
+    <string name="onboarding_storage_desc">在“设置 &gt; 缓存管理”中管理缓存大小和存储</string>
+    
+    <string name="onboarding_complete_title">一切就绪！</string>
+    <string name="onboarding_complete_desc">Rhythm 已准备好播放！你的音乐库正在后台扫描。以下是已配置的内容：</string>
+    <string name="onboarding_whats_next">下一步？</string>
+    <string name="onboarding_next_browse">浏览你的歌曲、专辑和艺术家</string>
+    <string name="onboarding_next_create">创建你的第一个播放列表</string>
+    <string name="onboarding_next_finetune">使用均衡器微调音频</string>
+    <string name="onboarding_next_explore">随时探索更多设置</string>
+    <string name="onboarding_settings_change">所有设置均可随时更改</string>
+    
+    <string name="settings_tip_theme">使用颜色、字体和节日特效定制你的主题</string>
+    <string name="settings_tip_haptic">启用触觉反馈以获得触感响应</string>
+    <string name="settings_tip_media_scan">使用媒体扫描从媒体库中隐藏不需要的文件</string>
+    <string name="settings_default_screen">默认启动屏幕</string>
+    <string name="settings_default_screen_desc">选择你的启动页面</string>
+    <string name="settings_home_desc">发现新音乐和推荐</string>
+    <string name="settings_library_desc">快速访问你的音乐收藏</string>
+    
+    <string name="cache_current_status">当前缓存状态</string>
+    <string name="cache_calculating">正在计算缓存大小…</string>
+    <string name="cache_total_size">总缓存大小：</string>
+    <string name="cache_limit">缓存限制：</string>
+    <string name="cache_max_size">最大缓存大小</string>
+    <string name="cache_max_size_desc">设置缓存数据的最大大小</string>
+    <string name="cache_about">关于缓存</string>
+    <string name="cache_size_limit">缓存大小限制</string>
+    <string name="cache_clear_on_exit">退出时清除缓存</string>
+    <string name="cache_clear_on_exit_desc">应用关闭时自动清除缓存数据</string>
+    
+    <string name="lyrics_source_priority">歌词来源优先级</string>
+    <string name="lyrics_choose_source">选择歌词查找来源</string>
+    <string name="lyrics_embedded_note">嵌入式歌词是从音频文件的 ID3v2 USLT 标签中提取的。为获得最佳效果，请使用标记正确的 MP3/FLAC 文件。</string>
+    
+    <string name="theme_good_to_know">小知识</string>
+    <string name="theme_tip_album_art">专辑封面颜色会根据你的音乐动态变化</string>
+    <string name="theme_tip_material_you">Material You 使用系统壁纸颜色 (Android 12+)</string>
+    <string name="theme_tip_custom_fonts">导入自定义字体以个性化排版</string>
+    <string name="theme_color_source">颜色来源</string>
+    <string name="theme_color_source_desc">选择颜色提取方式</string>
+    <string name="theme_font_source">字体来源</string>
+    <string name="theme_font_source_desc">选择字体加载来源</string>
+    <string name="theme_color_schemes">配色方案</string>
+    <string name="theme_color_schemes_desc">从预设配色方案中选择</string>
+    <string name="theme_custom_picker">自定义颜色选择器</string>
+    <string name="theme_custom_picker_desc">创建你自己的配色方案</string>
+    <string name="theme_font_selection">字体选择</string>
+    <string name="theme_font_selection_desc">从可用系统字体中选择</string>
+    
+    <string name="playlist_no_songs_yet">暂无歌曲</string>
+    
+    <string name="backup_title">备份与恢复</string>
+    <string name="backup_desc">保护你的个性化设置、播放列表和偏好。手动创建备份或启用每周自动备份，让你高枕无忧。</string>
+    <string name="backup_auto_weekly">每周自动备份设置</string>
+    <string name="backup_choose_save_location">选择备份文件保存位置</string>
+    <string name="backup_paste_data">粘贴备份数据</string>
+    <string name="backup_select_file">选择备份文件</string>
+    <string name="backup_whats_included">备份包含什么？</string>
+    <string name="backup_included_1">所有设置、播放列表、主题和媒体库定制</string>
+    <string name="backup_included_2">一键从文件或剪贴板恢复</string>
+    <string name="backup_included_3">备份存储在本地设备上以保护隐私</string>
+    <string name="backup_manage">管理备份</string>
+    <string name="backup_restore">恢复备份</string>
+    
+    <string name="blacklist_title">黑名单管理</string>
+    <string name="blacklist_desc">被屏蔽的歌曲和文件夹不会出现在搜索结果、推荐或自动播放队列中</string>
+    <string name="blacklist_songs">已拉黑歌曲</string>
+    <string name="blacklist_no_songs">暂无黑名单歌曲</string>
+    <string name="blacklist_all_available">你所有的歌曲均可播放</string>
+    <string name="blacklist_add_folder">添加文件夹到黑名单</string>
+    <string name="blacklist_folders">已拉黑文件夹</string>
+    <string name="blacklist_no_folders">暂无黑名单文件夹</string>
+    <string name="blacklist_tap_to_add">点击上方按钮添加文件夹到黑名单</string>
+    <string name="blacklist_blocked_songs">已屏蔽歌曲</string>
+    <string name="blacklist_available_songs">可用歌曲</string>
+    
+    <string name="queue_empty">你的队列是空的</string>
+    <string name="queue_add_songs">从媒体库添加歌曲以开始收听</string>
+    <string name="queue_no_more">队列中没有更多歌曲</string>
+    <string name="queue_add_more">添加更多歌曲以继续播放</string>
+    
+    <string name="playlist_create">创建播放列表</string>
+    <string name="playlist_name_empty">播放列表名称不能为空</string>
+    <string name="playlist_queue_not_empty">队列非空</string>
+    <string name="playlist_queue_songs">当前队列中有 %1$d 首歌曲%2$s。</string>
+    <string name="playlist_how_play">你想如何播放“%1$s”？</string>
+    
+    <string name="licenses_title">开源许可证</string>
+    <string name="licenses_desc">基于出色的开源项目构建</string>
+    <string name="licenses_apache">Apache License 2.0</string>
+    <string name="licenses_attribution">所有库均允许在正确署名的情况下使用、复制和分发</string>
+    
+    <string name="player_chip_order_title">播放器芯片顺序</string>
+    <string name="player_chip_order_desc">自定义播放器芯片</string>
+    <string name="player_chip_reset">重置为默认</string>
+    
+    <string name="library_tab_order_title">媒体库标签页顺序</string>
+    <string name="library_tab_order_desc">重新排序并切换可见性</string>
+    
+    <string name="playback_lyrics_priority">歌词来源优先级</string>
+    <string name="playback_lyrics_priority_desc">选择优先检查的歌词来源</string>
+    <string name="playback_settings">播放设置</string>
+    <string name="playback_audio_settings">音频设置</string>
+    <string name="playback_active_device">活动设备</string>
+    <string name="playback_no_device">未连接设备</string>
+    <string name="playback_tap_output">点击选择输出</string>
+    
+    <string name="lyrics_sync_adjustment">同步调整</string>
+    <string name="lyrics_sync_note">同步调整仅适用于时间同步歌词 (LRC 格式)。使用重置可获取同步歌词（如果有）。</string>
+    <string name="lyrics_placeholder">在此输入歌词…\n\n你可以使用 LRC 格式：\n[00:12.00] 第一行\n[00:17.00] 第二行</string>
+    <string name="lyrics_editor_title">歌词编辑器</string>
+    
+    <string name="song_info_title">歌曲信息</string>
+    <string name="song_info_no_metadata">无元数据可用</string>
+    <string name="song_info_permission">Rhythm 需要权限修改此音频文件的元数据。你可能会看到系统对话框请求访问权限 - 请允许以保存你的更改。</string>
+    
+    <string name="add_to_playlists">添加到播放列表</string>
+    <string name="add_to_playlist_action">添加到播放列表</string>
+    <string name="playlist_create_new">新建播放列表</string>
+    <string name="playlist_create_first">创建你的第一个播放列表以添加歌曲</string>
+    
+    <string name="cache_management">缓存管理</string>
+    <string name="cache_manage_desc">管理缓存数据，包括图片、临时文件和其他应用数据。</string>
+    
+    <string name="beta_welcome">欢迎加入 Beta 计划！</string>
+    <string name="beta_desc">你当前正在使用 Rhythm 的测试版。该版本仍在开发中，可能包含 Bug、未完成的功能或意外行为。</string>
+    
+    <string name="equalizer_disabled">均衡器已禁用</string>
+    <string name="equalizer_enable_desc">启用均衡器以定制你的音频体验。</string>
+    <string name="equalizer_open_system">打开系统均衡器</string>
+    
+    <string name="theme_color_schemes_unavailable">配色方案仅在使用“自定义”颜色来源时可用。</string>
+    <string name="theme_color_schemes_switch">在“颜色来源”设置中切换到“自定义”以访问预设方案。</string>
+    <string name="theme_custom_colors_unavailable">自定义颜色仅在使用“自定义”颜色来源时可用。</string>
+    <string name="theme_custom_colors_switch">在“颜色来源”设置中切换到“自定义”以创建你自己的颜色。</string>
+    <string name="theme_system_fonts_unavailable">系统字体仅在使用“系统”字体来源时可用。</string>
+    <string name="theme_system_fonts_switch">在“字体来源”设置中切换到“系统”以从可用字体中选择。</string>
+    
+    <string name="backup_whats_included_placeholder">备份包含什么？</string>
+    <string name="backup_all_settings_placeholder">所有设置、播放列表、主题和媒体库定制</string>
+    <string name="backup_restore_tap_placeholder">一键从文件或剪贴板恢复</string>
+    <string name="backup_local_storage_placeholder">备份存储在本地设备上以保护隐私</string>
+    <string name="library_reorder_tabs">重新排序标签页以定制你的媒体库体验</string>
+    <string name="external_services_desc">控制哪些外部 API 服务处于活动状态，以增强你的音乐体验。开启/关闭服务以管理数据使用和功能。</string>
+    <string name="lyrics_source_priority_title">歌词来源优先级</string>
+    <string name="lyrics_source_priority_desc_placeholder">选择 Rhythm 应该优先在哪里查找歌词</string>
+    
+    <string name="now_playing">正在播放</string>
+    <string name="skip_for_now">暂时跳过</string>
+    <string name="install_update_now">立即安装更新</string>
+    <string name="audio_settings">音频设置</string>
+    <string name="active_device">活动设备</string>
+    <string name="tap_select_output">点击选择输出</string>
+    <string name="browse_library">浏览媒体库</string>
+    <string name="add_more_songs">添加更多歌曲</string>
+    <string name="blocked_folders">已屏蔽文件夹</string>
+    <string name="last_backup">上次备份</string>
+    <string name="auto_backup">自动备份</string>
+    <string name="manage_backup">管理备份</string>
+    <string name="restore_backup">恢复备份</string>
+    <string name="edit_metadata">编辑元数据</string>
+    
+    <string name="updates_disabled_message">应用更新已在设置中禁用</string>
+    <string name="updates_auto_disabled">自动更新检查已禁用。你仍然可以手动检查。</string>
+    <string name="updates_up_to_date_message">已是最新版本！</string>
+    <string name="updates_check_frequency">Rhythm 应该多久检查一次更新？</string>
+    <string name="updates_experimental_coming">更多实验性功能即将在未来的更新中推出</string>
+    
+    <string name="cache_total_size_label">总缓存大小：</string>
+    <string name="cache_limit_label">缓存限制：</string>
+    
+    <string name="theme_featured_schemes">精选方案</string>
+    <string name="theme_more_schemes">更多方案</string>
+    <string name="theme_quick_presets">快速预设</string>
+    <string name="theme_advanced_rgb">高级 RGB 控制</string>
+    <string name="theme_font_preview">The quick brown fox jumps over the lazy dog (字体预览)</string>
+    
+    <string name="external_services">外部服务</string>
+    <string name="api_services">API 服务</string>
+    
+    <string name="equalizer">均衡器</string>
+    <string name="frequency_bands">频段</string>
+    <string name="frequency_response">频率响应</string>
+    <string name="audio_effects">音频效果</string>
+    <string name="virtualizer">虚拟器</string>
+    <string name="system_equalizer">系统均衡器</string>
+    <string name="system_equalizer_desc">访问设备内置均衡器</string>
+    
+    <string name="sleep_timer">睡眠定时器</string>
+    <string name="sleep_timer_coming_soon">睡眠定时器控制将在此处实现</string>
+    <string name="sleep_timer_quick">快速定时</string>
+    <string name="sleep_timer_custom">自定义定时</string>
+    <string name="sleep_timer_custom_desc">设置特定时长</string>
+    <string name="sleep_timer_action">定时动作</string>
+    <string name="sleep_timer_action_desc">计时结束时发生什么</string>
+    <string name="sleep_timer_select_duration">选择定时时长</string>
+    <string name="sleep_timer_set_hours_minutes">设置睡眠定时器的小时和分钟</string>
+    <string name="coming_soon">敬请期待</string>
+    
+    <string name="crash_reports">崩溃报告</string>
+    <string name="crashed_on">崩溃于: %1$s</string>
+    
+    <string name="about_lyrics_sources">关于歌词来源</string>
+    <string name="sync_adjustment">同步调整</string>
+    <string name="synced_lyrics_unavailable">此格式不支持同步歌词。</string>
+    <string name="word_by_word_unavailable">逐字歌词不可用。</string>
+    
+    <string name="exporting_playlists">正在导出播放列表…</string>
+    <string name="exporting_to_location">正在导出播放列表到选中位置…</string>
+    <string name="importing_playlist">正在导入播放列表…</string>
+    
+    <string name="restart_app">重启应用？</string>
+    <string name="export_playlist">导出播放列表</string>
+    <string name="export_all_playlists">导出所有播放列表</string>
+    <string name="export_count_playlists">导出 %1$d 个播放列表到：</string>
+    <string name="include_default_playlists">包含默认播放列表（收藏、最近添加、播放最多）</string>
+    <string name="import_playlist">导入播放列表</string>
+    <string name="select_playlist_file">选择要导入的播放列表文件：</string>
+    <string name="supported_formats">支持的格式：</string>
+    <string name="may_take_moments">这可能需要一点时间…</string>
+    
+    <string name="canvas_unavailable">Canvas 不可用</string>
+    <string name="canvas_couldnt_load">Canvas 无法加载</string>
+    
+    <string name="beta_program">BETA 计划</string>
+    <string name="lets_go">出发！ 🎵</string>
+    
+    <string name="special_thanks">特别鸣谢</string>
+    
+    <plurals name="playlist_count">
+        <item quantity="one">播放列表</item>
+        <item quantity="other">播放列表</item>
+    </plurals>
+    
+    <string name="action_ok">确定</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_save">保存</string>
+    <string name="action_create">创建</string>
+    <string name="action_delete">删除</string>
+    <string name="action_remove">移除</string>
+    <string name="action_export">导出</string>
+    <string name="action_export_all">全部导出</string>
+    <string name="action_import">导入</string>
+    <string name="action_browse_files">浏览文件</string>
+    <string name="action_close">关闭</string>
+    <string name="action_reset">重置</string>
+    <string name="action_apply">应用</string>
+    <string name="action_continue">继续</string>
+    <string name="action_proceed">继续</string>
+    <string name="action_later">稍后</string>
+    <string name="action_retry">重试</string>
+    <string name="action_add">添加</string>
+    <string name="action_edit">编辑</string>
+    <string name="action_change">更改</string>
+    <string name="action_choose">选择</string>
+    <string name="action_default">默认</string>
+    
+    <string name="settings_title">设置</string>
+    <string name="settings_section_appearance">外观</string>
+    <string name="settings_theme_customization">主题定制</string>
+    <string name="settings_theme_customization_desc">自定义颜色、字体和外观</string>
+    <string name="settings_library_tab_order">媒体库标签页顺序</string>
+    <string name="settings_library_tab_order_desc">在媒体库中重新排序标签页</string>
+    <string name="settings_section_user_interface">用户界面</string>
+    <string name="settings_language">语言</string>
+    <string name="settings_language_desc">更改应用语言</string>
+    <string name="settings_haptic_feedback">触觉反馈</string>
+    <string name="settings_haptic_feedback_desc">点击按钮时震动</string>
+    <string name="settings_section_audio_playback">音频与播放</string>
+    <string name="settings_system_volume">系统音量</string>
+    <string name="settings_system_volume_desc">使用设备音量进行播放</string>
+    <string name="settings_show_lyrics">显示歌词</string>
+    <string name="settings_show_lyrics_desc">可用时显示歌词</string>
+    <string name="settings_queue_playback_title">队列与播放</string>
+    <string name="settings_queue_playback_desc">配置队列和播放行为</string>
+    <string name="settings_equalizer_title">均衡器</string>
+    <string name="settings_equalizer_desc">调整音频频率和效果</string>
+    <string name="settings_sleep_timer_title">睡眠定时器</string>
+    <string name="settings_sleep_timer_desc">设定时间后自动停止播放</string>
+    <string name="settings_section_library_content">媒体库与内容</string>
+    <string name="settings_group_by_album_artist">按专辑艺术家分组</string>
+    <string name="settings_group_by_album_artist_desc">在主艺术家下显示合作专辑</string>
+    <string name="settings_media_scan_title">媒体扫描</string>
+    <string name="settings_media_scan_desc">管理黑名单和媒体扫描</string>
+    <string name="settings_playlists_title">播放列表</string>
+    <string name="settings_playlists_desc">管理你的播放列表</string>
+    <string name="settings_section_storage_data">存储与数据</string>
+    <string name="settings_cache_management_title">缓存管理</string>
+    <string name="settings_cache_management_desc">控制缓存大小和清理</string>
+    <string name="settings_backup_restore_title">备份与恢复</string>
+    <string name="settings_backup_restore_desc">保护设置和播放列表</string>
+    <string name="settings_section_services">服务</string>
+    <string name="settings_api_management">API 管理</string>
+    <string name="settings_api_management_desc">配置外部 API 服务</string>
+    <string name="settings_section_updates_info">更新与信息</string>
+    <string name="settings_updates_title">更新</string>
+    <string name="settings_updates_desc">检查应用更新</string>
+    <string name="settings_about_title">关于</string>
+    <string name="settings_about_desc">应用版本和信息</string>
+    <string name="settings_section_advanced">高级</string>
+    <string name="settings_crash_log_history">崩溃日志记录</string>
+    <string name="settings_crash_log_history_desc">查看和管理崩溃报告</string>
+    <string name="settings_experimental_features">实验性功能</string>
+    <string name="settings_experimental_features_desc">尝试前沿功能</string>
+    
+    <string name="playlist_name_label">播放列表名称</string>
+    <string name="playlist_rename">重命名播放列表</string>
+    <string name="playlist_delete_title">删除播放列表</string>
+    <string name="playlist_remove_song">移除歌曲</string>
+    <string name="playlist_export">导出播放列表</string>
+    <string name="playlist_import">导入播放列表</string>
+    <string name="playlist_rename_action">重命名播放列表</string>
+    <string name="playlist_delete_action">删除播放列表</string>
+    <string name="playlist_search">搜索歌曲</string>
+    <string name="playlist_search_in">在播放列表中搜索歌曲</string>
+    <string name="playlist_no_songs_available">无可用歌曲</string>
+    <string name="playlist_all_in_playlist">所有歌曲已在此播放列表中。</string>
+    <string name="playlist_name_field">播放列表名称</string>
+    <string name="playlist_delete_confirm">确定要删除“%1$s”吗？此操作无法撤销。</string>
+    <string name="playlist_remove_song_confirm">从该播放列表中移除“%1$s”？</string>
+    
+    <string name="player_load_lyrics">加载歌词</string>
+    <string name="player_retry_canvas">重试 Canvas</string>
+    
+    <string name="search_songs_count">歌曲 (%1$d)</string>
+    <string name="search_albums_count">专辑 (%1$d)</string>
+    <string name="search_artists_count">艺术家 (%1$d)</string>
+    <string name="search_playlists_count">播放列表 (%1$d)</string>
+    
+    <string name="metadata_title">标题</string>
+    <string name="metadata_artist">艺术家</string>
+    <string name="metadata_album">专辑</string>
+    <string name="metadata_genre">流派</string>
+    <string name="metadata_year">年份</string>
+    <string name="metadata_track">音轨</string>
+    <string name="metadata_saving">正在保存...</string>
+    <string name="metadata_save_changes">保存更改</string>
+    <string name="metadata_irreversible_changes">不可逆更改</string>
+    <string name="metadata_media_access_required">需要媒体访问权限</string>
+    
+    <string name="updates_check_now_action">立即检查</string>
+    <string name="updates_check_again">再次检查</string>
+    <string name="updates_download">下载更新</string>
+    <string name="updates_install">安装更新</string>
+    <string name="updates_cancel">取消下载</string>
+    <string name="updates_enable_auto_check">启用自动检查</string>
+    <string name="updates_channel_title">更新频道</string>
+    <string name="updates_check_interval_title">更新检查间隔</string>
+    
+    <string name="cache_clearing">正在清除缓存…</string>
+    <string name="cache_cleared">缓存已清除！</string>
+    <string name="cache_clear_all">清除所有缓存</string>
+    <string name="cache_clearing_lyrics">正在清除歌词…</string>
+    <string name="cache_lyrics_cleared">歌词缓存已清除！</string>
+    <string name="cache_clear_lyrics_only">仅清除歌词缓存</string>
+    
+    <string name="backup_created_success">备份创建成功</string>
+    <string name="backup_restore_success">恢复完成</string>
+    <string name="backup_restart_now">立即重启</string>
+    <string name="backup_continue_without_restart">不重启继续</string>
+    <string name="backup_error_title">错误</string>
+    
+    <string name="import_export_json_format">JSON 格式</string>
+    <string name="import_export_pls_format">PLS 播放列表</string>
+    <string name="import_complete_title">导入完成</string>
+    <string name="import_complete_message">成功导入 %1$d 个播放列表。\n%2$s\n\n重启应用以应用更改。</string>
+    <string name="import_restart_app">重启应用</string>
+    
+    <string name="sleep_timer_set_custom">设置自定义时间</string>
+    <string name="sleep_timer_set">设置定时器</string>
+    
+    <string name="crash_logs_clear_all">清除所有日志</string>
+    <string name="crash_logs_test">测试崩溃</string>
+    <string name="crash_logs_copy">复制日志</string>
+    <string name="crash_logs_details_title">崩溃日志详情</string>
+    
+    <string name="cd_back">返回</string>
+    <string name="cd_navigate_back">返回</string>
+    <string name="cd_play">播放</string>
+    <string name="cd_play_all">全部播放</string>
+    <string name="cd_shuffle">随机</string>
+    <string name="cd_play_album">播放专辑</string>
+    <string name="cd_shuffle_play">随机播放</string>
+    <string name="cd_previous_track">上一首</string>
+    <string name="cd_next_track">下一首</string>
+    <string name="cd_seek_back">后退 10 秒</string>
+    <string name="cd_seek_forward">前进 10 秒</string>
+    <string name="cd_more_options">更多选项</string>
+    <string name="cd_filters">筛选</string>
+    <string name="cd_clear_search">清除搜索</string>
+    <string name="cd_refresh">刷新</string>
+    <string name="cd_reorder_tabs">重新排序标签页</string>
+    <string name="cd_toggle_view_type">切换视图类型</string>
+    <string name="cd_open_playlist">打开播放列表</string>
+    <string name="cd_ascending">升序</string>
+    <string name="cd_descending">降序</string>
+    <string name="cd_artist_image">艺术家 %1$s</string>
+    <string name="cd_play_artist">播放 %1$s</string>
+    <string name="cd_storage">存储</string>
+    <string name="cd_pinned">已置顶</string>
+    <string name="cd_folder">文件夹</string>
+    <string name="cd_open_folder">打开文件夹</string>
+    <string name="cd_folder_options">文件夹选项</string>
+    <string name="cd_export_playlists">导出播放列表</string>
+    <string name="cd_import_playlist">导入播放列表</string>
+    <string name="cd_create_playlist">创建播放列表</string>
+    <string name="cd_create_new_playlist">创建新播放列表</string>
+    <string name="cd_home">主页</string>
+    <string name="cd_current_location">当前位置</string>
+    <string name="cd_item_icon">%1$s 图标</string>
+    <string name="cd_open_storage">打开存储</string>
+    <string name="cd_minimize">最小化</string>
+    <string name="cd_song_info">歌曲信息</string>
+    <string name="cd_album_artwork">专辑 %1$s 的封面</string>
+    <string name="cd_no_song_playing">暂无歌曲播放</string>
+    <string name="cd_toggle_shuffle">切换随机播放</string>
+    <string name="cd_toggle_lyrics">切换歌词</string>
+    <string name="cd_toggle_repeat_mode">切换重复模式</string>
+    <string name="cd_show_actions">显示操作</string>
+    <string name="cd_add_to_playlist_action">添加到播放列表</string>
+    <string name="cd_toggle_favorite">切换收藏</string>
+    <string name="cd_playback_speed_action">播放速度</string>
+    <string name="cd_show_album">显示专辑</string>
+    <string name="cd_show_artist">显示艺术家</string>
+    <string name="cd_reorder_chips">重新排序芯片</string>
+    <string name="cd_search">搜索</string>
+    <string name="cd_view_all">查看全部</string>
+    <string name="cd_albums">专辑</string>
+    <string name="cd_artists">艺术家</string>
+    <string name="cd_songs">歌曲</string>
+    <string name="cd_selected">已选择</string>
+    <string name="cd_rhythm_splash">Rhythm</string>
+    <string name="cd_search_in_playlist">在播放列表中搜索歌曲</string>
+    <string name="cd_shuffle_play_action">随机播放</string>
+    <string name="cd_add_songs_to_playlist">添加歌曲到播放列表</string>
+    <string name="cd_remove_from_playlist">从播放列表中移除</string>
+    <string name="cd_change_language">更改语言</string>
+    <string name="cd_permissions">权限</string>
+    <string name="cd_backup_restore">备份与恢复</string>
+    <string name="cd_open_backup_restore">打开备份与恢复</string>
+    <string name="cd_audio_playback_settings">音频与播放设置</string>
+    <string name="cd_library_setup">媒体库设置</string>
+    <string name="cd_open_settings">打开</string>
+    <string name="cd_theming">主题</string>
+    <string name="cd_open_theme_customization">打开主题定制</string>
+    <string name="cd_show_options">显示选项</string>
+    <string name="cd_app_updates">应用更新</string>
+    <string name="cd_completed">已完成</string>
+    <string name="cd_media_scan_filtering">媒体扫描筛选</string>
+    <string name="cd_open_media_scan_settings">打开媒体扫描设置</string>
+    <string name="cd_close">关闭</string>
+    <string name="cd_album_artwork_generic">专辑封面</string>
+    <string name="cd_language">语言</string>
+    <string name="cd_view_license">查看许可证</string>
+    <string name="cd_refresh_devices">刷新设备</string>
+    <string name="cd_switch_device">切换设备</string>
+    <string name="cd_volume">音量</string>
+    <string name="cd_decrease_volume">降低音量</string>
+    <string name="cd_increase_volume">增加音量</string>
+    <string name="cd_playback_speed">播放速度</string>
+    <string name="cd_playback_settings">播放设置</string>
+    <string name="cd_move_up">上移</string>
+    <string name="cd_move_down">下移</string>
+    <string name="cd_add_songs">添加歌曲</string>
+    <string name="cd_clear_queue">清空队列</string>
+    <string name="cd_now_playing">正在播放</string>
+    <string name="cd_drag_to_reorder">拖动以重新排序</string>
+    <string name="cd_remove_from_queue">从队列中移除</string>
+    <string name="cd_edit_metadata">编辑元数据</string>
+    <string name="cd_reset_to_original">重置为原始</string>
+    <string name="cd_remove_from_blacklist">从黑名单中移除</string>
+    <string name="cd_remove_folder_from_blacklist">从黑名单中移除文件夹</string>
+    <string name="cd_beta_program_warning">Beta 计划警告</string>
+    <string name="cd_sort_songs">歌曲排序</string>
+    <string name="cd_add_selected_songs">添加选中的歌曲</string>
+    <string name="cd_toggle_multi_select">切换多选</string>
+    <string name="cd_add_song">添加歌曲</string>
+    
+    <string name="audio_quality_dolby_atmos">杜比全景声 (Dolby Atmos)</string>
+    <string name="audio_quality_dolby_truehd">Dolby TrueHD</string>
+    <string name="audio_quality_dolby_digital">杜比数字 (Dolby Digital)</string>
+    <string name="audio_quality_apple_lossless">Apple Lossless</string>
+    <string name="audio_quality_flac_lossless">FLAC 无损</string>
+    <string name="audio_quality_ogg_vorbis">OGG Vorbis</string>
+    <string name="audio_quality_dts_audio">DTS Audio</string>
+    <string name="audio_quality_hi_res_lossless">Hi-Res 无损</string>
+    <string name="audio_quality_cd_quality">CD 音质</string>
+    <string name="audio_quality_studio_master">录音室母带</string>
+    <string name="audio_quality_lossless_surround">无损环绕声</string>
+    <string name="audio_quality_lossy_surround">有损环绕声</string>
+    <string name="audio_quality_dolby_surround">杜比环绕声 (Dolby Surround)</string>
+    
+    <string name="device_phone_speaker">手机扬声器</string>
+    <string name="device_wired_headphones">有线耳机</string>
+    <string name="device_wired_headset">有线耳麦</string>
+    <string name="device_bluetooth_audio">蓝牙音频</string>
+    <string name="device_unknown">未知设备</string>
+    
+    <string name="fallback_unknown_artist">未知艺术家</string>
+    <string name="fallback_unknown_album">未知专辑</string>
+    <string name="fallback_unknown_file">未知文件</string>
+    
+    <string name="service_app_updates">应用更新</string>
+    <string name="service_rhythm_music">Rhythm 音乐</string>
+    <string name="service_starting">正在启动服务…</string>
+    <string name="service_loading_settings">正在加载设置…</string>
+    <string name="service_setup_components">正在设置组件…</string>
+    <string name="service_initializing_player">正在初始化播放器…</string>
+    <string name="service_creating_controls">正在创建播放控制…</string>
+    <string name="service_setup_media_session">正在设置媒体会话…</string>
+    <string name="service_initializing_controller">正在初始化媒体控制器…</string>
+    <string name="service_ready">服务就绪</string>
+    <string name="service_init_failed">初始化失败</string>
+    
+    <string name="crash_bug_report">Bug 报告</string>
+    <string name="crash_restart_app">重启应用</string>
+    
+    <string name="genre_hip_hop">嘻哈 (Hip Hop)</string>
+    
+    <string name="cache_internal">内部缓存</string>
+    <string name="cache_external">外部缓存</string>
+    <string name="cache_canvas">Canvas 缓存</string>
+    
+    <string name="default_playlist_recently_added">最近添加</string>
+    <string name="default_playlist_most_played">播放最多</string>
+    
+    <string name="ui_clear_all">全部清除</string>
+    <string name="ui_error_generic">错误</string>
+</resources>

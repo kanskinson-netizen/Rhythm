@@ -108,6 +108,7 @@ fun MiniPlayer(
     onPlayPause: () -> Unit,
     onPlayerClick: () -> Unit,
     onSkipNext: () -> Unit,
+    onSkipPrevious: () -> Unit = {},
     onDismiss: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -169,20 +170,32 @@ fun MiniPlayer(
     
     // For swipe gesture detection
     var offsetY by remember { mutableStateOf(0f) }
+    var offsetX by remember { mutableStateOf(0f) }
     val swipeUpThreshold = 100f // Minimum distance to trigger player open
     val swipeDownThreshold = 100f // Minimum distance to trigger dismissal
+    val swipeHorizontalThreshold = 120f // Minimum distance to trigger prev/next
     
     // Track last offset for haptic feedback at intervals
     var lastHapticOffset by remember { mutableStateOf(0f) }
+    var lastHapticOffsetX by remember { mutableStateOf(0f) }
     
     // Animation for translation during swipe
-    val translationOffset by animateFloatAsState(
+    val translationOffsetY by animateFloatAsState(
         targetValue = if (offsetY > 0) offsetY.coerceAtMost(200f) else 0f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow
         ),
-        label = "translationOffset"
+        label = "translationOffsetY"
+    )
+    
+    val translationOffsetX by animateFloatAsState(
+        targetValue = offsetX.coerceIn(-300f, 300f),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "translationOffsetX"
     )
     
     // Calculate alpha based on offset
@@ -239,68 +252,104 @@ fun MiniPlayer(
             .scale(scale * songBounceScale * initialAppearanceBounceScale) // Combined scale for all bounce effects
             .graphicsLayer { 
                 // Apply translation based on swipe gesture
-                translationY = if (isDismissingPlayer) 300f else translationOffset
+                translationY = if (isDismissingPlayer) 300f else translationOffsetY
+                translationX = translationOffsetX
                 alpha = alphaValue
             }
             .pointerInput(Unit) {
-                detectVerticalDragGestures(
+                detectDragGestures(
                     onDragStart = { 
-                        // Reset the last haptic offset on new drag
+                        // Reset the last haptic offsets on new drag
                         lastHapticOffset = 0f
+                        lastHapticOffsetX = 0f
                         
                         // Initial feedback when starting to drag - respecting settings
                         HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
                     },
                     onDragEnd = {
-                        if (offsetY < -swipeUpThreshold) {
-                            // Swipe up detected, open player with stronger feedback
-                            HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
-                            onPlayerClick()
-                        } else if (offsetY > swipeDownThreshold) {
-                            // Swipe down detected, dismiss mini player with stronger feedback
-                            HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
-                            isDismissingPlayer = true
+                        // Determine which gesture was dominant
+                        val absX = abs(offsetX)
+                        val absY = abs(offsetY)
+                        
+                        if (absX > absY) {
+                            // Horizontal swipe is dominant
+                            if (offsetX < -swipeHorizontalThreshold) {
+                                // Swipe left - next track
+                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+                                onSkipNext()
+                            } else if (offsetX > swipeHorizontalThreshold) {
+                                // Swipe right - previous track
+                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+                                onSkipPrevious()
+                            } else {
+                                // Not enough swipe distance
+                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                            }
                         } else {
-                            // Snap-back haptic when releasing before threshold
-                            HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                            // Vertical swipe is dominant
+                            if (offsetY < -swipeUpThreshold) {
+                                // Swipe up detected, open player with stronger feedback
+                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+                                onPlayerClick()
+                            } else if (offsetY > swipeDownThreshold) {
+                                // Swipe down detected, dismiss mini player with stronger feedback
+                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+                                isDismissingPlayer = true
+                            } else {
+                                // Snap-back haptic when releasing before threshold
+                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                            }
                         }
-                        // Reset offset if not dismissing
+                        
+                        // Reset offsets if not dismissing
                         if (!isDismissingPlayer) {
                             offsetY = 0f
+                            offsetX = 0f
                         }
                     },
                     onDragCancel = {
                         // Feedback when drag canceled
                         HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
-                        // Reset offset if not dismissing
+                        // Reset offsets if not dismissing
                         if (!isDismissingPlayer) {
                             offsetY = 0f
+                            offsetX = 0f
                         }
                     },
-                    onVerticalDrag = { change, dragAmount ->
+                    onDrag = { change, dragAmount ->
                         change.consume()
-                        // Update offset for both up and down gestures
-                        offsetY += dragAmount
+                        // Update offsets for both horizontal and vertical gestures
+                        offsetX += dragAmount.x
+                        offsetY += dragAmount.y
                         
                         // Provide interval haptic feedback during drag
-                        // For swipe up (negative offsetY)
-                        if (offsetY < 0 && abs(offsetY) - abs(lastHapticOffset) > swipeUpThreshold / 3) {
-                            HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
-                            lastHapticOffset = offsetY
-                        }
-                        // For swipe down (positive offsetY)
-                        else if (offsetY > 0 && abs(offsetY) - abs(lastHapticOffset) > swipeDownThreshold / 3) {
-                            HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
-                            lastHapticOffset = offsetY
+                        // For vertical swipes
+                        if (abs(offsetY) > abs(offsetX)) {
+                            // Vertical is dominant
+                            if (offsetY < 0 && abs(offsetY) - abs(lastHapticOffset) > swipeUpThreshold / 3) {
+                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                                lastHapticOffset = offsetY
+                            } else if (offsetY > 0 && abs(offsetY) - abs(lastHapticOffset) > swipeDownThreshold / 3) {
+                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                                lastHapticOffset = offsetY
+                            }
+                        } else {
+                            // Horizontal is dominant
+                            if (abs(offsetX) - abs(lastHapticOffsetX) > swipeHorizontalThreshold / 3) {
+                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                                lastHapticOffsetX = offsetX
+                            }
                         }
                     }
                 )
             },
         interactionSource = interactionSource
     ) {
-        // Display a visual hint when user starts dragging
-        val dragUpIndicatorAlpha = if (offsetY < 0) minOf((-offsetY / swipeUpThreshold) * 0.3f, 0.3f) else 0f
-        val dragDownIndicatorAlpha = if (offsetY > 0) minOf((offsetY / swipeDownThreshold) * 0.3f, 0.3f) else 0f
+        // Display visual hints when user starts dragging
+        val dragUpIndicatorAlpha = if (offsetY < 0 && abs(offsetY) > abs(offsetX)) minOf((-offsetY / swipeUpThreshold) * 0.3f, 0.3f) else 0f
+        val dragDownIndicatorAlpha = if (offsetY > 0 && abs(offsetY) > abs(offsetX)) minOf((offsetY / swipeDownThreshold) * 0.3f, 0.3f) else 0f
+        val dragLeftIndicatorAlpha = if (offsetX < 0 && abs(offsetX) > abs(offsetY)) minOf((-offsetX / swipeHorizontalThreshold) * 0.3f, 0.3f) else 0f
+        val dragRightIndicatorAlpha = if (offsetX > 0 && abs(offsetX) > abs(offsetY)) minOf((offsetX / swipeHorizontalThreshold) * 0.3f, 0.3f) else 0f
         
         Column {
             // Enhanced drag handle indicator with better visual feedback
@@ -316,18 +365,19 @@ fun MiniPlayer(
                         .height(4.dp)
                         .clip(RoundedCornerShape(2.dp)),
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                        alpha = 0.4f + dragUpIndicatorAlpha + dragDownIndicatorAlpha
+                        alpha = 0.4f + dragUpIndicatorAlpha + dragDownIndicatorAlpha + dragLeftIndicatorAlpha + dragRightIndicatorAlpha
                     )
                 )
             }
 
-            // Visual indicator for swipe actions with improved positioning
+            // Visual indicators for swipe actions with improved positioning
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
+                // Swipe up indicator
                 androidx.compose.animation.AnimatedVisibility(
-                    visible = offsetY < -20f,
+                    visible = offsetY < -20f && abs(offsetY) > abs(offsetX),
                     enter = fadeIn() + slideInVertically(),
                     exit = fadeOut() + slideOutVertically()
                 ) {
@@ -345,8 +395,9 @@ fun MiniPlayer(
                     }
                 }
 
+                // Swipe down indicator
                 androidx.compose.animation.AnimatedVisibility(
-                    visible = offsetY > 20f,
+                    visible = offsetY > 20f && abs(offsetY) > abs(offsetX),
                     enter = fadeIn() + slideInVertically(),
                     exit = fadeOut() + slideOutVertically()
                 ) {
@@ -359,6 +410,46 @@ fun MiniPlayer(
                             text = "⬇ Swipe down to dismiss",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+                
+                // Swipe left indicator (next track)
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = offsetX < -20f && abs(offsetX) > abs(offsetY),
+                    enter = fadeIn() + slideInVertically(),
+                    exit = fadeOut() + slideOutVertically()
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = (-offsetX / swipeHorizontalThreshold).coerceIn(0f, 0.8f)),
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    ) {
+                        Text(
+                            text = "⬅ Next track",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+                
+                // Swipe right indicator (previous track)
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = offsetX > 20f && abs(offsetX) > abs(offsetY),
+                    enter = fadeIn() + slideInVertically(),
+                    exit = fadeOut() + slideOutVertically()
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = (offsetX / swipeHorizontalThreshold).coerceIn(0f, 0.8f)),
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    ) {
+                        Text(
+                            text = "Previous track ➡",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }

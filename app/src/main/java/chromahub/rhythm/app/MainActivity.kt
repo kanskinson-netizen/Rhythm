@@ -175,11 +175,6 @@ class MainActivity : ComponentActivity() {
             val colorSource by appSettings.colorSource.collectAsState()
             val extractedAlbumColors by appSettings.extractedAlbumColors.collectAsState()
             
-            // Festive theme states
-            val festiveThemeEnabled by appSettings.festiveThemeEnabled.collectAsState()
-            val festiveThemeSelected by appSettings.festiveThemeSelected.collectAsState()
-            val festiveThemeAutoDetect by appSettings.festiveThemeAutoDetect.collectAsState()
-            
             // Determine the theme based on settings
             val isDarkTheme = if (useSystemTheme) {
                 // Use system default
@@ -198,10 +193,7 @@ class MainActivity : ComponentActivity() {
                 fontSource = fontSource,
                 customFontPath = customFontPath,
                 colorSource = colorSource,
-                extractedAlbumColorsJson = extractedAlbumColors,
-                festiveThemeEnabled = festiveThemeEnabled,
-                festiveThemeSelected = festiveThemeSelected,
-                festiveThemeAutoDetect = festiveThemeAutoDetect
+                extractedAlbumColorsJson = extractedAlbumColors
             ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),

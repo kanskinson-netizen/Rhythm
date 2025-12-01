@@ -155,12 +155,14 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
+import chromahub.rhythm.app.R
 import chromahub.rhythm.app.data.Album
 import chromahub.rhythm.app.data.Artist
 import chromahub.rhythm.app.data.Playlist
 import chromahub.rhythm.app.data.Song
 import chromahub.rhythm.app.data.AlbumViewType
 import chromahub.rhythm.app.data.ArtistViewType
+import chromahub.rhythm.app.data.PlaylistViewType
 import chromahub.rhythm.app.data.AppSettings
 import chromahub.rhythm.app.ui.screens.AddToPlaylistBottomSheet
 import chromahub.rhythm.app.ui.components.CreatePlaylistDialog
@@ -171,7 +173,6 @@ import chromahub.rhythm.app.ui.components.PlaylistImportDialog
 import chromahub.rhythm.app.ui.components.PlaylistOperationProgressDialog
 import chromahub.rhythm.app.ui.components.PlaylistOperationResultDialog
 import chromahub.rhythm.app.ui.screens.SongInfoBottomSheet
-import chromahub.rhythm.app.ui.screens.PlaylistManagementBottomSheet
 import chromahub.rhythm.app.util.ImageUtils
 import chromahub.rhythm.app.util.M3ImageUtils
 import chromahub.rhythm.app.util.HapticUtils
@@ -190,6 +191,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.material.icons.rounded.ArrowCircleDown
 import androidx.compose.material.icons.rounded.ArrowCircleUp
+import androidx.compose.ui.text.font.FontFamily
 import chromahub.rhythm.app.ui.components.RhythmIcons
 import chromahub.rhythm.app.ui.components.M3FourColorCircularLoader
 import chromahub.rhythm.app.util.AudioFormatDetector
@@ -234,25 +236,33 @@ fun LibraryScreen(
     val context = LocalContext.current
     val appSettings = remember { AppSettings.getInstance(context) }
     val tabOrder by appSettings.libraryTabOrder.collectAsState()
+    val hiddenTabs by appSettings.hiddenLibraryTabs.collectAsState()
     
-    // Map tab IDs to display names
-    val tabs = remember(tabOrder) {
-        tabOrder.map { tabId ->
-            when (tabId) {
-                "SONGS" -> "Songs"
-                "PLAYLISTS" -> "Playlists"
-                "ALBUMS" -> "Albums"
-                "ARTISTS" -> "Artists"
-                "EXPLORER" -> "Explorer"
-                else -> tabId
+    // Map tab IDs to display names, filtering out hidden tabs
+    val tabs = remember(tabOrder, hiddenTabs) {
+        tabOrder
+            .filter { !hiddenTabs.contains(it) }
+            .map { tabId ->
+                when (tabId) {
+                    "SONGS" -> "Songs"
+                    "PLAYLISTS" -> "Playlists"
+                    "ALBUMS" -> "Albums"
+                    "ARTISTS" -> "Artists"
+                    "EXPLORER" -> "Explorer"
+                    else -> tabId
+                }
             }
-        }
     }
     
-    // Find initial tab index based on the reordered tabs
-    val initialTabIndex = remember(tabOrder, initialTab) {
+    // Create a list of visible tab IDs (after filtering hidden tabs)
+    val visibleTabIds = remember(tabOrder, hiddenTabs) {
+        tabOrder.filter { !hiddenTabs.contains(it) }
+    }
+    
+    // Find initial tab index based on the visible tabs
+    val initialTabIndex = remember(visibleTabIds, initialTab) {
         val tabId = initialTab.name
-        tabOrder.indexOf(tabId).takeIf { it >= 0 } ?: 0
+        visibleTabIds.indexOf(tabId).takeIf { it >= 0 } ?: 0
     }
     
     var selectedTabIndex by rememberSaveable { mutableStateOf(initialTabIndex) }
@@ -260,6 +270,20 @@ fun LibraryScreen(
     val tabRowState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val haptics = LocalHapticFeedback.current
+    
+    // Sync pager with selected tab when tabs change (hide/unhide)
+    LaunchedEffect(tabs.size, visibleTabIds) {
+        // If current selected tab is out of bounds, reset to first tab
+        if (selectedTabIndex >= tabs.size) {
+            selectedTabIndex = 0
+            pagerState.scrollToPage(0)
+        }
+    }
+    
+    // Sync pager state with selected tab index
+    LaunchedEffect(pagerState.currentPage) {
+        selectedTabIndex = pagerState.currentPage
+    }
     
     // Auto-scroll tab row to show selected tab when returning to this screen
     LaunchedEffect(selectedTabIndex) {
@@ -309,7 +333,6 @@ fun LibraryScreen(
 
     // FAB menu state
     var showPlaylistFabMenu by remember { mutableStateOf(false) }
-    var showPlaylistManagementSheet by remember { mutableStateOf(false) }
 
     // Function to close FAB menu from other places
     val closeFabMenu = {
@@ -347,10 +370,11 @@ fun LibraryScreen(
         }
     } else null
 
-    // Lambda to pass to PlaylistFabMenu for manage
+    // Lambda to pass to PlaylistFabMenu for manage - navigates to Tuner > Playlists
     val onManagePlaylists: (() -> Unit) = {
         HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
-        showPlaylistManagementSheet = true
+        // Navigation to Tuner Playlists should be handled by parent (RhythmNavigation)
+        // This is a placeholder that should be replaced with actual navigation
     }
 
     // Sync tabs with pager - only animate when tab button is clicked
@@ -541,30 +565,21 @@ fun LibraryScreen(
         )
     }
 
-    // Playlist Management bottom sheet
-    if (showPlaylistManagementSheet) {
-        PlaylistManagementBottomSheet(
-            onDismiss = { showPlaylistManagementSheet = false },
-            playlists = playlists,
-            musicViewModel = musicViewModel,
-            onCreatePlaylist = { showCreatePlaylistDialog = true },
-            onDeletePlaylist = { playlist ->
-//                musicViewModel.deletePlaylist(playlist)
-            }
-        )
-    }
+    // Playlist Management now handled in Tuner > Playlists settings
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            LargeTopAppBar(
+            Column {
+                Spacer(modifier = Modifier.height(5.dp)) // Add more padding before the header starts
+                LargeTopAppBar(
                 navigationIcon = {
                     // Refresh button on far left
                     FilledIconButton(
                         onClick = {
                             HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
                             // If on Explorer tab, reload explorer; otherwise, trigger media scan
-                            if (tabOrder.getOrNull(selectedTabIndex) == "EXPLORER") {
+                            if (visibleTabIds.getOrNull(selectedTabIndex) == "EXPLORER") {
                                 explorerReloadTrigger++
                             } else {
                                 onRefreshClick()
@@ -582,27 +597,22 @@ fun LibraryScreen(
                     }
                 },
                 title = {
-                    val expandedTextStyle = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
-                    val collapsedTextStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
-
-                    val fraction = scrollBehavior.state.collapsedFraction
-                    val currentFontSize = lerp(expandedTextStyle.fontSize.value, collapsedTextStyle.fontSize.value, fraction).sp
-                    val currentFontWeight = if (fraction < 0.5f) FontWeight.Bold else FontWeight.Bold // Changed to FontWeight.Bold
+                    val collapsedFraction = scrollBehavior.state.collapsedFraction
+                    val fontSize = (24 + (32 - 24) * (1 - collapsedFraction)).sp // Interpolate between 24sp and 32sp
 
                     Text(
-                        text = "Library",
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontSize = currentFontSize,
-                            fontWeight = currentFontWeight
+                        text = context.getString(R.string.library_title),
+                        style = MaterialTheme.typography.headlineLarge.copy(
+                            fontFamily = FontFamily.Default,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = fontSize
                         ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(start = 8.dp) // Added padding
+                        modifier = Modifier.padding(start = 14.dp) // Adjust start padding for title
                     )
                 },
                 actions = {
                     // Tab-specific actions moved from section headers
-                    when (tabOrder.getOrNull(selectedTabIndex)) {
+                    when (visibleTabIds.getOrNull(selectedTabIndex)) {
                         "ALBUMS" -> {
                             // Enhanced Album view toggle
                             val albumViewType by appSettings.albumViewType.collectAsState()
@@ -679,11 +689,49 @@ fun LibraryScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                         }
                         
+                        "PLAYLISTS" -> {
+                            // Enhanced Playlist view toggle
+                            val playlistViewType by appSettings.playlistViewType.collectAsState()
+                            
+                            // Animation for button press
+                            val buttonScale by animateFloatAsState(
+                                targetValue = 1f,
+                                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                                label = "playlistToggleScale"
+                            )
+                            
+                            FilledTonalIconButton(
+                                onClick = {
+                                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+                                    val newViewType = if (playlistViewType == PlaylistViewType.LIST) PlaylistViewType.GRID else PlaylistViewType.LIST
+                                    appSettings.setPlaylistViewType(newViewType)
+                                },
+                                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                                ),
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .graphicsLayer {
+                                        scaleX = buttonScale
+                                        scaleY = buttonScale
+                                    }
+                            ) {
+                                Icon(
+                                    imageVector = if (playlistViewType == PlaylistViewType.LIST) Icons.Default.GridView else Icons.AutoMirrored.Rounded.ViewList,
+                                    contentDescription = if (playlistViewType == PlaylistViewType.LIST) "Switch to Grid View" else "Switch to List View",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        
 
                     }
                     
                     // Sort dropdown like AlbumBottomSheet (only show for Songs and Albums)
-                    val currentTabId = tabOrder.getOrNull(selectedTabIndex)
+                    val currentTabId = visibleTabIds.getOrNull(selectedTabIndex)
                     if (currentTabId == "SONGS" || currentTabId == "ALBUMS") {
                         var showSortMenu by remember { mutableStateOf(false) }
                         var pendingSortOrder by remember { mutableStateOf<MusicViewModel.SortOrder?>(null) }
@@ -850,11 +898,12 @@ fun LibraryScreen(
                 scrollBehavior = scrollBehavior,
                 modifier = Modifier.padding(horizontal = 8.dp) // Added padding
             )
+            }
         },
         bottomBar = {},
         floatingActionButton = {
             // Only show FAB on playlists tab
-            if (tabOrder.getOrNull(selectedTabIndex) == "PLAYLISTS") {
+            if (visibleTabIds.getOrNull(selectedTabIndex) == "PLAYLISTS") {
                 PlaylistFabMenu(
                     expanded = showPlaylistFabMenu,
                     onCreatePlaylist = onCreatePlaylistFromFab,
@@ -880,7 +929,10 @@ fun LibraryScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(horizontal = 4.dp)
             ) {
-                items(tabs.size) { index ->
+                items(
+                    count = tabs.size,
+                    key = { index -> tabOrder.getOrNull(index) ?: "tab_$index" }
+                ) { index ->
                     val isSelected = selectedTabIndex == index
                     val animatedScale by animateFloatAsState(
                         targetValue = if (isSelected) 1.05f else 1f,
@@ -934,8 +986,10 @@ fun LibraryScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+                            // Get the actual tab ID from the visible tabs list
+                            val currentTabId = visibleTabIds.getOrNull(index)
                             Icon(
-                                imageVector = when (tabOrder.getOrNull(index)) {
+                                imageVector = when (currentTabId) {
                                     "SONGS" -> RhythmIcons.Relax
                                     "PLAYLISTS" -> RhythmIcons.PlaylistFilled
                                     "ALBUMS" -> RhythmIcons.Music.Album
@@ -1004,8 +1058,8 @@ fun LibraryScreen(
                         .fillMaxSize()
                         .padding(top = 16.dp)
                 ) { page ->
-                    // Dynamically show tab content based on tab order
-                    when (tabOrder.getOrNull(page)) {
+                    // Dynamically show tab content based on visible tab order (filtered)
+                    when (visibleTabIds.getOrNull(page)) {
                         "SONGS" -> {
                             // Sort songs according to current sort order
                             val sortedSongs = remember(songs, sortOrder) {
@@ -1053,7 +1107,8 @@ fun LibraryScreen(
                             haptics = haptics,
                             onCreatePlaylist = { showCreatePlaylistDialog = true },
                             onImportPlaylist = { showImportDialog = true },
-                            onExportPlaylists = { showBulkExportDialog = true }
+                            onExportPlaylists = { showBulkExportDialog = true },
+                            appSettings = appSettings
                         )
                         "ALBUMS" -> SingleCardAlbumsContent(
                             albums = albums,
@@ -1111,7 +1166,7 @@ fun LibraryScreen(
             onExport = { format, includeDefault ->
                 showBulkExportDialog = false
                 showOperationProgress = true
-                operationProgressText = "Exporting playlists..."
+                operationProgressText = context.getString(R.string.exporting_playlists)
                 
                 onExportAllPlaylists(format, includeDefault, null) { result ->
                     showOperationProgress = false
@@ -1128,7 +1183,7 @@ fun LibraryScreen(
             onExportToCustomLocation = { format, includeDefault, directoryUri ->
                 showBulkExportDialog = false
                 showOperationProgress = true
-                operationProgressText = "Exporting playlists to selected location..."
+                operationProgressText = context.getString(R.string.exporting_to_location)
                 
                 onExportAllPlaylists(format, includeDefault, directoryUri) { result ->
                     showOperationProgress = false
@@ -1154,7 +1209,7 @@ fun LibraryScreen(
             onImport = { uri, onResult, onRestartRequired ->
                 showImportDialog = false
                 showOperationProgress = true
-                operationProgressText = "Importing playlist..."
+                operationProgressText = context.getString(R.string.importing_playlist)
                 onImportPlaylist(uri, { result ->
                     showOperationProgress = false
                     result.fold(
@@ -1298,7 +1353,24 @@ fun SingleCardSongsContent(
     haptics: androidx.compose.ui.hapticfeedback.HapticFeedback
 ) {
     val context = LocalContext.current
+    val appSettings = remember { AppSettings.getInstance(context) }
+    val groupByAlbumArtist by appSettings.groupByAlbumArtist.collectAsState()
     var selectedCategory by remember { mutableStateOf("All") }
+    
+    // Helper function to split artist names
+    val splitArtistNames: (String) -> List<String> = remember {
+        { artistName ->
+            val separators = listOf(
+                " & ", " and ", ", ", " feat. ", " feat ", " ft. ", " ft ",
+                " featuring ", " x ", " X ", " vs ", " vs. ", " with "
+            )
+            var names = listOf(artistName)
+            for (separator in separators) {
+                names = names.flatMap { it.split(separator, ignoreCase = true) }
+            }
+            names.map { it.trim() }.filter { it.isNotBlank() }
+        }
+    }
     
     // Cache for audio quality detection to avoid re-computation
     val audioQualityCache = remember { mutableMapOf<String, AudioQualityDetector.AudioQuality>() }
@@ -1524,16 +1596,6 @@ fun SingleCardSongsContent(
             android.util.Log.d("SongsTab", "Sample song metadata: ${sampleSong.title} - bitrate=${sampleSong.bitrate}, sampleRate=${sampleSong.sampleRate}, channels=${sampleSong.channels}, codec=${sampleSong.codec}")
         }
 
-        // Extract actual music genres from songs (AFTER quality filters)
-        val genres = songs.mapNotNull { song ->
-            song.genre?.takeIf { it.isNotBlank() && it.lowercase() != "unknown" }
-        }.distinct().sorted()
-
-        android.util.Log.d("SongsTab", "Found ${genres.size} distinct genres: $genres")
-        
-        // Add genres to categories
-        allCategories.addAll(genres)
-
         // Quality-based categories for lossy audio
         val highQualitySongs = songs.filter { song ->
             val bitrate = song.bitrate ?: 0
@@ -1585,21 +1647,13 @@ fun SingleCardSongsContent(
                 bitrate in 128000..319999 && !isLosslessAudio(song) && !isDolbyOrSurround(song)
             }
 
-            "Unknown Genre" -> songs.filter { song ->
-                song.genre.isNullOrBlank() || song.genre.lowercase() == "unknown"
-            }
-
-            else -> songs.filter { song ->
-                // This handles genre filtering
-                val songGenre = song.genre?.trim()?.takeIf { it.isNotBlank() }
-                songGenre?.equals(selectedCategory, ignoreCase = true) == true
-            }
+            else -> songs // Default to showing all songs for any unrecognized category
         }
     }
 
     if (songs.isEmpty()) {
         EmptyState(
-            message = "No songs yet",
+            message = context.getString(R.string.library_no_songs),
             icon = RhythmIcons.Music.Song
         )
     } else {
@@ -1647,7 +1701,7 @@ fun SingleCardSongsContent(
 
                             Column {
                                 Text(
-                                    text = "Your Music",
+                                    text = context.getString(R.string.library_your_music),
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -1684,7 +1738,10 @@ fun SingleCardSongsContent(
                                 contentPadding = PaddingValues(horizontal = 28.dp, vertical = 8.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                items(categories) { category ->
+                                items(
+                                    items = categories,
+                                    key = { it }
+                                ) { category ->
                                     val isSelected = selectedCategory == category
 
                                     val containerColor by animateColorAsState(
@@ -1787,8 +1844,18 @@ fun SingleCardSongsContent(
                             onToggleFavorite = { onToggleFavorite(song) },
                             isFavorite = favoriteSongs.contains(song.id),
                             onGoToArtist = { 
-                                // Find the artist from the list
-                                val artist = artists.find { it.name.equals(song.artist, ignoreCase = true) }
+                                // Find the artist from the list - respect groupByAlbumArtist setting
+                                val artist = if (groupByAlbumArtist) {
+                                    // When grouping by album artist, match against albumArtist (with fallback to artist)
+                                    val songArtistName = (song.albumArtist?.takeIf { it.isNotBlank() } ?: song.artist).trim()
+                                    artists.find { it.name.equals(songArtistName, ignoreCase = true) }
+                                } else {
+                                    // When not grouping, check if any split artist name matches
+                                    val songArtistNames = splitArtistNames(song.artist)
+                                    artists.find { artist ->
+                                        songArtistNames.any { it.equals(artist.name, ignoreCase = true) }
+                                    }
+                                }
                                 artist?.let { onGoToArtist(it) }
                             },
                             onGoToAlbum = { 
@@ -1870,14 +1937,104 @@ fun SingleCardPlaylistsContent(
     haptics: androidx.compose.ui.hapticfeedback.HapticFeedback,
     onCreatePlaylist: (() -> Unit)? = null,
     onImportPlaylist: (() -> Unit)? = null,
-    onExportPlaylists: (() -> Unit)? = null
+    onExportPlaylists: (() -> Unit)? = null,
+    appSettings: AppSettings
 ) {
+    val context = LocalContext.current
+    val playlistViewType by appSettings.playlistViewType.collectAsState()
+
     if (playlists.isEmpty()) {
         EmptyState(
             message = "No playlists yet\nCreate your first playlist using the + button",
             icon = RhythmIcons.Music.Playlist
         )
     } else {
+        if (playlistViewType == PlaylistViewType.GRID) {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = 16.dp // Simple spacing - Scaffold handles rest
+                ),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Sticky Section Header
+                item(span = { GridItemSpan(2) }) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp, vertical = 8.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(20.dp)
+                        ) {
+                            Surface(
+                                modifier = Modifier.size(48.dp),
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary,
+                                shadowElevation = 0.dp
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = RhythmIcons.PlaylistFilled,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(16.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = context.getString(R.string.library_your_playlists),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Text(
+                                    text = "${playlists.size} ${if (playlists.size == 1) "playlist" else "playlists"}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                )
+                            }
+
+                            Surface(
+                                modifier = Modifier
+                                    .height(2.dp)
+                                    .width(60.dp),
+                                shape = RoundedCornerShape(1.dp),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f)
+                            ) {}
+                        }
+                    }
+                }
+                
+                // Playlist Grid Items
+                items(
+                    items = playlists,
+                    key = { it.id }
+                ) { playlist ->
+                    AnimateIn {
+                        PlaylistGridItem(
+                            playlist = playlist,
+                            onClick = { onPlaylistClick(playlist) },
+                            haptics = haptics
+                        )
+                    }
+                }
+            }
+        } else {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
@@ -1921,7 +2078,7 @@ fun SingleCardPlaylistsContent(
 
                         Column {
                             Text(
-                                text = "Your Playlists",
+                                text = context.getString(R.string.library_your_playlists),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -1960,6 +2117,7 @@ fun SingleCardPlaylistsContent(
                 }
             }
         }
+        }
     }
 }
 
@@ -1972,6 +2130,7 @@ fun SingleCardAlbumsContent(
     haptics: androidx.compose.ui.hapticfeedback.HapticFeedback,
     appSettings: AppSettings
 ) {
+    val context = LocalContext.current
     val albumViewType by appSettings.albumViewType.collectAsState()
 
     if (albums.isEmpty()) {
@@ -2028,7 +2187,7 @@ fun SingleCardAlbumsContent(
 
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Your Albums",
+                                    text = context.getString(R.string.library_your_albums),
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -2108,7 +2267,7 @@ fun SingleCardAlbumsContent(
 
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Your Albums",
+                                    text = context.getString(R.string.library_your_albums),
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -2169,7 +2328,24 @@ fun SongsTab(
     haptics: androidx.compose.ui.hapticfeedback.HapticFeedback
 ) {
     val context = LocalContext.current
+    val appSettings = remember { AppSettings.getInstance(context) }
+    val groupByAlbumArtist by appSettings.groupByAlbumArtist.collectAsState()
     var selectedCategory by remember { mutableStateOf("All") }
+    
+    // Helper function to split artist names
+    val splitArtistNames: (String) -> List<String> = remember {
+        { artistName ->
+            val separators = listOf(
+                " & ", " and ", ", ", " feat. ", " feat ", " ft. ", " ft ",
+                " featuring ", " x ", " X ", " vs ", " vs. ", " with "
+            )
+            var names = listOf(artistName)
+            for (separator in separators) {
+                names = names.flatMap { it.split(separator, ignoreCase = true) }
+            }
+            names.map { it.trim() }.filter { it.isNotBlank() }
+        }
+    }
     
     // Helper functions for quality detection (needed for this deprecated function)
     fun isLosslessAudio(song: Song): Boolean {
@@ -2318,16 +2494,6 @@ fun SongsTab(
             android.util.Log.d("SongsTab", "Sample song metadata: ${sampleSong.title} - bitrate=${sampleSong.bitrate}, sampleRate=${sampleSong.sampleRate}, channels=${sampleSong.channels}, codec=${sampleSong.codec}")
         }
         
-        // Extract actual music genres from songs (AFTER quality filters)
-        val genres = songs.mapNotNull { song ->
-            song.genre?.takeIf { it.isNotBlank() && it.lowercase() != "unknown" }
-        }.distinct().sorted()
-        
-        android.util.Log.d("SongsTab", "Found ${genres.size} distinct genres: $genres")
-        
-        // Add genres to categories
-        allCategories.addAll(genres)
-        
         // Quality-based categories for lossy audio
         val highQualitySongs = songs.filter { song ->
             val bitrate = song.bitrate ?: 0
@@ -2385,15 +2551,7 @@ fun SongsTab(
                 bitrate in 128000..319999 && !isLosslessAudio(song) && !isDolbyOrSurround(song)
             }
 
-            "Unknown Genre" -> songs.filter { song ->
-                song.genre.isNullOrBlank() || song.genre.lowercase() == "unknown"
-            }
-
-            else -> songs.filter { song ->
-                // This handles genre filtering
-                val songGenre = song.genre?.trim()?.takeIf { it.isNotBlank() }
-                songGenre?.equals(selectedCategory, ignoreCase = true) == true
-            }
+            else -> songs // Default to showing all songs for any unrecognized category
         }
     }
     
@@ -2443,7 +2601,7 @@ fun SongsTab(
 
                     Column {
                         Text(
-                            text = "Your Music",
+                            text = context.getString(R.string.library_your_music),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -2475,7 +2633,10 @@ fun SongsTab(
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp), // Added horizontal padding
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    items(categories) { category ->
+                    items(
+                        items = categories,
+                        key = { it }
+                    ) { category ->
                         val isSelected = selectedCategory == category
 
                         val containerColor by animateColorAsState(
@@ -2568,8 +2729,18 @@ fun SongsTab(
                                 onToggleFavorite = { onToggleFavorite(song) },
                                 isFavorite = favoriteSongs.contains(song.id),
                                 onGoToArtist = { 
-                                    // Find the artist from the list
-                                    val artist = artists.find { it.name.equals(song.artist, ignoreCase = true) }
+                                    // Find the artist from the list - respect groupByAlbumArtist setting
+                                    val artist = if (groupByAlbumArtist) {
+                                        // When grouping by album artist, match against albumArtist (with fallback to artist)
+                                        val songArtistName = (song.albumArtist?.takeIf { it.isNotBlank() } ?: song.artist).trim()
+                                        artists.find { it.name.equals(songArtistName, ignoreCase = true) }
+                                    } else {
+                                        // When not grouping, check if any split artist name matches
+                                        val songArtistNames = splitArtistNames(song.artist)
+                                        artists.find { artist ->
+                                            songArtistNames.any { it.equals(artist.name, ignoreCase = true) }
+                                        }
+                                    }
                                     artist?.let { onGoToArtist(it) }
                                 },
                                 onGoToAlbum = { 
@@ -2600,6 +2771,7 @@ fun PlaylistsTab(
     onPlaylistClick: (Playlist) -> Unit,
     haptics: androidx.compose.ui.hapticfeedback.HapticFeedback
 ) {
+    val context = LocalContext.current
     if (playlists.isEmpty()) {
         EmptyState(
             message = "No playlists yet\nCreate your first playlist using the + button",
@@ -2646,7 +2818,7 @@ fun PlaylistsTab(
 
                     Column {
                         Text(
-                            text = "Your Playlists",
+                            text = context.getString(R.string.library_your_playlists),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -2762,7 +2934,7 @@ fun AlbumsTab(
 
                     Column {
                         Text(
-                            text = "Your Albums",
+                            text = context.getString(R.string.library_your_albums),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -3767,6 +3939,7 @@ fun EmptyState(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(48.dp)
             ) {
+                val context = LocalContext.current
                 val animatedSize by animateFloatAsState(
                     targetValue = 1f,
                     animationSpec = spring(
@@ -3821,7 +3994,7 @@ fun EmptyState(
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 Text(
-                    text = "Start building your music collection",
+                    text = context.getString(R.string.library_start_collection),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -3837,6 +4010,7 @@ private fun AnimateIn(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
+    val context = LocalContext.current
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         visible = true
@@ -3899,6 +4073,118 @@ fun AlbumsGrid(
                     onPlayClick = { onAlbumPlay(album) }, // Play button plays album
                     haptics = haptics // Pass haptics
                 )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PlaylistGridItem(
+    playlist: Playlist,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    haptics: androidx.compose.ui.hapticfeedback.HapticFeedback
+) {
+    val context = LocalContext.current
+    
+    Card(
+        onClick = {
+            HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+            onClick()
+        },
+        modifier = modifier
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 0.dp,
+            hoveredElevation = 0.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            // Playlist artwork - maintain square ratio
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f),
+                shape = RoundedCornerShape(16.dp),
+                tonalElevation = 0.dp,
+                color = MaterialTheme.colorScheme.secondaryContainer
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.secondaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (playlist.songs.isNotEmpty()) {
+                        PlaylistArtCollage(
+                            songs = playlist.songs,
+                            playlistName = playlist.name
+                        )
+                    } else {
+                        Icon(
+                            imageVector = RhythmIcons.Player.Queue,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.size(52.dp)
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(14.dp))
+            
+            // Playlist name
+            Text(
+                text = playlist.name,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(horizontal = 2.dp)
+            )
+            
+            Spacer(modifier = Modifier.height(6.dp))
+            
+            // Song count pill
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(horizontal = 2.dp)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(50), // Pill shape
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Icon(
+                            imageVector = RhythmIcons.MusicNote,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.size(10.dp)
+                        )
+                        Text(
+                            text = "${playlist.songs.size}",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
             }
         }
     }
@@ -4147,7 +4433,7 @@ fun SingleCardArtistsContent(
             }
             
             if (sortedArtists.isNotEmpty()) {
-                items(sortedArtists, key = { it.id }) { artist ->
+                items(sortedArtists, key = { "gridartist_${it.id}_${sortedArtists.indexOf(it)}" }) { artist ->
                     AnimateIn {
                         Surface(
                             color = MaterialTheme.colorScheme.surfaceContainer,
@@ -4194,7 +4480,7 @@ fun SingleCardArtistsContent(
             }
             
             if (sortedArtists.isNotEmpty()) {
-                items(sortedArtists, key = { it.id }) { artist ->
+                items(sortedArtists, key = { "listartist_${it.id}_${sortedArtists.indexOf(it)}" }) { artist ->
                     AnimateIn {
                         Surface(
                             color = MaterialTheme.colorScheme.surfaceContainer,
@@ -4236,7 +4522,7 @@ fun SingleCardArtistsContent(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "Sort Artists By",
+                    text = context.getString(R.string.library_sort_artists),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 16.dp)
@@ -4278,6 +4564,7 @@ fun SingleCardArtistsContent(
 private fun ArtistSectionHeader(
     artistCount: Int
 ) {
+    val context = LocalContext.current
     
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -4311,7 +4598,7 @@ private fun ArtistSectionHeader(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Your Artists",
+                    text = context.getString(R.string.library_your_artists),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -4338,6 +4625,7 @@ private fun ArtistSectionHeader(
 
 @Composable
 private fun EmptyArtistsState() {
+    val context = LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -4355,12 +4643,12 @@ private fun EmptyArtistsState() {
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "No artists found",
+                text = context.getString(R.string.library_no_artists),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = "Add some music to see your artists here",
+                text = context.getString(R.string.library_no_artists_desc),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -4830,7 +5118,7 @@ fun SingleCardExplorerContent(
 
                     // Title
                     Text(
-                        text = "Storage Permission Required",
+                        text = context.getString(R.string.storage_permission_required),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -4839,7 +5127,7 @@ fun SingleCardExplorerContent(
 
                     // Description
                     Text(
-                        text = "To browse your music files and explore your device's storage, Rhythm needs permission to access your files and media.",
+                        text = context.getString(R.string.storage_permission_desc),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
@@ -4908,7 +5196,7 @@ fun SingleCardExplorerContent(
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Text(
-                                    text = "This allows access only to audio files and folders containing music.",
+                                    text = context.getString(R.string.storage_permission_audio_only),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     lineHeight = MaterialTheme.typography.bodySmall.lineHeight * 1.2
@@ -4927,6 +5215,23 @@ fun SingleCardExplorerContent(
     // Get audio file extensions to filter
     val audioExtensions = remember {
         setOf("mp3", "flac", "m4a", "aac", "ogg", "wav", "wma", "aiff", "opus")
+    }
+
+    // Pre-compute song path map for fast lookups (computed once, reused for all directory loads)
+    val songPathMap = remember(songs) {
+        val map = mutableMapOf<String, Song>()
+        songs.forEach { song ->
+            try {
+                val path = getFilePathFromUri(song.uri, context)
+                if (path != null) {
+                    map[path.replace("//", "/")] = song
+                }
+            } catch (e: Exception) {
+                // Skip problematic songs
+            }
+        }
+        android.util.Log.d("LibraryScreen", "Pre-computed path map with ${map.size} songs")
+        map
     }
 
     // Directory items state - loaded asynchronously to prevent ANR
@@ -4978,13 +5283,10 @@ fun SingleCardExplorerContent(
                 isLoadingDirectory = true
                 try {
                     val items = withContext(Dispatchers.IO) {
-                        getDirectoryContentsOptimized(currentPath!!, audioExtensions, songs, context)
+                        getDirectoryContentsOptimized(currentPath!!, songPathMap, context)
                     }
-                    // Filter: keep files and folders that have audio content (only show folders with tracks)
-                    val filteredItems = items.filter { 
-                        it.type != ExplorerItemType.FOLDER || it.itemCount > 0
-                    }
-                    val sortedItems = filteredItems.sortedWith(
+                    // Show all items immediately for fast navigation
+                    val sortedItems = items.sortedWith(
                         compareBy<ExplorerItem> { it.type != ExplorerItemType.FOLDER }
                             .thenBy { it.name.lowercase() }
                     )
@@ -5035,25 +5337,13 @@ fun SingleCardExplorerContent(
                 debounceJob = launch {
                     try {
                         val items = withContext(Dispatchers.IO) {
-                            getDirectoryContentsOptimized(currentPath!!, audioExtensions, songs, context)
+                            getDirectoryContentsOptimized(currentPath!!, songPathMap, context)
                         }
                         
-                        // OPTIMIZED: Check for nested audio in parallel using coroutines
-                        val filteredItems = withContext(Dispatchers.IO) {
-                            items.filter { item ->
-                                when {
-                                    // Always keep files
-                                    item.type != ExplorerItemType.FOLDER -> true
-                                    // Keep folders with direct audio count > 0
-                                    item.itemCount > 0 -> true
-                                    // For folders with 0 direct count, check if they have nested audio
-                                    // Use the optimized check that queries songs list instead of filesystem
-                                    else -> hasAudioContentRecursive(item.path, songs, context, maxDepth = 3)
-                                }
-                            }
-                        }
-                        
-                        val sortedItems = filteredItems.sortedWith(
+                        // PERFORMANCE: Show all folders immediately without filtering
+                        // This matches behavior of other FOSS music players for instant results
+                        // Users can still see folder contents when they navigate into them
+                        val sortedItems = items.sortedWith(
                             compareBy<ExplorerItem> { it.type != ExplorerItemType.FOLDER }
                                 .thenBy { it.name.lowercase() }
                         )
@@ -5098,6 +5388,12 @@ fun SingleCardExplorerContent(
     val currentFolderSongs = remember(currentItems) {
         currentItems.filter { it.type == ExplorerItemType.FILE && it.song != null }
             .mapNotNull { it.song }
+    }
+
+    // Handle back gesture to navigate up directory levels
+    BackHandler(enabled = currentPath != null) {
+        HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+        currentPath = getParentPath(currentPath!!)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -5145,7 +5441,7 @@ fun SingleCardExplorerContent(
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Explore",
+                                text = context.getString(R.string.library_explore),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -5260,7 +5556,7 @@ fun SingleCardExplorerContent(
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = "Storage Locations",
+                                text = context.getString(R.string.library_storage_locations),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -5338,7 +5634,7 @@ fun SingleCardExplorerContent(
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Text(
-                                    text = "Pinned Folders",
+                                    text = context.getString(R.string.library_pinned_folders),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.secondary
@@ -5621,7 +5917,7 @@ fun SingleCardExplorerContent(
                                                     modifier = Modifier.size(16.dp)
                                                 )
                                                 Text(
-                                                    text = "Check storage permissions if files don't appear",
+                                                    text = context.getString(R.string.library_check_permissions),
                                                     style = MaterialTheme.typography.bodySmall,
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
@@ -5649,7 +5945,7 @@ fun SingleCardExplorerContent(
                                             )
                                             Spacer(modifier = Modifier.width(6.dp))
                                             Text(
-                                                text = "Go Back",
+                                                text = context.getString(R.string.library_go_back),
                                                 style = MaterialTheme.typography.labelMedium
                                             )
                                         }
@@ -5747,7 +6043,7 @@ fun SingleCardExplorerContent(
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = "Creating playlist and adding ${folderSongsForPlaylist.size} songs...",
+                                text = context.getString(R.string.library_creating_playlist, folderSongsForPlaylist.size),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -5770,7 +6066,7 @@ fun SingleCardExplorerContent(
                             supportingText = {
                                 if (isError) {
                                     Text(
-                                        text = "Playlist name cannot be empty",
+                                        text = context.getString(R.string.library_playlist_name_empty),
                                         color = MaterialTheme.colorScheme.error
                                     )
                                 }
@@ -6052,7 +6348,7 @@ fun getAudioFileCountSongsInDirectory(
 }
 
 // Fast MediaStore-only implementation - no filesystem operations
-fun getDirectoryContentsOptimized(directoryPath: String, audioExtensions: Set<String>, songs: List<Song>, context: android.content.Context): List<ExplorerItem> {
+fun getDirectoryContentsOptimized(directoryPath: String, songPathMap: Map<String, Song>, context: android.content.Context): List<ExplorerItem> {
     val startTime = System.currentTimeMillis()
     android.util.Log.d("LibraryScreen", "Loading directory: $directoryPath")
     
@@ -6062,53 +6358,42 @@ fun getDirectoryContentsOptimized(directoryPath: String, audioExtensions: Set<St
     // Build maps for fast lookups - group songs by their immediate parent directory
     val songsByDirectory = mutableMapOf<String, MutableList<Song>>()
     val subdirectories = mutableSetOf<String>()
+    val subdirectorySongCounts = mutableMapOf<String, Int>()
     
-    // Process all songs and extract directory structure
-    songs.forEach { song ->
+    // Process pre-computed song paths - MUCH faster than parsing URIs repeatedly
+    songPathMap.forEach { (normalizedSongPath, song) ->
         try {
-            val songPath = getFilePathFromUri(song.uri, context)
-            if (songPath != null) {
-                val normalizedSongPath = songPath.replace("//", "/")
-                val parentDir = File(normalizedSongPath).parent?.replace("//", "/") ?: return@forEach
-                
-                // Check if this song is in the current directory or a subdirectory
-                if (parentDir == normalizedDirPath) {
-                    // Song is directly in this directory
-                    songsByDirectory.getOrPut(normalizedDirPath) { mutableListOf() }.add(song)
-                } else if (parentDir.startsWith("$normalizedDirPath/")) {
-                    // Song is in a subdirectory - extract immediate child directory
-                    val relativePath = parentDir.removePrefix("$normalizedDirPath/")
-                    val firstSlash = relativePath.indexOf('/')
-                    val immediateChild = if (firstSlash > 0) {
-                        relativePath.substring(0, firstSlash)
-                    } else {
-                        relativePath
-                    }
-                    
-                    val childPath = "$normalizedDirPath/$immediateChild"
-                    subdirectories.add(childPath)
-                    
-                    // Count this song for the subdirectory
-                    songsByDirectory.getOrPut(childPath) { mutableListOf() }
+            val parentDir = File(normalizedSongPath).parent?.replace("//", "/") ?: return@forEach
+            
+            // Check if this song is in the current directory or a subdirectory
+            if (parentDir == normalizedDirPath) {
+                // Song is directly in this directory
+                songsByDirectory.getOrPut(normalizedDirPath) { mutableListOf() }.add(song)
+            } else if (parentDir.startsWith("$normalizedDirPath/")) {
+                // Song is in a subdirectory - extract immediate child directory
+                val relativePath = parentDir.removePrefix("$normalizedDirPath/")
+                val firstSlash = relativePath.indexOf('/')
+                val immediateChild = if (firstSlash > 0) {
+                    relativePath.substring(0, firstSlash)
+                } else {
+                    relativePath
                 }
+                
+                val childPath = "$normalizedDirPath/$immediateChild"
+                subdirectories.add(childPath)
+                
+                // Increment count for this subdirectory (including nested songs)
+                subdirectorySongCounts[childPath] = (subdirectorySongCounts[childPath] ?: 0) + 1
             }
         } catch (e: Exception) {
             // Skip problematic songs
         }
     }
     
-    // Add subdirectories
+    // Add subdirectories with pre-computed counts
     subdirectories.sorted().forEach { subdirPath ->
         val subdirName = File(subdirPath).name
-        // Count all songs in this directory and its subdirectories
-        val songCount = songs.count { song ->
-            try {
-                val songPath = getFilePathFromUri(song.uri, context)
-                songPath != null && songPath.replace("//", "/").startsWith("$subdirPath/")
-            } catch (e: Exception) {
-                false
-            }
-        }
+        val songCount = subdirectorySongCounts[subdirPath] ?: 0
         
         items.add(ExplorerItem(
             name = subdirName,
@@ -6124,7 +6409,7 @@ fun getDirectoryContentsOptimized(directoryPath: String, audioExtensions: Set<St
     songsByDirectory[normalizedDirPath]?.sortedBy { it.title.lowercase() }?.forEach { song ->
         items.add(ExplorerItem(
             name = song.title,
-            path = getFilePathFromUri(song.uri, context) ?: "",
+            path = songPathMap.entries.find { it.value == song }?.key ?: "",
             isDirectory = false,
             itemCount = 1,
             type = ExplorerItemType.FILE,
@@ -6915,7 +7200,7 @@ fun ExplorerBreadcrumb(
                         tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     Text(
-                        text = "Home",
+                        text = context.getString(R.string.library_home),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -7102,7 +7387,7 @@ fun ExplorerItemCard(
                         Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
-                            text = "Tap to browse files",
+                            text = context.getString(R.string.library_tap_browse),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -7577,7 +7862,7 @@ fun BottomFloatingButtonGroup(
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Play All",
+                    text = context.getString(R.string.library_play_all),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )

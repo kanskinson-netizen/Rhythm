@@ -71,12 +71,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.util.lerp
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.sp
+import chromahub.rhythm.app.R
 import chromahub.rhythm.app.data.Playlist
 import chromahub.rhythm.app.data.Song
 import chromahub.rhythm.app.ui.components.MiniPlayer
 import chromahub.rhythm.app.ui.components.RhythmIcons
 import chromahub.rhythm.app.ui.components.RhythmIcons.Search
 import chromahub.rhythm.app.ui.LocalMiniPlayerPadding
+import chromahub.rhythm.app.ui.components.CollapsibleHeaderScreen
 import chromahub.rhythm.app.ui.components.PlaylistExportDialog
 import chromahub.rhythm.app.ui.components.PlaylistImportDialog
 import chromahub.rhythm.app.ui.components.PlaylistOperationProgressDialog
@@ -293,217 +295,157 @@ fun PlaylistDetailScreen(
         )
     }
 
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            LargeTopAppBar(
-                title = {
-                    val expandedTextStyle = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
-                    val collapsedTextStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
-
-                    val fraction = scrollBehavior.state.collapsedFraction
-                    val currentFontSize = lerp(expandedTextStyle.fontSize.value, collapsedTextStyle.fontSize.value, fraction).sp
-                    val currentFontWeight = if (fraction < 0.5f) FontWeight.Bold else FontWeight.Bold // Changed to FontWeight.Bold
-
-                    Text(
-                        text = playlist.name,
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontSize = currentFontSize,
-                            fontWeight = currentFontWeight
-                        ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(start = 8.dp) // Added padding
+    CollapsibleHeaderScreen(
+        title = playlist.name,
+        showBackButton = true,
+        onBackClick = {
+            if (showSearchBar) {
+                HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+                showSearchBar = false
+                searchQuery = ""
+            } else {
+                HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+                onBack()
+            }
+        },
+        actions = {
+            if (!showSearchBar) {
+                FilledIconButton(
+                    onClick = {
+                        HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+                        showSearchBar = true
+                    },
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                     )
-                },
-                navigationIcon = {
-                    FilledIconButton(
-                        onClick = {
-                            if (showSearchBar) {
-                                HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
-                                showSearchBar = false
-                                searchQuery = ""
-                            } else {
-                                HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
-                                onBack()
-                            }
-                        },
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    ) {
-                        Icon(
-                            imageVector = if (showSearchBar) RhythmIcons.Close else RhythmIcons.Back,
-                            contentDescription = if (showSearchBar) "Close search" else "Back"
-                        )
-                    }
-                },
-                actions = {
-                    if (!showSearchBar) {
-                        FilledIconButton(
-                            onClick = {
-                                HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
-                                showSearchBar = true
-                            },
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        ) {
-                            Icon(
-                                imageVector = RhythmIcons.Search,
-                                contentDescription = "Search songs in playlist",
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                    if (playlist.id != "1" && playlist.id != "2" && playlist.id != "3") {
-                        FilledIconButton(
+                ) {
+                    Icon(
+                        imageVector = RhythmIcons.Search,
+                        contentDescription = "Search songs in playlist",
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            if (playlist.id != "1" && playlist.id != "2" && playlist.id != "3") {
+                FilledIconButton(
+                    onClick = {
+                        HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                        showMenu = true
+                    },
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                ) {
+                    Icon(
+                        imageVector = RhythmIcons.More,
+                        contentDescription = "More options",
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false },
+                    modifier = Modifier,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    // Export playlist option
+                    if (onExportPlaylist != null || onExportPlaylistToCustomLocation != null) {
+                        DropdownMenuItem(
+                            text = { Text("Export playlist") },
                             onClick = {
                                 HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
-                                showMenu = true
+                                showMenu = false
+                                showExportDialog = true
                             },
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        ) {
-                            Icon(
-                                imageVector = RhythmIcons.More,
-                                contentDescription = "More options",
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false },
-                            modifier = Modifier,
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            // Export playlist option
-                            if (onExportPlaylist != null || onExportPlaylistToCustomLocation != null) {
-                                DropdownMenuItem(
-                                    text = { Text("Export playlist") },
-                                    onClick = {
-                                        HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
-                                        showMenu = false
-                                        showExportDialog = true
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = Icons.Default.FileUpload,
-                                            contentDescription = null
-                                        )
-                                    }
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.FileUpload,
+                                    contentDescription = null
                                 )
                             }
-                            
-                            // Import playlist option
-                            if (onImportPlaylist != null) {
-                                DropdownMenuItem(
-                                    text = { Text("Import playlist") },
-                                    onClick = {
-                                        HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
-                                        showMenu = false
-                                        showImportDialog = true
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = RhythmIcons.Actions.Download,
-                                            contentDescription = null
-                                        )
-                                    }
-                                )
-                            }
-                            
-                            DropdownMenuItem(
-                                text = { Text("Rename playlist") },
-                                onClick = {
-                                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
-                                    showMenu = false
-                                    newPlaylistName = playlist.name
-                                    showRenameDialog = true
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = RhythmIcons.Edit,
-                                        contentDescription = null
-                                    )
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Delete playlist") },
-                                onClick = {
-                                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
-                                    showMenu = false
-                                    showDeleteDialog = true
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = RhythmIcons.Delete,
-                                        contentDescription = null
-                                    )
-                                }
-                            )
-                        }
+                        )
                     }
-                },
-                colors = TopAppBarDefaults.largeTopAppBarColors(
-                    containerColor = Color.Transparent,
-                    scrolledContainerColor = Color.Transparent
-                ),
-                scrollBehavior = scrollBehavior, // Apply scroll behavior
-                modifier = Modifier.padding(horizontal = 8.dp) // Added padding
-            )
-        },
-        bottomBar = {},
-        floatingActionButton = {
-            FloatingActionButton(
-                modifier = Modifier.padding(bottom = 16.dp), // Simple fixed spacing
-                onClick = {
-                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
-                    onAddSongsToPlaylist()
-                },
-                containerColor = MaterialTheme.colorScheme.primary,
-                shape = CircleShape
-            ) {
-                Icon(
-                    imageVector = RhythmIcons.Add,
-                    contentDescription = "Add songs to playlist",
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
-            }
-        }
-    ) { paddingValues ->
-        val filteredSongs = remember(playlist.songs, searchQuery) {
-            if (searchQuery.isBlank()) {
-                playlist.songs
-            } else {
-                playlist.songs.filter { song ->
-                    song.title.contains(searchQuery, ignoreCase = true) ||
-                            song.artist.contains(searchQuery, ignoreCase = true) ||
-                            song.album.contains(searchQuery, ignoreCase = true)
+                    
+                    // Import playlist option
+                    if (onImportPlaylist != null) {
+                        DropdownMenuItem(
+                            text = { Text("Import playlist") },
+                            onClick = {
+                                HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                                showMenu = false
+                                showImportDialog = true
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = RhythmIcons.Actions.Download,
+                                    contentDescription = null
+                                )
+                            }
+                        )
+                    }
+                    
+                    DropdownMenuItem(
+                        text = { Text("Rename playlist") },
+                        onClick = {
+                            HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                            showMenu = false
+                            newPlaylistName = playlist.name
+                            showRenameDialog = true
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = RhythmIcons.Edit,
+                                contentDescription = null
+                            )
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Delete playlist") },
+                        onClick = {
+                            HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                            showMenu = false
+                            showDeleteDialog = true
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = RhythmIcons.Delete,
+                                contentDescription = null
+                            )
+                        }
+                    )
                 }
             }
         }
-
-        val listState = rememberLazyListState()
-
-        LaunchedEffect(showSearchBar) {
-            if (showSearchBar) {
-                listState.animateScrollToItem(1) // Scroll to the top to show the search bar
+    ) { modifier ->
+        Box(modifier = modifier.fillMaxSize()) {
+            val filteredSongs = remember(playlist.songs, searchQuery) {
+                if (searchQuery.isBlank()) {
+                    playlist.songs
+                } else {
+                    playlist.songs.filter { song ->
+                        song.title.contains(searchQuery, ignoreCase = true) ||
+                                song.artist.contains(searchQuery, ignoreCase = true) ||
+                                song.album.contains(searchQuery, ignoreCase = true)
+                    }
+                }
             }
-        }
 
-        LazyColumn(
-            state = listState, // Apply the list state
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp) // Added horizontal padding to the content
-        ) {
+            val listState = rememberLazyListState()
+
+            LaunchedEffect(showSearchBar) {
+                if (showSearchBar) {
+                    listState.animateScrollToItem(1) // Scroll to the top to show the search bar
+                }
+            }
+
+            LazyColumn(
+                state = listState, // Apply the list state
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp) // Added horizontal padding to the content
+            ) {
             item { // Wrap playlist header in an item
                 // Enhanced Playlist header with better visual hierarchy
                 Column(
@@ -671,8 +613,8 @@ fun PlaylistDetailScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = "Songs",
-                                    style = MaterialTheme.typography.titleLarge,
+                                    text = context.getString(R.string.common_songs),
+                                    style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onBackground
                                 )
@@ -719,7 +661,7 @@ fun PlaylistDetailScreen(
 
                             // Empty state text
                             Text(
-                                text = if (searchQuery.isNotEmpty()) "No matching songs found" else "No songs yet",
+                                text = if (searchQuery.isNotEmpty()) context.getString(R.string.nav_no_matching_songs) else context.getString(R.string.playlist_no_songs_yet),
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onBackground
@@ -776,8 +718,28 @@ fun PlaylistDetailScreen(
                     Spacer(modifier = Modifier.height(16.dp)) // Simple spacing
                 }
             }
+            
+            // Floating Action Button
+            FloatingActionButton(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                onClick = {
+                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.TextHandleMove)
+                    onAddSongsToPlaylist()
+                },
+                containerColor = MaterialTheme.colorScheme.primary,
+                shape = CircleShape
+            ) {
+                Icon(
+                    imageVector = RhythmIcons.Add,
+                    contentDescription = "Add songs to playlist",
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
+            }
         }
     }
+}
 
 @Composable
 private fun AnimateIn(

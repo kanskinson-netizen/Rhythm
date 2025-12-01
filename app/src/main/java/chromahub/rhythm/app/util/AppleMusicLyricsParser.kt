@@ -8,6 +8,9 @@ import com.google.gson.reflect.TypeToken
 
 object AppleMusicLyricsParser {
     private const val TAG = "AppleMusicLyricsParser"
+    
+    // Pattern to detect voice tags in lyrics text (e.g., "v1: text" or "v2: text")
+    private val voiceTagPattern = java.util.regex.Pattern.compile("^(v\\d+):\\s*(.*)$", java.util.regex.Pattern.CASE_INSENSITIVE)
 
     /**
      * Parses Apple Music word-by-word lyrics JSON into structured format
@@ -23,7 +26,7 @@ object AppleMusicLyricsParser {
             val appleMusicLines: List<AppleMusicLyricsLine> = gson.fromJson(jsonContent, listType)
             
             appleMusicLines.mapNotNull { line ->
-                val words = line.text?.map { word ->
+                var words = line.text?.map { word ->
                     WordByWordWord(
                         text = word.text,
                         isPart = word.part ?: false,
@@ -32,12 +35,33 @@ object AppleMusicLyricsParser {
                     )
                 } ?: emptyList()
                 
+                // Check if first word contains voice tag and extract it
+                var voiceTag: String? = null
+                if (words.isNotEmpty()) {
+                    val firstWordText = words.first().text
+                    val matcher = voiceTagPattern.matcher(firstWordText)
+                    if (matcher.matches()) {
+                        voiceTag = matcher.group(1)?.lowercase()
+                        val cleanedText = matcher.group(2)?.trim() ?: ""
+                        // Replace first word with cleaned text (without voice tag)
+                        if (cleanedText.isNotEmpty()) {
+                            words = listOf(
+                                words.first().copy(text = cleanedText)
+                            ) + words.drop(1)
+                        } else {
+                            // If cleaned text is empty, remove the first word entirely
+                            words = words.drop(1)
+                        }
+                    }
+                }
+                
                 if (words.isNotEmpty()) {
                     WordByWordLyricLine(
                         words = words,
                         lineTimestamp = line.timestamp ?: 0L,
                         lineEndtime = line.endtime ?: 0L,
-                        background = line.background ?: false
+                        background = line.background ?: false,
+                        voiceTag = voiceTag
                     )
                 } else {
                     null
@@ -97,7 +121,8 @@ data class WordByWordLyricLine(
     val words: List<WordByWordWord>,
     val lineTimestamp: Long,
     val lineEndtime: Long,
-    val background: Boolean = false
+    val background: Boolean = false,
+    val voiceTag: String? = null // Voice tag (v1, v2, v3, etc.) for multi-voice lyrics
 )
 
 /**

@@ -5,7 +5,8 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Images permission is OPTIONAL - only needed for enhanced album art display -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" android:required="false" />
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -41,6 +42,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:localeConfig="@xml/locale_config"
         android:theme="@style/Theme.Rhythm"
         android:enableOnBackInvokedCallback="true"
         tools:targetApi="36">
@@ -68,6 +70,36 @@
         <receiver
             android:name="androidx.mediarouter.media.MediaTransferReceiver"
             android:exported="true">
+        </receiver>
+        
+        <!-- Music Widget Receiver (Legacy RemoteViews) -->
+        <receiver
+            android:name=".widget.MusicWidgetProvider"
+            android:exported="true"
+            android:label="Rhythm Music (Legacy)">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="chromahub.rhythm.app.widget.PLAY_PAUSE" />
+                <action android:name="chromahub.rhythm.app.widget.SKIP_NEXT" />
+                <action android:name="chromahub.rhythm.app.widget.SKIP_PREVIOUS" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info" />
+        </receiver>
+        
+        <!-- Rhythm Music Widget (Modern Glance with Material 3) -->
+        <receiver
+            android:name=".widget.glance.RhythmWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_name_glance"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_glance" />
         </receiver>
         
         <service

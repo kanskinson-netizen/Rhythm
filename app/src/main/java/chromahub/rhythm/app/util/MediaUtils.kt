@@ -593,7 +593,73 @@ object MediaUtils {
                 else -> null
             }
             
-            // Write metadata to the actual file
+            // IMPORTANT: Update MediaStore FIRST before writing to file
+            // This ensures that when media scanner runs, it reads the updated metadata
+            // instead of overwriting our changes with cached old data
+            
+            // Check permissions first
+            if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
+                val hasWritePermission = androidx.core.content.ContextCompat.checkSelfPermission(
+                    context,
+                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                
+                if (!hasWritePermission) {
+                    Log.e(TAG, "Missing WRITE_EXTERNAL_STORAGE permission")
+                    return false
+                }
+            }
+            
+            // Prepare MediaStore values
+            val values = android.content.ContentValues().apply {
+                put(MediaStore.Audio.Media.TITLE, newTitle)
+                put(MediaStore.Audio.Media.ARTIST, newArtist)
+                put(MediaStore.Audio.Media.ALBUM, newAlbum)
+                if (newGenre.isNotBlank()) {
+                    put(MediaStore.Audio.Media.GENRE, newGenre)
+                }
+                if (newYear > 0) {
+                    put(MediaStore.Audio.Media.YEAR, newYear)
+                }
+                if (newTrackNumber > 0) {
+                    put(MediaStore.Audio.Media.TRACK, newTrackNumber)
+                }
+            }
+            
+            // Update MediaStore first
+            val mediaStoreRowsUpdated = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                try {
+                    val directUpdate = contentResolver.update(
+                        song.uri,
+                        values,
+                        null,
+                        null
+                    )
+                    
+                    if (directUpdate > 0) {
+                        Log.d(TAG, "MediaStore direct update successful for song: ${song.title}")
+                        directUpdate
+                    } else {
+                        Log.w(TAG, "MediaStore direct update failed, trying alternative approach")
+                        updateViaMediaStore(contentResolver, song, values)
+                    }
+                } catch (e: SecurityException) {
+                    Log.w(TAG, "Security exception during MediaStore update, trying alternative", e)
+                    updateViaMediaStore(contentResolver, song, values)
+                }
+            } else {
+                contentResolver.update(
+                    song.uri,
+                    values,
+                    null,
+                    null
+                )
+            }
+            
+            val mediaStoreSuccess = mediaStoreRowsUpdated > 0
+            Log.d(TAG, "MediaStore updated $mediaStoreRowsUpdated rows for song: ${song.title}")
+            
+            // Now write metadata to the actual file
             var fileWriteSucceeded = false
             
             // For Android 10+ (API 29+), we need to use a temporary file approach
@@ -755,93 +821,11 @@ object MediaUtils {
                     }
                 }
             }
-            if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
-                val hasWritePermission = androidx.core.content.ContextCompat.checkSelfPermission(
-                    context,
-                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                
-                if (!hasWritePermission) {
-                    Log.e(TAG, "Missing WRITE_EXTERNAL_STORAGE permission")
-                    return false
-                }
-            }
-            
-            // For Android 11+, check if we can access the specific file
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                try {
-                    // Test if we can query the file
-                    val testCursor = contentResolver.query(
-                        song.uri,
-                        arrayOf(MediaStore.Audio.Media._ID),
-                        null,
-                        null,
-                        null
-                    )
-                    testCursor?.close()
-                } catch (e: SecurityException) {
-                    Log.e(TAG, "Cannot access file - permission denied: ${song.uri}")
-                    return false
-                }
-            }
-            
-            val values = android.content.ContentValues().apply {
-                put(MediaStore.Audio.Media.TITLE, newTitle)
-                put(MediaStore.Audio.Media.ARTIST, newArtist)
-                put(MediaStore.Audio.Media.ALBUM, newAlbum)
-                if (newGenre.isNotBlank()) {
-                    put(MediaStore.Audio.Media.GENRE, newGenre)
-                }
-                if (newYear > 0) {
-                    put(MediaStore.Audio.Media.YEAR, newYear)
-                }
-                if (newTrackNumber > 0) {
-                    put(MediaStore.Audio.Media.TRACK, newTrackNumber)
-                }
-            }
-            
-            // For Android 11+ (API 30+), we need to handle MediaStore differently
-            val rowsUpdated = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                try {
-                    // Try direct update first
-                    val directUpdate = contentResolver.update(
-                        song.uri,
-                        values,
-                        null,
-                        null
-                    )
-                    
-                    if (directUpdate > 0) {
-                        Log.d(TAG, "Direct update successful for song: ${song.title}")
-                        directUpdate
-                    } else {
-                        Log.w(TAG, "Direct update failed, may require user permission for song: ${song.title}")
-                        // On Android 11+, we might need to request user permission for modifying this file
-                        // For now, we'll try alternative approach using MediaStore.Audio.Media table
-                        updateViaMediaStore(contentResolver, song, values)
-                    }
-                } catch (e: SecurityException) {
-                    Log.w(TAG, "Security exception during direct update, trying alternative approach", e)
-                    updateViaMediaStore(contentResolver, song, values)
-                }
-            } else {
-                // For older Android versions, direct update should work
-                contentResolver.update(
-                    song.uri,
-                    values,
-                    null,
-                    null
-                )
-            }
-            
-            Log.d(TAG, "Updated $rowsUpdated rows for song: ${song.title}")
-            val mediaStoreSuccess = rowsUpdated > 0
             
             // Log the results of both operations
             Log.d(TAG, "Metadata update results - MediaStore: $mediaStoreSuccess, File write: $fileWriteSucceeded")
             
-            // Only trigger media scanner if the file write actually succeeded
-            // If file write failed but MediaStore succeeded, scanner would overwrite with old metadata
+            // Only trigger media scanner if BOTH operations succeeded
             if (mediaStoreSuccess && fileWriteSucceeded) {
                 // Trigger media scanner to refresh the metadata
                 try {

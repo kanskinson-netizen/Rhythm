@@ -13,11 +13,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import chromahub.rhythm.app.R
 import chromahub.rhythm.app.util.LyricsParser
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -28,8 +30,13 @@ fun SyncedLyricsView(
     currentPlaybackTime: Long,
     modifier: Modifier = Modifier,
     listState: LazyListState = rememberLazyListState(),
-    onSeek: ((Long) -> Unit)? = null
+    onSeek: ((Long) -> Unit)? = null,
+    syncOffset: Long = 0L // TODO: Add UI controls for adjusting sync offset in real-time
 ) {
+    val context = LocalContext.current
+    // TODO: Apply syncOffset to all timestamp comparisons for manual sync adjustment
+    val adjustedPlaybackTime = currentPlaybackTime + syncOffset
+    
     val parsedLyrics = remember(lyrics) {
         LyricsParser.parseLyrics(lyrics)
     }
@@ -39,10 +46,10 @@ fun SyncedLyricsView(
     // Track previous line for smooth transitions
     val previousLineIndex = remember { mutableIntStateOf(-1) }
     
-    // Find current line index more efficiently
-    val currentLineIndex by remember(currentPlaybackTime, parsedLyrics) {
+    // Find current line index more efficiently (using adjustedPlaybackTime for sync offset)
+    val currentLineIndex by remember(adjustedPlaybackTime, parsedLyrics) {
         derivedStateOf {
-            parsedLyrics.indexOfLast { it.timestamp <= currentPlaybackTime }
+            parsedLyrics.indexOfLast { it.timestamp <= adjustedPlaybackTime }
         }
     }
 
@@ -63,7 +70,7 @@ fun SyncedLyricsView(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Synchronized lyrics not available for this format.",
+                text = context.getString(R.string.synced_lyrics_unavailable),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center
@@ -81,7 +88,7 @@ fun SyncedLyricsView(
                     line = line,
                     index = index,
                     currentLineIndex = currentLineIndex,
-                    currentPlaybackTime = currentPlaybackTime,
+                    currentPlaybackTime = adjustedPlaybackTime, // Use adjusted time for progress calculation
                     parsedLyrics = parsedLyrics,
                     onSeek = onSeek
                 )
@@ -159,10 +166,24 @@ private fun SyncedLyricItem(
         label = "lineTranslationY_$index"
     )
     
-    // Color transition for active line
+    // Color transition for active line with voice-specific colors
     val textColor = when {
-        isCurrentLine -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.onSurface
+        isCurrentLine -> {
+            // Apply different colors based on voice tag
+            when (line.voiceTag) {
+                "v2" -> MaterialTheme.colorScheme.secondary // Different color for second voice
+                "v3" -> MaterialTheme.colorScheme.tertiary  // Third voice
+                else -> MaterialTheme.colorScheme.primary   // Default/v1
+            }
+        }
+        else -> {
+            // Inactive lines also get subtle voice coloring (alpha applied via modifier)
+            when (line.voiceTag) {
+                "v2" -> MaterialTheme.colorScheme.secondary
+                "v3" -> MaterialTheme.colorScheme.tertiary
+                else -> MaterialTheme.colorScheme.onSurface
+            }
+        }
     }
     
     // Dynamic font weight based on position

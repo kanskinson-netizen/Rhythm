@@ -1,6 +1,8 @@
 package chromahub.rhythm.app.ui.screens
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -95,6 +97,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.rememberModalBottomSheetState
+import chromahub.rhythm.app.ui.components.CollapsibleHeaderScreen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -181,7 +184,7 @@ fun HomeScreen(
     updaterViewModel: AppUpdaterViewModel = viewModel()
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val scope = rememberCoroutineScope()
+    val coroutineScope = rememberCoroutineScope()
     val musicViewModel = viewModel<chromahub.rhythm.app.viewmodel.MusicViewModel>()
     val haptics = LocalHapticFeedback.current
     val context = LocalContext.current
@@ -277,7 +280,7 @@ fun HomeScreen(
             },
             onAddSongToPlaylist = { song ->
                 selectedSongForPlaylist = song
-                scope.launch {
+                coroutineScope.launch {
                     artistSheetState.hide()
                 }.invokeOnCompletion {
                     if (!artistSheetState.isVisible) {
@@ -301,7 +304,7 @@ fun HomeScreen(
                 if (songsToPlay.isNotEmpty()) {
                     musicViewModel.playQueue(songsToPlay)
                 }
-                scope.launch {
+                coroutineScope.launch {
                     albumSheetState.hide()
                 }.invokeOnCompletion {
                     if (!albumSheetState.isVisible) {
@@ -313,7 +316,7 @@ fun HomeScreen(
                 if (songsToPlay.isNotEmpty()) {
                     musicViewModel.playShuffled(songsToPlay)
                 }
-                scope.launch {
+                coroutineScope.launch {
                     albumSheetState.hide()
                 }.invokeOnCompletion {
                     if (!albumSheetState.isVisible) {
@@ -324,7 +327,7 @@ fun HomeScreen(
             onAddToQueue = onAddToQueue,
             onAddSongToPlaylist = { song ->
                 selectedSongForPlaylist = song
-                scope.launch {
+                coroutineScope.launch {
                     albumSheetState.hide()
                 }.invokeOnCompletion {
                     if (!albumSheetState.isVisible) {
@@ -349,7 +352,7 @@ fun HomeScreen(
             onDismissRequest = { showAddToPlaylistSheet = false },
             onAddToPlaylist = { playlist ->
                 onAddSongToPlaylist(selectedSongForPlaylist!!, playlist.id)
-                scope.launch {
+                coroutineScope.launch {
                     addToPlaylistSheetState.hide()
                 }.invokeOnCompletion {
                     if (!addToPlaylistSheetState.isVisible) {
@@ -358,7 +361,7 @@ fun HomeScreen(
                 }
             },
             onCreateNewPlaylist = {
-                scope.launch {
+                coroutineScope.launch {
                     addToPlaylistSheetState.hide()
                 }.invokeOnCompletion {
                     if (!addToPlaylistSheetState.isVisible) {
@@ -381,64 +384,30 @@ fun HomeScreen(
         )
     }
 
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            // Preserved topbar as requested
-            LargeTopAppBar(
-                title = {
-                    val expandedTextStyle = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
-                    val collapsedTextStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
-
-                    val fraction = scrollBehavior.state.collapsedFraction
-                    val currentFontSize = lerp(expandedTextStyle.fontSize.value, collapsedTextStyle.fontSize.value, fraction).sp
-                    val currentFontWeight = if (fraction < 0.5f) FontWeight.Bold else FontWeight.Bold
-
-                    Text(
-                        "Rhythm",
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontSize = currentFontSize,
-                            fontWeight = currentFontWeight
-                        ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
+    CollapsibleHeaderScreen(
+        title = context.getString(R.string.home_title),
+        actions = {
+            FilledIconButton(
+                onClick = {
+                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+                    onSettingsClick()
                 },
-                actions = {
-                    FilledIconButton(
-                        onClick = {
-                            HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
-                            onSettingsClick()
-                        },
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        ),
-                        modifier = Modifier.padding(end = 16.dp)
-                    ) {
-                        Icon(
-                            imageVector = RhythmIcons.Settings,
-                            contentDescription = "Settings"
-                        )
-                    }
-                },
-                scrollBehavior = scrollBehavior,
-                colors = TopAppBarDefaults.largeTopAppBarColors(
-                    containerColor = Color.Transparent,
-                    scrolledContainerColor = Color.Transparent.copy(alpha = 0.0f),
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ),
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
-        },
-        bottomBar = {},
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
+                modifier = Modifier.padding(end = 16.dp)
+            ) {
+                Icon(
+                    imageVector = RhythmIcons.Settings,
+                    contentDescription = context.getString(R.string.home_settings_cd)
+                )
+            }
+        }
+    ) { modifier ->
         ModernScrollableContent(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(bottom = if (currentSong != null) 0.dp else 0.dp),
             featuredContent = featuredContent,
             albums = albums,
@@ -470,7 +439,7 @@ fun HomeScreen(
             onNavigateToPlaylist = onNavigateToPlaylist,
             updaterViewModel = updaterViewModel,
             musicViewModel = musicViewModel,
-            coroutineScope = scope
+            coroutineScope = coroutineScope
         )
     }
 }
@@ -505,6 +474,7 @@ private fun ModernScrollableContent(
     musicViewModel: chromahub.rhythm.app.viewmodel.MusicViewModel,
     coroutineScope: CoroutineScope
 ) {
+    val context = LocalContext.current
     val scrollState = rememberScrollState()
     val allSongs by musicViewModel.filteredSongs.collectAsState()
     
@@ -608,11 +578,11 @@ private fun ModernScrollableContent(
     val greeting = remember {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         when {
-            hour in 0..4 -> "Good night"      // Late night: 12 AM - 4:59 AM
-            hour in 5..11 -> "Good morning"   // Morning: 5 AM - 11:59 AM
-            hour in 12..16 -> "Good afternoon" // Afternoon: 12 PM - 4:59 PM
-            hour in 17..20 -> "Good evening"   // Evening: 5 PM - 8:59 PM
-            else -> "Good night"              // Night: 9 PM - 11:59 PM
+            hour in 0..4 -> context.getString(R.string.home_greeting_night)      // Late night: 12 AM - 4:59 AM
+            hour in 5..11 -> context.getString(R.string.home_greeting_morning)   // Morning: 5 AM - 11:59 AM
+            hour in 12..16 -> context.getString(R.string.home_greeting_afternoon) // Afternoon: 12 PM - 4:59 PM
+            hour in 17..20 -> context.getString(R.string.home_greeting_evening)   // Evening: 5 PM - 8:59 PM
+            else -> context.getString(R.string.home_greeting_night)              // Night: 9 PM - 11:59 PM
         }
     }
     
@@ -697,8 +667,8 @@ private fun ModernScrollableContent(
             item {
                 Column {
                     ModernSectionTitle(
-                        title = "Discover Albums",
-                        subtitle = "Explore amazing music",
+                        title = context.getString(R.string.home_discover_albums),
+                        subtitle = context.getString(R.string.home_explore_music),
                         viewAllAction = onViewAllAlbums
                     )
                     Spacer(modifier = Modifier.height(20.dp))
@@ -711,8 +681,8 @@ private fun ModernScrollableContent(
                     } else {
                         ModernEmptyState(
                             icon = Icons.Rounded.Album,
-                            title = "No Featured Albums",
-                            subtitle = "Add some albums to your library to see featured content",
+                            title = context.getString(R.string.home_no_featured_albums),
+                            subtitle = context.getString(R.string.home_no_featured_albums_desc),
                             iconSize = 48.dp
                         )
                     }
@@ -736,15 +706,15 @@ private fun ModernScrollableContent(
                 } else {
                     Column {
                         ModernSectionTitle(
-                            title = "Artists",
-                            subtitle = "Explore your favorite musicians",
+                            title = context.getString(R.string.home_artists),
+                            subtitle = context.getString(R.string.home_explore_musicians),
                             viewAllAction = onViewAllArtists
                         )
                         Spacer(modifier = Modifier.height(20.dp))
                         ModernEmptyState(
                             icon = Icons.Rounded.Person,
-                            title = "No Artists Found",
-                            subtitle = "Add some music to your library to see your artists",
+                            title = context.getString(R.string.home_no_artists),
+                            subtitle = context.getString(R.string.home_no_artists_desc),
                             iconSize = 48.dp
                         )
                     }
@@ -760,8 +730,8 @@ private fun ModernScrollableContent(
             item {
                 Column {
                     ModernSectionTitle(
-                        title = "New Releases",
-                        subtitle = "Fresh music just for you",
+                        title = context.getString(R.string.home_new_releases),
+                        subtitle = context.getString(R.string.home_fresh_music),
                         onPlayAll = {
                             coroutineScope.launch {
                                 val allNewReleaseSongs = newReleases.flatMap { album ->
@@ -789,7 +759,7 @@ private fun ModernScrollableContent(
                             contentPadding = PaddingValues(horizontal = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            items(newReleases, key = { it.id }) { album ->
+                            items(newReleases, key = { "newrelease_${it.id}_${newReleases.indexOf(it)}" }) { album ->
                                 ModernAlbumCard(
                                     album = album,
                                     onClick = { onAlbumClick(album) }
@@ -799,8 +769,8 @@ private fun ModernScrollableContent(
                     } else {
                         ModernEmptyState(
                             icon = Icons.Rounded.NewReleases,
-                            title = "No New Releases",
-                            subtitle = "New albums will appear here as they're added to your library",
+                            title = context.getString(R.string.home_no_new_releases),
+                            subtitle = context.getString(R.string.home_no_new_releases_desc),
                             iconSize = 48.dp
                         )
                     }
@@ -816,22 +786,30 @@ private fun ModernScrollableContent(
             item {
                 Column {
                     ModernSectionTitle(
-                        title = "Recently Added",
-                        subtitle = "Your latest additions",
+                        title = context.getString(R.string.home_recently_added),
+                        subtitle = context.getString(R.string.home_latest_additions),
                         onPlayAll = {
                             if (recentlyAddedAlbums.isNotEmpty()) {
-                                val allSongs = recentlyAddedAlbums.flatMap { album ->
-                                    album.songs
+                                coroutineScope.launch(Dispatchers.Default) {
+                                    val allSongs = recentlyAddedAlbums.flatMap { album ->
+                                        album.songs
+                                    }
+                                    withContext(Dispatchers.Main) {
+                                        musicViewModel.playQueue(allSongs)
+                                    }
                                 }
-                                musicViewModel.playQueue(allSongs)
                             }
                         },
                         onShufflePlay = {
                             if (recentlyAddedAlbums.isNotEmpty()) {
-                                val allSongs = recentlyAddedAlbums.flatMap { album ->
-                                    album.songs
+                                coroutineScope.launch(Dispatchers.Default) {
+                                    val allSongs = recentlyAddedAlbums.flatMap { album ->
+                                        album.songs
+                                    }
+                                    withContext(Dispatchers.Main) {
+                                        musicViewModel.playShuffled(allSongs)
+                                    }
                                 }
-                                musicViewModel.playShuffled(allSongs)
                             }
                         }
                     )
@@ -841,7 +819,7 @@ private fun ModernScrollableContent(
                             contentPadding = PaddingValues(horizontal = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            items(recentlyAddedAlbums, key = { it.id }) { album ->
+                            items(recentlyAddedAlbums, key = { "recentalbum_${it.id}_${recentlyAddedAlbums.indexOf(it)}" }) { album ->
                                 ModernAlbumCard(
                                     album = album,
                                     onClick = { onAlbumClick(album) }
@@ -851,8 +829,8 @@ private fun ModernScrollableContent(
                     } else {
                         ModernEmptyState(
                             icon = Icons.Rounded.LibraryAdd,
-                            title = "No Recently Added Albums",
-                            subtitle = "Albums you add to your library will appear here",
+                            title = context.getString(R.string.home_no_recently_added),
+                            subtitle = context.getString(R.string.home_no_recently_added_desc),
                             iconSize = 48.dp
                         )
                     }
@@ -939,34 +917,34 @@ private fun ModernWelcomeSection(
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         when {
             hour in 0..4 -> listOf(
-                "Late night vibes for the dreamers 🌙",
-                "Perfect time for your late night playlist 🎧",
-                "Music sounds better at midnight ✨",
-                "Let the night music play on 🌟"
+                context.getString(R.string.home_quote_late_night_1),
+                context.getString(R.string.home_quote_late_night_2),
+                context.getString(R.string.home_quote_late_night_3),
+                context.getString(R.string.home_quote_late_night_4)
             )
             hour in 5..11 -> listOf(
-                "Start your day with the perfect soundtrack ✨",
-                "Let music energize your morning routine 🎵",
-                "Every morning is a new symphony waiting to begin 🌅",
-                "Coffee and music - the perfect morning blend ☕"
+                context.getString(R.string.home_quote_morning_1),
+                context.getString(R.string.home_quote_morning_2),
+                context.getString(R.string.home_quote_morning_3),
+                context.getString(R.string.home_quote_morning_4)
             )
             hour in 12..16 -> listOf(
-                "Power through with your favorite beats 🚀",
-                "Music makes everything better 💪",
-                "Let the rhythm guide your day 🎯",
-                "Turn up the focus with great tunes 🔥"
+                context.getString(R.string.home_quote_afternoon_1),
+                context.getString(R.string.home_quote_afternoon_2),
+                context.getString(R.string.home_quote_afternoon_3),
+                context.getString(R.string.home_quote_afternoon_4)
             )
             hour in 17..20 -> listOf(
-                "Time to unwind with soothing melodies 🌅",
-                "Let the evening soundtrack begin 🎶",
-                "Perfect time for your chill playlist 😌",
-                "Wind down with your favorite tunes 🌇"
+                context.getString(R.string.home_quote_evening_1),
+                context.getString(R.string.home_quote_evening_2),
+                context.getString(R.string.home_quote_evening_3),
+                context.getString(R.string.home_quote_evening_4)
             )
             else -> listOf(
-                "Night time is music time 🌙",
-                "Let the night serenade you 🎵",
-                "Perfect vibes for a peaceful night 🌟",
-                "Embrace the calm of the night 😴"
+                context.getString(R.string.home_quote_night_1),
+                context.getString(R.string.home_quote_night_2),
+                context.getString(R.string.home_quote_night_3),
+                context.getString(R.string.home_quote_night_4)
             )
         }.random()
     }
@@ -975,12 +953,12 @@ private fun ModernWelcomeSection(
         if (recentlyPlayed.isNotEmpty()) {
             val recentSong = recentlyPlayed.firstOrNull()?.title
             if (!recentSong.isNullOrBlank()) {
-                "Continue where you left off with \"$recentSong\""
+                context.getString(R.string.home_continue_song, recentSong)
             } else {
-                "Your musical adventure continues"
+                context.getString(R.string.home_adventure_continues)
             }
         } else {
-            "Ready to discover your next favorite song?"
+            context.getString(R.string.home_discover_next_favorite)
         }
     }
     
@@ -1146,10 +1124,11 @@ private fun ModernRecentlyPlayedSection(
     musicViewModel: chromahub.rhythm.app.viewmodel.MusicViewModel,
     coroutineScope: CoroutineScope
 ) {
+    val context = LocalContext.current
     Column {
         ModernSectionTitle(
-            title = "Recently Played",
-            subtitle = "Continue your musical journey",
+            title = context.getString(R.string.home_recently_played),
+            subtitle = context.getString(R.string.home_recently_played_subtitle),
             onPlayAll = {
                 coroutineScope.launch {
                     if (recentlyPlayed.isNotEmpty()) {
@@ -1173,7 +1152,7 @@ private fun ModernRecentlyPlayedSection(
                 contentPadding = PaddingValues(horizontal = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp) // More spacing between items
             ) {
-                items(recentlyPlayed, key = { it.id }) { song ->
+                items(recentlyPlayed, key = { "recentplay_${it.id}_${recentlyPlayed.indexOf(it)}" }) { song ->
                     ModernRecentSongCard(
                         song = song,
                         onClick = { onSongClick(song) }
@@ -1184,8 +1163,8 @@ private fun ModernRecentlyPlayedSection(
             // Empty state for recently played
             ModernEmptyState(
                 icon = Icons.Rounded.History,
-                title = "No Recent Activity",
-                subtitle = "Start listening to see your recently played songs here",
+                title = context.getString(R.string.home_no_recent_activity),
+                subtitle = context.getString(R.string.home_no_recent_activity_desc),
                 iconSize = 48.dp
             )
         }
@@ -1469,7 +1448,7 @@ private fun ModernSectionTitle(
                         }
                 ) {
                     Text(
-                        text = "View All",
+                        text = context.getString(R.string.ui_view_all),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -1757,7 +1736,7 @@ private fun ModernArtistsSection(
             contentPadding = PaddingValues(horizontal = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(artists, key = { it.id }) { artist ->
+            items(artists, key = { "artist_${it.id}_${artists.indexOf(it)}" }) { artist ->
                 ModernArtistCard(
                     artist = artist,
                     songs = songs,
@@ -2095,13 +2074,13 @@ private fun ModernListeningStatsSection() {
                 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Your Listening Stats",
+                        text = context.getString(R.string.home_listening_stats),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "This week's musical journey",
+                        text = context.getString(R.string.home_listening_stats_subtitle),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -2118,7 +2097,7 @@ private fun ModernListeningStatsSection() {
                 EnhancedStatItem(
                     modifier = Modifier.weight(1f),
                     value = listeningTimeHours,
-                    label = "Listening Time",
+                    label = context.getString(R.string.home_stat_listening_time),
                     icon = RhythmIcons.Player.Timer,
                     accentColor = MaterialTheme.colorScheme.primary
                 )
@@ -2126,7 +2105,7 @@ private fun ModernListeningStatsSection() {
                 EnhancedStatItem(
                     modifier = Modifier.weight(1f),
                     value = songsPlayed,
-                    label = "Songs Played",
+                    label = context.getString(R.string.home_stat_songs_played),
                     icon = RhythmIcons.Music.MusicNote,
                     accentColor = MaterialTheme.colorScheme.secondary
                 )
@@ -2134,7 +2113,7 @@ private fun ModernListeningStatsSection() {
                 EnhancedStatItem(
                     modifier = Modifier.weight(1f),
                     value = uniqueArtists,
-                    label = "Artists",
+                    label = context.getString(R.string.home_stat_artists),
                     icon = RhythmIcons.Artist,
                     accentColor = MaterialTheme.colorScheme.tertiary
                 )
@@ -2268,8 +2247,8 @@ private fun ModernMoodSection(
     
     Column {
         ModernSectionTitle(
-            title = "Mood & Moments",
-            subtitle = "Music for every feeling"
+            title = context.getString(R.string.home_mood_title),
+            subtitle = context.getString(R.string.home_mood_subtitle)
         )
         
         Spacer(modifier = Modifier.height(16.dp))
@@ -2280,8 +2259,8 @@ private fun ModernMoodSection(
         ) {
             item {
                 ModernMoodCard(
-                    title = "Energize",
-                    description = "Boost your energy",
+                    title = context.getString(R.string.home_mood_energize),
+                    description = context.getString(R.string.home_mood_energize_desc),
                     songs = energeticSongs,
                     backgroundColor = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -2290,11 +2269,8 @@ private fun ModernMoodSection(
                     onPlayClick = {
                         HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
                         if (energeticSongs.isNotEmpty()) {
-                            viewModel.playSongWithQueueOption(
-                                song = energeticSongs.first(), 
-                                replaceQueue = true, 
-                                shuffleQueue = true
-                            )
+                            // Play all energetic songs shuffled
+                            viewModel.playQueue(energeticSongs.shuffled())
                             onSongClick(energeticSongs.first())
                         }
                     }
@@ -2303,8 +2279,8 @@ private fun ModernMoodSection(
             
             item {
                 ModernMoodCard(
-                    title = "Relax",
-                    description = "Unwind and breathe",
+                    title = context.getString(R.string.home_mood_relax),
+                    description = context.getString(R.string.home_mood_relax_desc),
                     songs = relaxingSongs,
                     backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -2313,10 +2289,8 @@ private fun ModernMoodSection(
                     onPlayClick = {
                         HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
                         if (relaxingSongs.isNotEmpty()) {
-                            viewModel.playSongWithQueueOption(
-                                song = relaxingSongs.first(), 
-                                replaceQueue = true
-                            )
+                            // Play all relaxing songs in order
+                            viewModel.playQueue(relaxingSongs)
                             onSongClick(relaxingSongs.first())
                         }
                     }
@@ -2325,8 +2299,8 @@ private fun ModernMoodSection(
             
             item {
                 ModernMoodCard(
-                    title = "Focus",
-                    description = "Concentration mode",
+                    title = context.getString(R.string.home_mood_focus),
+                    description = context.getString(R.string.home_mood_focus_desc),
                     songs = moodBasedSongs,
                     backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
                     contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -2335,10 +2309,8 @@ private fun ModernMoodSection(
                     onPlayClick = {
                         HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
                         if (moodBasedSongs.isNotEmpty()) {
-                            viewModel.playSongWithQueueOption(
-                                song = moodBasedSongs.first(), 
-                                replaceQueue = true
-                            )
+                            // Play all focus songs in order
+                            viewModel.playQueue(moodBasedSongs)
                             onSongClick(moodBasedSongs.first())
                         }
                     }
@@ -2417,7 +2389,7 @@ private fun ModernMoodCard(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.PlayArrow,
-                        contentDescription = "Play $title",
+                        contentDescription = context.getString(R.string.ui_play_action, title),
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -2429,7 +2401,7 @@ private fun ModernMoodCard(
                 modifier = Modifier.align(Alignment.TopEnd)
             ) {
                 Text(
-                    text = "$songCount songs",
+                    text = context.getString(R.string.ui_songs_count, songCount),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = contentColor,
@@ -2500,7 +2472,7 @@ private fun ModernUpdateSection(
                 ) {
                     Icon(
                         imageVector = RhythmIcons.Download,
-                        contentDescription = "Update available",
+                        contentDescription = context.getString(R.string.update_available_cd),
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier
                             .size(28.dp)
@@ -2511,7 +2483,7 @@ private fun ModernUpdateSection(
                 Spacer(modifier = Modifier.width(20.dp))
                 
                 Text(
-                    text = "Update Available",
+                    text = context.getString(R.string.update_available_title),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -2521,7 +2493,7 @@ private fun ModernUpdateSection(
             Spacer(modifier = Modifier.height(20.dp))
             
             Text(
-                text = "Version ${latestVersion.versionName}",
+                text = context.getString(R.string.update_version, latestVersion.versionName),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -2531,7 +2503,7 @@ private fun ModernUpdateSection(
             
             if (latestVersion.whatsNew.isNotEmpty()) {
                 Text(
-                    text = "What's New:",
+                    text = context.getString(R.string.update_whats_new),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -2570,7 +2542,7 @@ private fun ModernUpdateSection(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = if (isDownloading) "Downloading..." else "Update Now",
+                        text = if (isDownloading) context.getString(R.string.update_downloading) else context.getString(R.string.update_now),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primaryContainer,
                         fontWeight = FontWeight.Bold
@@ -2600,12 +2572,13 @@ private fun ModernRecommendedSection(
     recommendedSongs: List<Song>,
     onSongClick: (Song) -> Unit
 ) {
+    val context = LocalContext.current
     Column(
         modifier = Modifier.fillMaxWidth()
     ) {
         ModernSectionTitle(
-            title = "Recommended For You",
-            subtitle = "Based on your listening history"
+            title = context.getString(R.string.home_recommended_title),
+            subtitle = context.getString(R.string.home_recommended_subtitle)
         )
         
         Spacer(modifier = Modifier.height(20.dp))
@@ -2634,8 +2607,8 @@ private fun ModernRecommendedSection(
         } else {
             ModernEmptyState(
                 icon = Icons.Rounded.TipsAndUpdates,
-                title = "No Recommendations",
-                subtitle = "Listen to some music to get personalized recommendations",
+                title = context.getString(R.string.home_no_recommendations),
+                subtitle = context.getString(R.string.home_no_recommendations_desc),
                 iconSize = 48.dp
             )
         }

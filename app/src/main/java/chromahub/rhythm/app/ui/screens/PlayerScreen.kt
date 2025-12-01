@@ -152,6 +152,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.painterResource
+import chromahub.rhythm.app.R
 import chromahub.rhythm.app.data.PlaybackLocation
 import chromahub.rhythm.app.data.Playlist
 import chromahub.rhythm.app.data.Song
@@ -169,7 +170,7 @@ import java.util.Locale
 import kotlin.math.abs
 import chromahub.rhythm.app.ui.components.M3CircularLoader
 import android.view.animation.OvershootInterpolator
-import chromahub.rhythm.app.ui.screens.EqualizerBottomSheetNew
+import chromahub.rhythm.app.ui.screens.tuner.EqualizerSettingsScreen
 import chromahub.rhythm.app.ui.screens.SleepTimerBottomSheetNew
 import chromahub.rhythm.app.ui.components.SyncedLyricsView
 import androidx.compose.foundation.layout.WindowInsets
@@ -237,6 +238,7 @@ fun PlayerScreen(
     playlists: List<Playlist> = emptyList(),
     queue: List<Song> = emptyList(),
     onSongClick: (Song) -> Unit = {},
+    onSongClickAtIndex: (Int) -> Unit = { _ -> }, // New parameter for index-based queue clicks
     onRemoveFromQueue: (Song) -> Unit = {},
     onMoveQueueItem: (Int, Int) -> Unit = { _, _ -> },
     onAddSongsToQueue: () -> Unit = {},
@@ -274,6 +276,22 @@ fun PlayerScreen(
     val appSettingsInstance =
         appSettings ?: chromahub.rhythm.app.data.AppSettings.getInstance(context)
     val useSystemVolume by appSettingsInstance.useSystemVolume.collectAsState()
+    val groupByAlbumArtist by appSettingsInstance.groupByAlbumArtist.collectAsState()
+
+    // Helper function to split artist names
+    val splitArtistNames: (String) -> List<String> = remember {
+        { artistName ->
+            val separators = listOf(
+                " & ", " and ", ", ", " feat. ", " feat ", " ft. ", " ft ",
+                " featuring ", " x ", " X ", " vs ", " vs. ", " with "
+            )
+            var names = listOf(artistName)
+            for (separator in separators) {
+                names = names.flatMap { it.split(separator, ignoreCase = true) }
+            }
+            names.map { it.trim() }.filter { it.isNotBlank() }
+        }
+    }
 
     // System volume state
     var systemVolume by remember { mutableFloatStateOf(0.5f) }
@@ -329,8 +347,14 @@ fun PlayerScreen(
     // Chip visibility state
     var showChips by remember { mutableStateOf(false) }
     
-    // Collect chip order from settings
+    // Collect chip order and hidden chips from settings
     val chipOrder by appSettings.playerChipOrder.collectAsState()
+    val hiddenChips by appSettings.hiddenPlayerChips.collectAsState()
+    
+    // Filter out hidden chips
+    val visibleChips = remember(chipOrder, hiddenChips) {
+        chipOrder.filter { !hiddenChips.contains(it) }
+    }
     
     // File picker launcher for loading lyrics directly
     val loadLyricsLauncher = rememberLauncherForActivityResult(
@@ -490,7 +514,7 @@ fun PlayerScreen(
     // Bottom sheet states
     val queueSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val addToPlaylistSheetState = rememberModalBottomSheetState()
-    val deviceOutputSheetState = rememberModalBottomSheetState()
+    val deviceOutputSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val albumBottomSheetState = rememberModalBottomSheetState()
     val artistBottomSheetState = rememberModalBottomSheetState()
     var showQueueSheet by remember { mutableStateOf(false) }
@@ -624,6 +648,10 @@ fun PlayerScreen(
                 onSongClick(selectedSong)
                 showQueueSheet = false
             },
+            onSongClickAtIndex = { index ->
+                onSongClickAtIndex(index)
+                showQueueSheet = false
+            },
             onDismiss = { showQueueSheet = false },
             onRemoveSong = { songToRemove ->
                 // Remove the song from the queue
@@ -753,11 +781,22 @@ fun PlayerScreen(
             onSongClick = onSongClick,
             onPlayAll = { songs -> onPlayAlbumSongs(songs) },
             onShufflePlay = { songs -> onShuffleAlbumSongs(songs) },
-            onAddToQueue = { song -> /* TODO: Add queue functionality */ },
+            onAddToQueue = { song -> musicViewModel.addSongToQueue(song) },
             onAddSongToPlaylist = { song -> onAddSongToPlaylist(song, "") },
             onPlayerClick = onBack,
             sheetState = albumBottomSheetState,
-            haptics = haptic
+            haptics = haptic,
+            onPlayNext = { song -> musicViewModel.playNext(song) },
+            onToggleFavorite = { song -> musicViewModel.toggleFavorite(song) },
+            favoriteSongs = musicViewModel.favoriteSongs.collectAsState().value,
+            onShowSongInfo = { song ->
+                // Song info can be shown via a toast or separate sheet if needed
+                Toast.makeText(context, "${song.title}\nArtist: ${song.artist}\nAlbum: ${song.album}", Toast.LENGTH_SHORT).show()
+            },
+            onAddToBlacklist = { song ->
+                appSettings.addToBlacklist(song.id)
+                Toast.makeText(context, "${song.title} added to blacklist", Toast.LENGTH_SHORT).show()
+            }
         )
     }
 
@@ -786,11 +825,22 @@ fun PlayerScreen(
                     onShuffleArtistSongs(artistSongs)
                 }
             },
-            onAddToQueue = { song -> /* TODO: Add queue functionality */ },
+            onAddToQueue = { song -> musicViewModel.addSongToQueue(song) },
             onAddSongToPlaylist = { song -> onAddSongToPlaylist(song, "") },
             onPlayerClick = { /* Already in player screen */ },
             sheetState = artistBottomSheetState,
-            haptics = haptic
+            haptics = haptic,
+            onPlayNext = { song -> musicViewModel.playNext(song) },
+            onToggleFavorite = { song -> musicViewModel.toggleFavorite(song) },
+            favoriteSongs = musicViewModel.favoriteSongs.collectAsState().value,
+            onShowSongInfo = { song ->
+                // Song info can be shown via a toast or separate sheet if needed
+                Toast.makeText(context, "${song.title}\nArtist: ${song.artist}\nAlbum: ${song.album}", Toast.LENGTH_SHORT).show()
+            },
+            onAddToBlacklist = { song ->
+                appSettings.addToBlacklist(song.id)
+                Toast.makeText(context, "${song.title} added to blacklist", Toast.LENGTH_SHORT).show()
+            }
         )
     }
 
@@ -1493,7 +1543,7 @@ fun PlayerScreen(
                                                         )
                                                         Spacer(modifier = Modifier.height(16.dp))
                                                         Text(
-                                                            text = "Loading lyrics...",
+                                                            text = context.getString(R.string.player_loading_lyrics),
                                                             style = MaterialTheme.typography.bodyMedium,
                                                             color = MaterialTheme.colorScheme.onSurface.copy(
                                                                 alpha = 0.7f
@@ -2159,7 +2209,7 @@ fun PlayerScreen(
                                         Row {
                                             Spacer(modifier = Modifier.width(4.dp))
                                             Text(
-                                                text = "SHUFFLE",
+                                                text = context.getString(R.string.player_shuffle),
                                                 style = MaterialTheme.typography.labelMedium.copy(
                                                     fontWeight = FontWeight.Bold,
                                                     letterSpacing = 0.8.sp
@@ -2235,7 +2285,7 @@ fun PlayerScreen(
                                             Row {
                                                 Spacer(modifier = Modifier.width(4.dp))
                                                 Text(
-                                                    text = "LYRICS",
+                                                    text = context.getString(R.string.player_lyrics),
                                                     style = MaterialTheme.typography.labelMedium.copy(
                                                         fontWeight = FontWeight.Bold,
                                                         letterSpacing = 0.8.sp
@@ -2313,7 +2363,7 @@ fun PlayerScreen(
                                         Row {
                                             Spacer(modifier = Modifier.width(4.dp))
                                             Text(
-                                                text = "REPEAT",
+                                                text = context.getString(R.string.player_repeat),
                                                 style = MaterialTheme.typography.labelMedium.copy(
                                                     fontWeight = FontWeight.Bold,
                                                     letterSpacing = 0.8.sp
@@ -2455,9 +2505,9 @@ fun PlayerScreen(
                                         )
                                     }
 
-                                    // Dynamic reorderable chips based on chipOrder
+                                    // Dynamic reorderable chips based on visible chips
                                     items(
-                                        items = chipOrder,
+                                        items = visibleChips,
                                         key = { it }
                                     ) { chipId ->
                                         when (chipId) {
@@ -2914,8 +2964,18 @@ fun PlayerScreen(
                                                         )
                                                         // Find the artist for the current song and show bottom sheet
                                                         song?.let { currentSong ->
-                                                            val artistForSong =
-                                                                artists.find { it.name == currentSong.artist }
+                                                            // Respect groupByAlbumArtist setting when finding artist
+                                                            val artistForSong = if (groupByAlbumArtist) {
+                                                                // When grouping by album artist, match against albumArtist (with fallback to artist)
+                                                                val songArtistName = (currentSong.albumArtist?.takeIf { it.isNotBlank() } ?: currentSong.artist).trim()
+                                                                artists.find { it.name == songArtistName }
+                                                            } else {
+                                                                // When not grouping, check if any split artist name matches
+                                                                val songArtistNames = splitArtistNames(currentSong.artist)
+                                                                artists.find { artist ->
+                                                                    songArtistNames.any { it.equals(artist.name, ignoreCase = true) }
+                                                                }
+                                                            }
                                                             artistForSong?.let {
                                                                 selectedArtist = it
                                                                 showArtistSheet = true
@@ -3164,7 +3224,7 @@ fun PlayerScreen(
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Text(
-                                            text = "Queue",
+                                            text = context.getString(R.string.player_queue),
                                             style = MaterialTheme.typography.labelLarge.copy(
                                                 fontSize = if (isCompactHeight) 12.sp else 14.sp
                                             ),
@@ -3197,10 +3257,19 @@ fun PlayerScreen(
     
     // Bottom sheets
     if (showEqualizerBottomSheet) {
-        EqualizerBottomSheetNew(
-            musicViewModel = musicViewModel,
-            onDismiss = { showEqualizerBottomSheet = false }
-        )
+        // Use full-screen dialog for equalizer settings
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { showEqualizerBottomSheet = false },
+            properties = androidx.compose.ui.window.DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            EqualizerSettingsScreen(
+                onBackClick = { showEqualizerBottomSheet = false }
+            )
+        }
     }
     
     if (showPlaybackSpeedDialog) {
@@ -3236,11 +3305,15 @@ fun PlayerScreen(
         LyricsEditorBottomSheet(
             currentLyrics = lyrics?.getBestLyrics() ?: "",
             songTitle = song?.title ?: "Unknown",
+            initialTimeOffset = musicViewModel.lyricsTimeOffset.collectAsState().value,
             onDismiss = { showLyricsEditorDialog = false },
-            onSave = { editedLyrics ->
-                // Save lyrics to cache and update current lyrics
-                musicViewModel.saveEditedLyrics(editedLyrics)
-                showLyricsEditorDialog = false
+            onSave = { editedLyrics, timeOffset ->
+                // Save lyrics to cache and update current lyrics immediately with offset
+                musicViewModel.saveEditedLyrics(editedLyrics, timeOffset)
+            },
+            onRefresh = {
+                // Clear cache and refetch lyrics from source priority
+                musicViewModel.clearLyricsCacheAndRefetch()
             }
         )
     }
@@ -3279,7 +3352,7 @@ fun PlaybackSpeedDialog(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Playback Speed",
+                    text = context.getString(R.string.player_playback_speed),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -3288,7 +3361,7 @@ fun PlaybackSpeedDialog(
         text = {
             Column {
                 Text(
-                    text = "Adjust the speed of audio playback.",
+                    text = context.getString(R.string.player_playback_speed_desc),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -3368,7 +3441,7 @@ fun PlaybackSpeedDialog(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        items(listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f)) { presetSpeed ->
+                        items(listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f), key = { "speed_$it" }) { presetSpeed ->
                             AssistChip(
                                 onClick = {
                                     selectedSpeed = presetSpeed

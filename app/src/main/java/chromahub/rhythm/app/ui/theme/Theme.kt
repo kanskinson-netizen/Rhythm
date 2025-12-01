@@ -1267,100 +1267,6 @@ fun getAlbumArtColorScheme(colorsJson: String, darkTheme: Boolean): androidx.com
     }
 }
 
-/**
- * Apply festive theme colors to the base color scheme
- */
-private fun applyFestiveColors(
-    baseScheme: ColorScheme,
-    festiveTheme: chromahub.rhythm.app.ui.theme.FestiveTheme,
-    darkTheme: Boolean
-): ColorScheme {
-    // More vibrant festive colors - higher blend factor for stronger impact
-    val primaryBlend = 0.85f // Strong festive primary color
-    val secondaryBlend = 0.75f // Good festive secondary
-    val tertiaryBlend = 0.70f // Balanced tertiary
-    val containerBlend = 0.60f // Visible in containers
-    
-    // Adjust colors for dark/light theme
-    val adjustedPrimary = if (darkTheme) {
-        // Lighten festive colors for dark theme
-        festiveTheme.primaryColor.copy(
-            red = (festiveTheme.primaryColor.red * 0.9f + 0.1f).coerceAtMost(1f),
-            green = (festiveTheme.primaryColor.green * 0.9f + 0.1f).coerceAtMost(1f),
-            blue = (festiveTheme.primaryColor.blue * 0.9f + 0.1f).coerceAtMost(1f)
-        )
-    } else {
-        // Keep vibrant for light theme
-        festiveTheme.primaryColor
-    }
-    
-    val adjustedSecondary = if (darkTheme) {
-        festiveTheme.secondaryColor.copy(
-            red = (festiveTheme.secondaryColor.red * 0.85f + 0.15f).coerceAtMost(1f),
-            green = (festiveTheme.secondaryColor.green * 0.85f + 0.15f).coerceAtMost(1f),
-            blue = (festiveTheme.secondaryColor.blue * 0.85f + 0.15f).coerceAtMost(1f)
-        )
-    } else {
-        festiveTheme.secondaryColor
-    }
-    
-    val adjustedTertiary = if (darkTheme) {
-        festiveTheme.tertiaryColor.copy(
-            red = (festiveTheme.tertiaryColor.red * 0.80f + 0.20f).coerceAtMost(1f),
-            green = (festiveTheme.tertiaryColor.green * 0.80f + 0.20f).coerceAtMost(1f),
-            blue = (festiveTheme.tertiaryColor.blue * 0.80f + 0.20f).coerceAtMost(1f)
-        )
-    } else {
-        festiveTheme.tertiaryColor
-    }
-    
-    return baseScheme.copy(
-        primary = blendColors(baseScheme.primary, adjustedPrimary, primaryBlend),
-        onPrimary = if (adjustedPrimary.luminance() > 0.5f) Color.Black else Color.White,
-        primaryContainer = blendColors(
-            baseScheme.primaryContainer, 
-            adjustedPrimary.copy(alpha = if (darkTheme) 0.25f else 0.15f), 
-            containerBlend
-        ),
-        onPrimaryContainer = if (darkTheme) adjustedPrimary.copy(
-            red = (adjustedPrimary.red + 0.3f).coerceAtMost(1f),
-            green = (adjustedPrimary.green + 0.3f).coerceAtMost(1f),
-            blue = (adjustedPrimary.blue + 0.3f).coerceAtMost(1f)
-        ) else adjustedPrimary.copy(
-            red = (adjustedPrimary.red * 0.7f).coerceAtLeast(0f),
-            green = (adjustedPrimary.green * 0.7f).coerceAtLeast(0f),
-            blue = (adjustedPrimary.blue * 0.7f).coerceAtLeast(0f)
-        ),
-        secondary = blendColors(baseScheme.secondary, adjustedSecondary, secondaryBlend),
-        onSecondary = if (adjustedSecondary.luminance() > 0.5f) Color.Black else Color.White,
-        secondaryContainer = blendColors(
-            baseScheme.secondaryContainer, 
-            adjustedSecondary.copy(alpha = if (darkTheme) 0.25f else 0.15f), 
-            containerBlend * 0.8f
-        ),
-        tertiary = blendColors(baseScheme.tertiary, adjustedTertiary, tertiaryBlend),
-        onTertiary = if (adjustedTertiary.luminance() > 0.5f) Color.Black else Color.White,
-        tertiaryContainer = blendColors(
-            baseScheme.tertiaryContainer, 
-            adjustedTertiary.copy(alpha = if (darkTheme) 0.25f else 0.15f), 
-            containerBlend * 0.8f
-        )
-    )
-}
-
-/**
- * Blend two colors together
- */
-private fun blendColors(base: Color, overlay: Color, factor: Float): Color {
-    val clampedFactor = factor.coerceIn(0f, 1f)
-    return Color(
-        red = base.red * (1 - clampedFactor) + overlay.red * clampedFactor,
-        green = base.green * (1 - clampedFactor) + overlay.green * clampedFactor,
-        blue = base.blue * (1 - clampedFactor) + overlay.blue * clampedFactor,
-        alpha = base.alpha
-    )
-}
-
 @Composable
 fun RhythmTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -1372,29 +1278,11 @@ fun RhythmTheme(
     customFontPath: String? = null,
     colorSource: String = "CUSTOM",
     extractedAlbumColorsJson: String? = null,
-    festiveThemeEnabled: Boolean = false,
-    festiveThemeSelected: String = "NONE",
-    festiveThemeAutoDetect: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
     
-    // Determine active festive theme
-    val activeFestiveTheme = remember(festiveThemeEnabled, festiveThemeAutoDetect, festiveThemeSelected) {
-        if (!festiveThemeEnabled) {
-            chromahub.rhythm.app.ui.theme.FestiveTheme.NONE
-        } else if (festiveThemeAutoDetect) {
-            chromahub.rhythm.app.ui.theme.FestiveTheme.detectCurrentFestival()
-        } else {
-            try {
-                chromahub.rhythm.app.ui.theme.FestiveTheme.valueOf(festiveThemeSelected)
-            } catch (e: Exception) {
-                chromahub.rhythm.app.ui.theme.FestiveTheme.NONE
-            }
-        }
-    }
-    
-    val baseColorScheme = when {
+    val colorScheme = when {
         // Album art colors take highest priority when available
         colorSource == "ALBUM_ART" && extractedAlbumColorsJson != null -> {
             getAlbumArtColorScheme(extractedAlbumColorsJson, darkTheme)
@@ -1408,13 +1296,6 @@ fun RhythmTheme(
         // Default Rhythm color scheme
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
-    }
-    
-    // Apply festive theme colors if enabled
-    val colorScheme = if (festiveThemeEnabled && activeFestiveTheme != chromahub.rhythm.app.ui.theme.FestiveTheme.NONE) {
-        applyFestiveColors(baseColorScheme, activeFestiveTheme, darkTheme)
-    } else {
-        baseColorScheme
     }
     
     // Load typography based on font source
