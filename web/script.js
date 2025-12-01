@@ -229,6 +229,99 @@ const updateData = {
             <p><strong>Happy listening with Rhythm 2.9! 🎵</strong></p>
         `
     },
+    update6: {
+        image: "assets/Banner.png",
+        headline: "3.1 Stable Release is here!",
+        date: "December 1, 2025",
+        writer: "Anjishnu Nandi",
+        details: `
+            <p>🎉 Hold onto your headphones, music lovers! Rhythm 3.1 Stable has dropped, and it's PACKED with goodies! We've been cooking up a storm, and this release is our biggest, boldest update yet. From speaking your language (literally!) to widgets that'll make your home screen jealous, we've got it all!</p>
+            
+            <h3>🌍 Now Speaking YOUR Language!</h3>
+            <p>We've gone global, baby! Rhythm now supports multiple languages with a built-in language switcher. Huge shoutout to our amazing community translators who brought French, Dutch, and more to life. Whether you're in Paris, Amsterdam, or anywhere in between, Rhythm speaks YOUR language! 🗣️</p>
+            
+            <h3>⚙️ Settings Got a MAJOR Glow-Up!</h3>
+            <p>Say goodbye to the old boring settings and hello to the sleek new "Tuner" UI! We're talking:</p>
+            <ul>
+                <li>🎴 <strong>Gorgeous Grouped Cards</strong> - Everything's organized beautifully now</li>
+                <li>📖 <strong>Collapsible Headers</strong> - Expand what you need, hide what you don't</li>
+                <li>💡 <strong>Quick Tips</strong> - Helpful hints right when you need them</li>
+                <li>🔍 <strong>Settings Search</strong> - Find ANY setting in seconds!</li>
+                <li>🎨 <strong>Next-Level Theme Customization</strong> - Make Rhythm TRULY yours</li>
+            </ul>
+            
+            <h3>📱 Widget Mania: 9 Flavors of Awesome!</h3>
+            <p>Widgets just got a SERIOUS upgrade! Choose from NINE different layouts (from tiny 2x1 to massive 5x5) and customize them to your heart's content. Built with modern Glance framework and Material 3 design, these widgets are eye candy with real-time updates. Your home screen will thank you! 🎉</p>
+            
+            <h3>🎵 Music Features That Hit Different</h3>
+            <p>We've turbocharged your music experience:</p>
+            <ul>
+                <li>🎯 <strong>Queue Action Dialog</strong> - Play next? Add to queue? Replace everything? YOU decide!</li>
+                <li>📊 <strong>Playlist Grid View</strong> - Because sometimes lists are boring</li>
+                <li>🎸 <strong>Genre Browsing</strong> - Rock, Jazz, Pop - find it all with smart detection</li>
+                <li>✅ <strong>Multi-Select Madness</strong> - Add tons of songs to playlists in one go</li>
+                <li>🎛️ <strong>Player Customization</strong> - Arrange those player chips YOUR way</li>
+                <li>🏠 <strong>Default Screen Selection</strong> - Start wherever you want</li>
+                <li>👁️ <strong>Show/Hide Tabs</strong> - Declutter your library view</li>
+            </ul>
+            
+            <h3>🎤 Lyrics Just Got LYRICAL!</h3>
+            <p>Karaoke lovers, REJOICE! We've added:</p>
+            <ul>
+                <li>✨ <strong>Word-by-Word Highlighting</strong> - Follow along like a pro</li>
+                <li>⏱️ <strong>Sync Adjustment</strong> - Lyrics off-beat? Fix it yourself with offset controls</li>
+                <li>🎼 <strong>OGG/Vorbis Support</strong> - Extract lyrics from even MORE file types</li>
+                <li>🎯 <strong>Better Extraction</strong> - Smarter embedded lyrics detection</li>
+            </ul>
+            
+            <h3>✨ UI That Makes You Go "WOW!"</h3>
+            <p>Every corner of Rhythm got prettier:</p>
+            <ul>
+                <li>🎚️ <strong>Equalizer Makeover</strong> - Slick new cards with buttery animations</li>
+                <li>📄 <strong>Bottom Sheet Magic</strong> - Smooth as butter, looks like a dream</li>
+                <li>👆 <strong>Swipe to Skip</strong> - Swipe left/right on mini player to change tracks</li>
+                <li>🌊 <strong>Fluid Transitions</strong> - Navigation so smooth you'll want to keep tapping</li>
+            </ul>
+            
+            <h3>⚡ Faster Than Your Morning Coffee!</h3>
+            <p>Performance nerds (we see you 🤓), check this out:</p>
+            <ul>
+                <li>🚀 Optimized directory loading - blazing fast even with 10,000+ songs</li>
+                <li>⚡ Genre caching - instant genre detection</li>
+                <li>🔋 Better battery life - jam longer, charge less</li>
+                <li>💾 Smarter memory usage - no more sluggishness</li>
+                <li>📂 Enhanced media scanning - finds your music faster</li>
+            </ul>
+            
+            <h3>🐛 Squashed Bugs (RIP Little Guys)</h3>
+            <ul>
+                <li>✅ Fixed Canvas API hiccups</li>
+                <li>✅ No more LazyColumn crashes (they were getting lazy indeed!)</li>
+                <li>✅ Queue now finds the RIGHT duplicate song (not just any duplicate)</li>
+                <li>✅ "Most Played" respects your scan settings now</li>
+                <li>✅ Screen transitions won't crash anymore</li>
+                <li>✅ Album Artist grouping works perfectly</li>
+                <li>✅ Updater animations are buttery smooth</li>
+            </ul>
+            
+            <h3>🙏 HUGE Thanks to YOU!</h3>
+            <p>This wouldn't exist without our INCREDIBLE community! From bug reports to feature suggestions to translations - you all ROCK! Special love to our beta testers who caught issues before they became problems, and our translators who brought Rhythm to the world. You're all legends! 🌟</p>
+            
+            <h3>🔮 What's Cooking for 3.2?</h3>
+            <p>We're already planning the next wave of awesome:</p>
+            <ul>
+                <li>📝 Persistent metadata editing (save those changes forever!)</li>
+                <li>🌍 Even MORE languages from our amazing community</li>
+                <li>🎨 Additional widget layouts and customizations</li>
+                <li>🎵 Enhanced playlist management</li>
+                <li>⚡ More performance magic</li>
+            </ul>
+            
+            <p><strong>⚠️ Quick heads up: Metadata editor is memory-only for now, translations are still coming in, and you might see rare ANRs when idle. We're on it!</strong></p>
+            
+            <p><strong>🎉 Thank you for being part of this incredible journey! Grab 3.1, crank up the volume, and let's make some noise! Happy listening, Rhythm fam! 🎵✨</strong></p>
+        `
+    },
 };
 
 // Function to check if an image exists
