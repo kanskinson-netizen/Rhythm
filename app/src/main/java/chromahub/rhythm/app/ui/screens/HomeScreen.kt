@@ -98,6 +98,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.rememberModalBottomSheetState
 import chromahub.rhythm.app.ui.components.CollapsibleHeaderScreen
+import chromahub.rhythm.app.ui.theme.festive.FestiveConfig
+import chromahub.rhythm.app.ui.theme.festive.FestiveThemeEngine
+import chromahub.rhythm.app.ui.theme.festive.FestiveThemeType
+import chromahub.rhythm.app.data.AppSettings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -578,15 +582,47 @@ private fun ModernScrollableContent(
         Triple(focusSongs, betterEnergeticSongs, betterRelaxingSongs)
     }
     
-    // Time-based greeting with proper time ranges
-    val greeting = remember {
-        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        when {
-            hour in 0..4 -> context.getString(R.string.home_greeting_night)      // Late night: 12 AM - 4:59 AM
-            hour in 5..11 -> context.getString(R.string.home_greeting_morning)   // Morning: 5 AM - 11:59 AM
-            hour in 12..16 -> context.getString(R.string.home_greeting_afternoon) // Afternoon: 12 PM - 4:59 PM
-            hour in 17..20 -> context.getString(R.string.home_greeting_evening)   // Evening: 5 PM - 8:59 PM
-            else -> context.getString(R.string.home_greeting_night)              // Night: 9 PM - 11:59 PM
+    // Get festive theme settings
+    val appSettings = AppSettings.getInstance(context)
+    val festiveEnabled by appSettings.festiveThemeEnabled.collectAsState()
+    val festiveTypeString by appSettings.festiveThemeType.collectAsState()
+    val festiveAutoDetect by appSettings.festiveThemeAutoDetect.collectAsState()
+    
+    // Determine active festive theme
+    val activeFestiveTheme = remember(festiveEnabled, festiveTypeString, festiveAutoDetect) {
+        if (festiveEnabled) {
+            val festiveConfig = FestiveConfig(
+                enabled = festiveEnabled,
+                type = try {
+                    FestiveThemeType.valueOf(festiveTypeString)
+                } catch (e: IllegalArgumentException) {
+                    FestiveThemeType.NONE
+                },
+                autoDetect = festiveAutoDetect
+            )
+            FestiveThemeEngine.getActiveFestiveTheme(festiveConfig)
+        } else {
+            FestiveThemeType.NONE
+        }
+    }
+    
+    // Time-based greeting with festive override
+    val greeting = remember(activeFestiveTheme) {
+        when (activeFestiveTheme) {
+            FestiveThemeType.CHRISTMAS -> "Merry Christmas"
+            FestiveThemeType.NEW_YEAR -> "Happy New Year"
+            FestiveThemeType.HALLOWEEN -> "Happy Halloween"
+            FestiveThemeType.VALENTINES -> "Happy Valentine's"
+            else -> {
+                val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+                when {
+                    hour in 0..4 -> context.getString(R.string.home_greeting_night)      // Late night: 12 AM - 4:59 AM
+                    hour in 5..11 -> context.getString(R.string.home_greeting_morning)   // Morning: 5 AM - 11:59 AM
+                    hour in 12..16 -> context.getString(R.string.home_greeting_afternoon) // Afternoon: 12 PM - 4:59 PM
+                    hour in 17..20 -> context.getString(R.string.home_greeting_evening)   // Evening: 5 PM - 8:59 PM
+                    else -> context.getString(R.string.home_greeting_night)              // Night: 9 PM - 11:59 PM
+                }
+            }
         }
     }
     
@@ -643,7 +679,11 @@ private fun ModernScrollableContent(
             // Welcome/Greeting section (preserved as requested)
             item {
                 if (!updateAvailable || latestVersion == null || error != null || !updatesEnabled) {
-                    ModernWelcomeSection(greeting = greeting, onSearchClick = onSearchClick)
+                    ModernWelcomeSection(
+                        greeting = greeting, 
+                        festiveTheme = activeFestiveTheme,
+                        onSearchClick = onSearchClick
+                    )
                 }
             }
 
@@ -909,6 +949,7 @@ private fun ModernScrollableContent(
 @Composable
 private fun ModernWelcomeSection(
     greeting: String,
+    festiveTheme: FestiveThemeType = FestiveThemeType.NONE,
     onSearchClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -966,14 +1007,22 @@ private fun ModernWelcomeSection(
         }
     }
     
-    val timeBasedTheme = remember {
-        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        when {
-            hour in 0..4 -> Triple("🌙", "late_night", "⭐")  // Late night
-            hour in 5..11 -> Triple("☀️", "morning", "🌻")      // Morning
-            hour in 12..16 -> Triple("🌤️", "afternoon", "⚡") // Afternoon
-            hour in 17..20 -> Triple("🌅", "evening", "✨")    // Evening
-            else -> Triple("🌙", "night", "🌟")                // Night
+    val timeBasedTheme = remember(festiveTheme) {
+        when (festiveTheme) {
+            FestiveThemeType.CHRISTMAS -> Triple("🎄", "christmas", "🎅")
+            FestiveThemeType.NEW_YEAR -> Triple("🎉", "new_year", "🥳")
+            FestiveThemeType.HALLOWEEN -> Triple("🎃", "halloween", "👻")
+            FestiveThemeType.VALENTINES -> Triple("💝", "valentines", "💕")
+            else -> {
+                val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+                when {
+                    hour in 0..4 -> Triple("🌙", "late_night", "⭐")  // Late night
+                    hour in 5..11 -> Triple("☀️", "morning", "🌻")      // Morning
+                    hour in 12..16 -> Triple("🌤️", "afternoon", "⚡") // Afternoon
+                    hour in 17..20 -> Triple("🌅", "evening", "✨")    // Evening
+                    else -> Triple("🌙", "night", "🌟")                // Night
+                }
+            }
         }
     }
 

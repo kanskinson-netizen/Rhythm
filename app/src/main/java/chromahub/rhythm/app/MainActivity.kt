@@ -67,6 +67,7 @@ import androidx.compose.material.icons.filled.WavingHand // New import for Welco
 import androidx.compose.material.icons.filled.DarkMode // New import for Dark Mode icon
 import chromahub.rhythm.app.ui.navigation.RhythmNavigation
 import chromahub.rhythm.app.ui.theme.RhythmTheme
+import chromahub.rhythm.app.ui.theme.festive.FestiveOverlayFromSettings
 import chromahub.rhythm.app.viewmodel.ThemeViewModel
 import chromahub.rhythm.app.viewmodel.AppUpdaterViewModel // Import AppUpdaterViewModel
 import chromahub.rhythm.app.util.CrashReporter // Import CrashReporter
@@ -199,12 +200,13 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // Show splash screen first, then transition to the app
-                    var showSplash by remember { mutableStateOf(true) }
-                    val hasShownBetaPopup by appSettings.hasShownBetaPopup.collectAsState()
-                    var showBetaPopup by remember { mutableStateOf(false) }
-                    val currentAppVersion by appUpdaterViewModel.currentVersion.collectAsState() // Observe current version
-                    val updateChannel by appUpdaterViewModel.updateChannel.collectAsState() // Observe update channel
+                    FestiveOverlayFromSettings {
+                        // Show splash screen first, then transition to the app
+                        var showSplash by remember { mutableStateOf(true) }
+                        val hasShownBetaPopup by appSettings.hasShownBetaPopup.collectAsState()
+                        var showBetaPopup by remember { mutableStateOf(false) }
+                        val currentAppVersion by appUpdaterViewModel.currentVersion.collectAsState() // Observe current version
+                        val updateChannel by appUpdaterViewModel.updateChannel.collectAsState() // Observe update channel
 
                     // State for permission handling and app initialization
                     var shouldShowSettingsRedirect by remember { mutableStateOf(false) }
@@ -288,6 +290,7 @@ class MainActivity : ComponentActivity() {
                                 appSettings.setHasShownBetaPopup(true)
                             })
                         }
+                    }
                     }
                 }
             }

@@ -4330,27 +4330,85 @@ fun ExperimentalFeaturesScreen(onBackClick: () -> Unit) {
     val hapticFeedbackEnabled by appSettings.hapticFeedbackEnabled.collectAsState()
     val groupByAlbumArtist by appSettings.groupByAlbumArtist.collectAsState()
     val showLyrics by appSettings.showLyrics.collectAsState()
+    val festiveThemeEnabled by appSettings.festiveThemeEnabled.collectAsState()
+    val festiveThemeAutoDetect by appSettings.festiveThemeAutoDetect.collectAsState()
+    val festiveThemeIntensity by appSettings.festiveThemeIntensity.collectAsState()
+    val festiveSnowflakeSize by appSettings.festiveSnowflakeSize.collectAsState()
+    val festiveSnowflakeArea by appSettings.festiveSnowflakeArea.collectAsState()
+    val festiveThemeType by appSettings.festiveThemeType.collectAsState()
     val haptic = LocalHapticFeedback.current
+    
+    var showFestivalSelectionSheet by remember { mutableStateOf(false) }
 
     CollapsibleHeaderScreen(
         title = "Experimental Features",
         showBackButton = true,
         onBackClick = onBackClick
     ) { modifier ->
-        val settingGroups = listOf(
-            SettingGroup(
-                title = "Library Organization",
-                items = listOf(
+        // Build festive decoration items conditionally
+        val festiveItems = buildList {
+            // Always show the main toggle
+            add(
+                SettingItem(
+                    Icons.Default.Celebration,
+                    "Enable Festive Theme",
+                    "Show festive decorations across the app",
+                    toggleState = festiveThemeEnabled,
+                    onToggleChange = { appSettings.setFestiveThemeEnabled(it) }
+                )
+            )
+            
+            // Show these only if festive theme is enabled
+            if (festiveThemeEnabled) {
+                add(
                     SettingItem(
-                        Icons.Default.Person,
-                        "Group by Album Artist",
-                        "Show collaboration albums under main artist",
-                        toggleState = groupByAlbumArtist,
-                        onToggleChange = { appSettings.setGroupByAlbumArtist(it) }
+                        Icons.Default.EventAvailable,
+                        "Auto-Detect Holidays",
+                        "Automatically show decorations for holidays",
+                        toggleState = festiveThemeAutoDetect,
+                        onToggleChange = { appSettings.setFestiveThemeAutoDetect(it) }
+                    )
+                )
+                
+                // Show festival selection only if auto-detect is off
+                if (!festiveThemeAutoDetect) {
+                    add(
+                        SettingItem(
+                            Icons.Default.AutoAwesome,
+                            "Select Festival",
+                            getFestivalDisplayName(festiveThemeType),
+                            onClick = { showFestivalSelectionSheet = true }
+                        )
+                    )
+                }
+            }
+        }
+        
+        val settingGroups = buildList {
+            if (festiveItems.isNotEmpty()) {
+                add(
+                    SettingGroup(
+                        title = "Festive Decorations",
+                        items = festiveItems
+                    )
+                )
+            }
+            
+            add(
+                SettingGroup(
+                    title = "Library Organization",
+                    items = listOf(
+                        SettingItem(
+                            Icons.Default.Person,
+                            "Group by Album Artist",
+                            "Show collaboration albums under main artist",
+                            toggleState = groupByAlbumArtist,
+                            onToggleChange = { appSettings.setGroupByAlbumArtist(it) }
+                        )
                     )
                 )
             )
-        )
+        }
 
         LazyColumn(
             modifier = modifier
@@ -4379,6 +4437,165 @@ fun ExperimentalFeaturesScreen(onBackClick: () -> Unit) {
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = 20.dp),
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Festive Intensity Slider with animation
+            item {
+                AnimatedVisibility(
+                    visible = festiveThemeEnabled,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Column {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            text = "Decoration Intensity",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+                        )
+                        
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(20.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Intensity",
+                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "${(festiveThemeIntensity * 100).toInt()}%",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.height(12.dp))
+                                
+                                Slider(
+                                    value = festiveThemeIntensity,
+                                    onValueChange = { 
+                                        appSettings.setFestiveThemeIntensity(it) 
+                                    },
+                                    valueRange = 0.1f..1f,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
+                                Text(
+                                    text = "Adjust the amount of festive decorations shown",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                
+                                // Snowflake Size Control
+                                Spacer(modifier = Modifier.height(24.dp))
+                                
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Snowflake Size",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    
+                                    Text(
+                                        text = "${(festiveSnowflakeSize * 100).toInt()}%",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.height(12.dp))
+                                
+                                Slider(
+                                    value = festiveSnowflakeSize,
+                                    onValueChange = { 
+                                        appSettings.setFestiveSnowflakeSize(it) 
+                                    },
+                                    valueRange = 0.5f..2.0f,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
+                                Text(
+                                    text = "Adjust snowflake size (smaller size = more snowflakes)",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                
+                                // Snowflake Area Control
+                                Spacer(modifier = Modifier.height(24.dp))
+                                
+                                Text(
+                                    text = "Snowflake Display Area",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                
+                                Spacer(modifier = Modifier.height(12.dp))
+                                
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    // Full Screen Button
+                                    FilterChip(
+                                        selected = festiveSnowflakeArea == "FULL_SCREEN",
+                                        onClick = { appSettings.setFestiveSnowflakeArea("FULL_SCREEN") },
+                                        label = { Text("Full Screen") },
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    
+                                    // Left-Right Only Button
+                                    FilterChip(
+                                        selected = festiveSnowflakeArea == "LEFT_RIGHT_ONLY",
+                                        onClick = { appSettings.setFestiveSnowflakeArea("LEFT_RIGHT_ONLY") },
+                                        label = { Text("Sides Only") },
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    
+                                    // Top 1/3 Button
+                                    FilterChip(
+                                        selected = festiveSnowflakeArea == "TOP_ONE_THIRD",
+                                        onClick = { appSettings.setFestiveSnowflakeArea("TOP_ONE_THIRD") },
+                                        label = { Text("Top ⅓") },
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
+                                Text(
+                                    text = when (festiveSnowflakeArea) {
+                                        "FULL_SCREEN" -> "Snowflakes appear across the entire screen"
+                                        "LEFT_RIGHT_ONLY" -> "Snowflakes only on left and right edges"
+                                        "TOP_ONE_THIRD" -> "Snowflakes on top third of screen"
+                                        else -> "Choose where snowflakes appear"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -4414,9 +4631,241 @@ fun ExperimentalFeaturesScreen(onBackClick: () -> Unit) {
                     }
                 }
             }
+            
+            item { Spacer(modifier = Modifier.height(40.dp)) }
+        }
+    }
+    
+    // Festival Selection Bottom Sheet
+    if (showFestivalSelectionSheet) {
+        FestivalSelectionBottomSheet(
+            currentFestival = festiveThemeType,
+            onDismiss = { showFestivalSelectionSheet = false },
+            onFestivalSelected = { festival ->
+                appSettings.setFestiveThemeType(festival)
+                showFestivalSelectionSheet = false
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FestivalSelectionBottomSheet(
+    currentFestival: String,
+    onDismiss: () -> Unit,
+    onFestivalSelected: (String) -> Unit
+) {
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    
+    // Animation states
+    var showContent by remember { mutableStateOf(false) }
+    val contentAlpha by animateFloatAsState(
+        targetValue = if (showContent) 1f else 0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "contentAlpha"
+    )
+
+    LaunchedEffect(Unit) {
+        delay(100)
+        showContent = true
+    }
+    
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        dragHandle = {
+            BottomSheetDefaults.DragHandle(
+                color = MaterialTheme.colorScheme.primary
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceContainer
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 24.dp)
+                .graphicsLayer(alpha = contentAlpha)
+        ) {
+            // Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 0.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = "Select Festival",
+                        style = MaterialTheme.typography.displayMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 6.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                shape = CircleShape
+                            )
+                    ) {
+                        Text(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                            text = "Choose festive theme",
+                            overflow = TextOverflow.Ellipsis,
+                            maxLines = 1,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Festival Options
+            val festivals = listOf(
+                Triple("CHRISTMAS", "Christmas", Icons.Default.AcUnit),
+                Triple("NEW_YEAR", "New Year", Icons.Default.Celebration),
+                Triple("VALENTINES", "Valentine's Day", Icons.Default.Favorite),
+                Triple("HALLOWEEN", "Halloween", Icons.Default.Nightlight)
+            )
+            
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                festivals.forEach { (value, name, icon) ->
+                    val isSelected = currentFestival == value
+                    val isAvailable = value == "CHRISTMAS" || value == "NEW_YEAR"
+                    
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isSelected) 
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                            else 
+                                MaterialTheme.colorScheme.surfaceContainerHigh
+                        ),
+                        shape = RoundedCornerShape(16.dp),
+                        onClick = {
+                            if (isAvailable) {
+                                HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+                                onFestivalSelected(value)
+                            }
+                        }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                    tint = when {
+                                        !isAvailable -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                        isSelected -> MaterialTheme.colorScheme.primary
+                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                                    modifier = Modifier.size(28.dp)
+                                )
+                                Column {
+                                    Text(
+                                        text = name,
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
+                                        ),
+                                        color = when {
+                                            !isAvailable -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                            isSelected -> MaterialTheme.colorScheme.primary
+                                            else -> MaterialTheme.colorScheme.onSurface
+                                        }
+                                    )
+                                    if (!isAvailable) {
+                                        Text(
+                                            text = "Coming soon",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = "Selected",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Info card
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "More festivals will be added in future updates",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }
+
+private fun getFestivalDisplayName(festivalType: String): String {
+    return when (festivalType) {
+        "CHRISTMAS" -> "Christmas"
+        "NEW_YEAR" -> "New Year"
+        "VALENTINES" -> "Valentine's Day"
+        "HALLOWEEN" -> "Halloween"
+        "NONE" -> "None"
+        "CUSTOM" -> "Custom"
+        else -> "Not selected"
+    }
+}
+            
+//            item { Spacer(modifier = Modifier.height(40.dp)) }
+//        }
+//    }
+//}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

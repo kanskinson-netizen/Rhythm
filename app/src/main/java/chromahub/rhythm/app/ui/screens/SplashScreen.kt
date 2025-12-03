@@ -54,6 +54,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import chromahub.rhythm.app.R
 import chromahub.rhythm.app.data.AppSettings
+import chromahub.rhythm.app.ui.theme.festive.FestiveConfig
+import chromahub.rhythm.app.ui.theme.festive.FestiveSplashGreeting
+import chromahub.rhythm.app.ui.theme.festive.FestiveThemeEngine
+import chromahub.rhythm.app.ui.theme.festive.FestiveThemeType
 import chromahub.rhythm.app.viewmodel.MusicViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -66,6 +70,24 @@ fun SplashScreen(
 ) {
     val context = LocalContext.current
     val appSettings = remember { AppSettings.getInstance(context) }
+    
+    // Festive theme configuration
+    val festiveEnabled by appSettings.festiveThemeEnabled.collectAsState()
+    val festiveTypeString by appSettings.festiveThemeType.collectAsState()
+    val festiveAutoDetect by appSettings.festiveThemeAutoDetect.collectAsState()
+    
+    val festiveConfig = remember(festiveEnabled, festiveTypeString, festiveAutoDetect) {
+        FestiveConfig(
+            enabled = festiveEnabled,
+            type = try {
+                FestiveThemeType.valueOf(festiveTypeString)
+            } catch (e: IllegalArgumentException) {
+                FestiveThemeType.NONE
+            },
+            autoDetect = festiveAutoDetect
+        )
+    }
+    val activeFestiveTheme = FestiveThemeEngine.getActiveFestiveTheme(festiveConfig)
     
     val infiniteTransition = rememberInfiniteTransition(label = "splashAnimations")
     
@@ -188,6 +210,16 @@ fun SplashScreen(
             },
         contentAlignment = Alignment.Center
     ) {
+        // Festive greeting overlay - positioned at bottom
+//        if (festiveEnabled && showLogo) {
+//            FestiveSplashGreeting(
+//                festiveType = activeFestiveTheme,
+//                modifier = Modifier
+//                    .align(Alignment.BottomCenter)
+//                    .padding(bottom = 100.dp)
+//            )
+//        }
+        
         // Background particles using the drawable
 //        AnimatedVisibility(
 //            visible = showContent,

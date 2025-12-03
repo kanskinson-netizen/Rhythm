@@ -173,7 +173,17 @@ class AppSettings private constructor(context: Context) {
     
     // UI Settings
     private const val KEY_USE_SETTINGS = "use_settings"
-    private const val KEY_DEFAULT_SCREEN = "default_screen"        // Blacklisted Songs
+    private const val KEY_DEFAULT_SCREEN = "default_screen"
+        
+        // Festive Theme Settings
+        private const val KEY_FESTIVE_THEME_ENABLED = "festive_theme_enabled"
+        private const val KEY_FESTIVE_THEME_TYPE = "festive_theme_type"
+        private const val KEY_FESTIVE_THEME_INTENSITY = "festive_theme_intensity"
+        private const val KEY_FESTIVE_THEME_AUTO_DETECT = "festive_theme_auto_detect"
+        private const val KEY_FESTIVE_SNOWFLAKE_SIZE = "festive_snowflake_size"
+        private const val KEY_FESTIVE_SNOWFLAKE_AREA = "festive_snowflake_area"
+        
+        // Blacklisted Songs
         private const val KEY_BLACKLISTED_SONGS = "blacklisted_songs"
         
         // Blacklisted Folders
@@ -708,6 +718,25 @@ class AppSettings private constructor(context: Context) {
     // UI Settings
     private val _useSettings = MutableStateFlow(prefs.getBoolean(KEY_USE_SETTINGS, true))
     val useSettings: StateFlow<Boolean> = _useSettings.asStateFlow()
+    
+    // Festive Theme Settings
+    private val _festiveThemeEnabled = MutableStateFlow(prefs.getBoolean(KEY_FESTIVE_THEME_ENABLED, true))
+    val festiveThemeEnabled: StateFlow<Boolean> = _festiveThemeEnabled.asStateFlow()
+    
+    private val _festiveThemeType = MutableStateFlow(prefs.getString(KEY_FESTIVE_THEME_TYPE, "CHRISTMAS") ?: "CHRISTMAS")
+    val festiveThemeType: StateFlow<String> = _festiveThemeType.asStateFlow()
+    
+    private val _festiveThemeIntensity = MutableStateFlow(prefs.getFloat(KEY_FESTIVE_THEME_INTENSITY, 0.5f))
+    val festiveThemeIntensity: StateFlow<Float> = _festiveThemeIntensity.asStateFlow()
+    
+    private val _festiveThemeAutoDetect = MutableStateFlow(prefs.getBoolean(KEY_FESTIVE_THEME_AUTO_DETECT, true))
+    val festiveThemeAutoDetect: StateFlow<Boolean> = _festiveThemeAutoDetect.asStateFlow()
+    
+    private val _festiveSnowflakeSize = MutableStateFlow(prefs.getFloat(KEY_FESTIVE_SNOWFLAKE_SIZE, 1.0f))
+    val festiveSnowflakeSize: StateFlow<Float> = _festiveSnowflakeSize.asStateFlow()
+    
+    private val _festiveSnowflakeArea = MutableStateFlow(prefs.getString(KEY_FESTIVE_SNOWFLAKE_AREA, "FULL_SCREEN") ?: "FULL_SCREEN")
+    val festiveSnowflakeArea: StateFlow<String> = _festiveSnowflakeArea.asStateFlow()
     
     // Blacklisted Songs
     private val _blacklistedSongs = MutableStateFlow<List<String>>(
@@ -1397,6 +1426,37 @@ class AppSettings private constructor(context: Context) {
     fun setUseSettings(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_USE_SETTINGS, enabled).apply()
         _useSettings.value = enabled
+    }
+    
+    // Festive Theme Settings Methods
+    fun setFestiveThemeEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_FESTIVE_THEME_ENABLED, enabled).apply()
+        _festiveThemeEnabled.value = enabled
+    }
+    
+    fun setFestiveThemeType(type: String) {
+        prefs.edit().putString(KEY_FESTIVE_THEME_TYPE, type).apply()
+        _festiveThemeType.value = type
+    }
+    
+    fun setFestiveThemeIntensity(intensity: Float) {
+        prefs.edit().putFloat(KEY_FESTIVE_THEME_INTENSITY, intensity).apply()
+        _festiveThemeIntensity.value = intensity
+    }
+    
+    fun setFestiveThemeAutoDetect(autoDetect: Boolean) {
+        prefs.edit().putBoolean(KEY_FESTIVE_THEME_AUTO_DETECT, autoDetect).apply()
+        _festiveThemeAutoDetect.value = autoDetect
+    }
+    
+    fun setFestiveSnowflakeSize(size: Float) {
+        prefs.edit().putFloat(KEY_FESTIVE_SNOWFLAKE_SIZE, size).apply()
+        _festiveSnowflakeSize.value = size
+    }
+    
+    fun setFestiveSnowflakeArea(area: String) {
+        prefs.edit().putString(KEY_FESTIVE_SNOWFLAKE_AREA, area).apply()
+        _festiveSnowflakeArea.value = area
     }
     
     // Blacklisted Songs Methods
