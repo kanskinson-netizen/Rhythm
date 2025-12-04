@@ -41,6 +41,7 @@ import chromahub.rhythm.app.data.Song
 import chromahub.rhythm.app.data.AppSettings
 import chromahub.rhythm.app.ui.components.RhythmIcons
 import chromahub.rhythm.app.ui.components.M3PlaceholderType
+import chromahub.rhythm.app.ui.components.formatDuration
 import chromahub.rhythm.app.util.ImageUtils
 import chromahub.rhythm.app.util.HapticUtils
 import chromahub.rhythm.app.viewmodel.MusicViewModel
@@ -85,6 +86,7 @@ fun AlbumBottomSheet(
     // Get AppSettings for sort order persistence
     val appSettings = remember { AppSettings.getInstance(context) }
     val savedSortOrder by appSettings.albumSortOrder.collectAsState()
+    val useHoursFormat by appSettings.useHoursInTimeFormat.collectAsState()
     
     // Sort order state with persistence
     var sortOrder by remember { 
@@ -570,6 +572,7 @@ fun AlbumBottomSheet(
                                     onAddToBlacklist = { onAddToBlacklist(song) },
                                     currentSong = currentSong,
                                     isPlaying = isPlaying,
+                                    useHoursFormat = useHoursFormat,
                                     modifier = Modifier
                                         .animateItem(), // Keep item placement animation
                                     haptics = haptics
@@ -632,7 +635,8 @@ fun EnhancedAlbumSongItem(
     onShowSongInfo: () -> Unit = {},
     onAddToBlacklist: () -> Unit = {},
     currentSong: Song? = null, // Add current song parameter
-    isPlaying: Boolean = false // Add playing state
+    isPlaying: Boolean = false, // Add playing state
+    useHoursFormat: Boolean = false // Time format setting
 ) {
     val context = LocalContext.current
     var showDropdown by remember { mutableStateOf(false) }
@@ -708,7 +712,7 @@ fun EnhancedAlbumSongItem(
                     }
                     
                     if (song.duration > 0) {
-                        val durationText = formatDuration(song.duration)
+                        val durationText = formatDuration(song.duration, useHoursFormat)
                         Text(
                             text = durationText,
                             style = MaterialTheme.typography.bodyMedium,
@@ -1047,18 +1051,5 @@ fun EnhancedAlbumSongItem(
             ),
             modifier = Modifier.padding(horizontal = 0.dp, vertical = 0.dp) // Removed internal padding
         )
-    }
-}
-
-// Helper function to format duration (reuse from PlaylistDetailScreen)
-private fun formatDuration(durationMs: Long): String {
-    val seconds = (durationMs / 1000) % 60
-    val minutes = (durationMs / (1000 * 60)) % 60
-    val hours = (durationMs / (1000 * 60 * 60))
-    
-    return if (hours > 0) {
-        String.format("%d:%02d:%02d", hours, minutes, seconds)
-    } else {
-        String.format("%d:%02d", minutes, seconds)
     }
 }

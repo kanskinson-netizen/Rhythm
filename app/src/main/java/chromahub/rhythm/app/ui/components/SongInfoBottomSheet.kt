@@ -52,6 +52,7 @@ import chromahub.rhythm.app.data.Song
 import chromahub.rhythm.app.data.AppSettings
 import chromahub.rhythm.app.ui.components.M3PlaceholderType
 import chromahub.rhythm.app.ui.components.SimpleCircularLoader
+import chromahub.rhythm.app.ui.components.formatDuration
 import chromahub.rhythm.app.util.ImageUtils
 import chromahub.rhythm.app.util.MediaUtils
 import chromahub.rhythm.app.util.HapticUtils
@@ -114,6 +115,9 @@ fun SongInfoBottomSheet(
     var extendedInfo by remember { mutableStateOf<ExtendedSongInfo?>(null) }
     var isLoadingMetadata by remember { mutableStateOf(true) }
     var showEditSheet by remember { mutableStateOf(false) }
+    
+    // Time format setting
+    val useHoursFormat by appSettings.useHoursInTimeFormat.collectAsState()
     
     // Animation states
     var showContent by remember { mutableStateOf(false) }
@@ -609,7 +613,8 @@ fun SongInfoBottomSheet(
                     MetadataGridSection(
                         song = song,
                         extendedInfo = extendedInfo,
-                        isLoading = isLoadingMetadata
+                        isLoading = isLoadingMetadata,
+                        useHoursFormat = useHoursFormat
                     )
                 }
             }
@@ -633,13 +638,14 @@ fun SongInfoBottomSheet(
 private fun MetadataGridSection(
     song: Song,
     extendedInfo: ExtendedSongInfo?,
-    isLoading: Boolean
+    isLoading: Boolean,
+    useHoursFormat: Boolean = false
 ) {
     val context = LocalContext.current
     // Prepare metadata items (avoiding duplicates and showing more information)
     val metadataItems = buildList {
         // Basic song info
-        add(MetadataItem("Duration", formatDuration(song.duration), Icons.Rounded.Schedule))
+        add(MetadataItem("Duration", formatDuration(song.duration, useHoursFormat), Icons.Rounded.Schedule))
         
         // Track info (prefer extended info if available)
         val trackNum = if (song.trackNumber > 0) song.trackNumber else 0
@@ -1480,17 +1486,6 @@ data class MetadataItem(
 )
 
 // Helper functions
-private fun formatDuration(durationMs: Long): String {
-    val minutes = java.util.concurrent.TimeUnit.MILLISECONDS.toMinutes(durationMs)
-    val seconds = java.util.concurrent.TimeUnit.MILLISECONDS.toSeconds(durationMs) - java.util.concurrent.TimeUnit.MINUTES.toSeconds(minutes)
-    val hours = java.util.concurrent.TimeUnit.MILLISECONDS.toHours(durationMs)
-
-    return when {
-        hours > 0 -> String.format("%d:%02d:%02d", hours, minutes % 60, seconds)
-        else -> String.format("%d:%02d", minutes, seconds)
-    }
-}
-
 private fun formatFileSize(bytes: Long): String {
     val kb = bytes / 1024.0
     val mb = kb / 1024.0

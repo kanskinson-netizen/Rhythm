@@ -43,6 +43,7 @@ import chromahub.rhythm.app.data.Artist
 import chromahub.rhythm.app.data.Song
 import chromahub.rhythm.app.ui.components.RhythmIcons
 import chromahub.rhythm.app.ui.components.M3PlaceholderType
+import chromahub.rhythm.app.ui.components.formatDuration
 import chromahub.rhythm.app.util.ImageUtils
 import chromahub.rhythm.app.util.HapticUtils
 import chromahub.rhythm.app.viewmodel.MusicViewModel
@@ -80,6 +81,7 @@ fun ArtistBottomSheet(
     val viewModel: MusicViewModel = viewModel()
     val appSettings = remember { AppSettings.getInstance(context) }
     val groupByAlbumArtist by appSettings.groupByAlbumArtist.collectAsState()
+    val useHoursFormat by appSettings.useHoursInTimeFormat.collectAsState()
     
     // Get songs and albums from viewModel
     val allSongs by viewModel.songs.collectAsState()
@@ -513,6 +515,7 @@ fun ArtistBottomSheet(
                                         },
                                         currentSong = currentSong,
                                         isPlaying = isPlaying,
+                                        useHoursFormat = useHoursFormat,
                                         modifier = Modifier
                                             .graphicsLayer {
                                                 alpha = contentAlpha
@@ -651,7 +654,8 @@ private fun EnhancedArtistSongItem(
     onShowSongInfo: () -> Unit = {},
     onAddToBlacklist: () -> Unit = {},
     currentSong: Song? = null,
-    isPlaying: Boolean = false
+    isPlaying: Boolean = false,
+    useHoursFormat: Boolean = false
 ) {
     val context = LocalContext.current
     var showDropdown by remember { mutableStateOf(false) }
@@ -725,7 +729,7 @@ private fun EnhancedArtistSongItem(
                             color = artistColor
                         )
                         
-                        val durationText = formatDuration(song.duration)
+                        val durationText = formatDuration(song.duration, useHoursFormat)
                         Text(
                             text = durationText,
                             style = MaterialTheme.typography.bodyMedium,
@@ -1068,18 +1072,5 @@ private fun EnhancedArtistSongItem(
             containerColor = Color.Transparent
         )
     )
-    }
-}
-
-// Helper function to format duration
-private fun formatDuration(durationMs: Long): String {
-    val seconds = (durationMs / 1000) % 60
-    val minutes = (durationMs / (1000 * 60)) % 60
-    val hours = (durationMs / (1000 * 60 * 60))
-    
-    return if (hours > 0) {
-        String.format("%d:%02d:%02d", hours, minutes, seconds)
-    } else {
-        String.format("%d:%02d", minutes, seconds)
     }
 }

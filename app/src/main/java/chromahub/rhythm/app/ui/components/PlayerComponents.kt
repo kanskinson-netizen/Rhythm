@@ -94,6 +94,8 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.windowInsetsPadding
 import chromahub.rhythm.app.util.HapticUtils
+import chromahub.rhythm.app.data.AppSettings
+import androidx.compose.runtime.collectAsState
 
 
 /**
@@ -113,6 +115,8 @@ fun MiniPlayer(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val appSettings = remember { AppSettings.getInstance(context) }
+    val useHoursFormat by appSettings.useHoursInTimeFormat.collectAsState()
     val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
     val animatedProgress by animateFloatAsState(
@@ -573,7 +577,7 @@ fun MiniPlayer(
                                 shape = RoundedCornerShape(8.dp)
                             ) {
                                 Text(
-                                    text = "${formatDuration((progress * song.duration).toLong())}/${formatDuration(song.duration)}",
+                                    text = "${formatDuration((progress * song.duration).toLong(), useHoursFormat)}/${formatDuration(song.duration, useHoursFormat)}",
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontWeight = FontWeight.Medium
                                     ),
@@ -637,11 +641,20 @@ fun MiniPlayer(
 }
 
 /**
- * Format duration from milliseconds to mm:ss format
+ * Format duration from milliseconds to mm:ss or h:mm:ss format
+ * @param durationMs Duration in milliseconds
+ * @param useHoursFormat If true, shows hours when duration is >= 60 minutes (e.g., 1:32:26 instead of 92:26)
  */
-fun formatDuration(durationMs: Long): String {
-    val minutes = TimeUnit.MILLISECONDS.toMinutes(durationMs)
+fun formatDuration(durationMs: Long, useHoursFormat: Boolean = false): String {
+    val totalMinutes = TimeUnit.MILLISECONDS.toMinutes(durationMs)
     val seconds = TimeUnit.MILLISECONDS.toSeconds(durationMs) -
-            TimeUnit.MINUTES.toSeconds(minutes)
-    return String.format("%d:%02d", minutes, seconds)
+            TimeUnit.MINUTES.toSeconds(totalMinutes)
+    
+    return if (useHoursFormat && totalMinutes >= 60) {
+        val hours = totalMinutes / 60
+        val minutes = totalMinutes % 60
+        String.format("%d:%02d:%02d", hours, minutes, seconds)
+    } else {
+        String.format("%d:%02d", totalMinutes, seconds)
+    }
 }

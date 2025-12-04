@@ -94,6 +94,7 @@ import coil.request.ImageRequest
 import chromahub.rhythm.app.ui.components.M3PlaceholderType
 import chromahub.rhythm.app.util.ImageUtils
 import chromahub.rhythm.app.util.HapticUtils
+import chromahub.rhythm.app.ui.components.formatDuration
 import kotlinx.coroutines.delay // Import delay
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -149,6 +150,7 @@ fun PlaylistDetailScreen(
     val context = LocalContext.current
     val appSettings = remember { chromahub.rhythm.app.data.AppSettings.getInstance(context) }
     val playlistClickBehavior by appSettings.playlistClickBehavior.collectAsState(initial = "ask")
+    val useHoursFormat by appSettings.useHoursInTimeFormat.collectAsState()
 
     // Queue Options Dialog - matches app-wide dialog design
     if (showQueueOptionsDialog && selectedSongForQueue != null) {
@@ -894,7 +896,8 @@ fun PlaylistDetailScreen(
                                 },
                                 onRemove = { message -> onRemoveSong(song, message) },
                                 currentSong = currentSong,
-                                isPlaying = isPlaying
+                                isPlaying = isPlaying,
+                                useHoursFormat = useHoursFormat
                             )
                         }
                     }
@@ -969,7 +972,8 @@ fun PlaylistSongItem(
     onClick: () -> Unit,
     onRemove: (String) -> Unit = {},
     currentSong: Song? = null,
-    isPlaying: Boolean = false
+    isPlaying: Boolean = false,
+    useHoursFormat: Boolean = false
 ) {
     val context = LocalContext.current
     var showRemoveDialog by remember { mutableStateOf(false) }
@@ -1155,7 +1159,7 @@ fun PlaylistSongItem(
             // Duration display
             if (song.duration > 0) {
                 Text(
-                    text = formatDuration(song.duration),
+                    text = formatDuration(song.duration, useHoursFormat),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     modifier = Modifier.padding(end = 12.dp)
@@ -1181,18 +1185,5 @@ fun PlaylistSongItem(
                 )
             }
         }
-    }
-}
-
-// Helper function to format duration
-private fun formatDuration(durationMs: Long): String {
-    val seconds = (durationMs / 1000) % 60
-    val minutes = (durationMs / (1000 * 60)) % 60
-    val hours = (durationMs / (1000 * 60 * 60))
-    
-    return if (hours > 0) {
-        String.format("%d:%02d:%02d", hours, minutes, seconds)
-    } else {
-        String.format("%d:%02d", minutes, seconds)
     }
 }

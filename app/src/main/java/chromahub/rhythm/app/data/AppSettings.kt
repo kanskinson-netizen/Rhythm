@@ -233,6 +233,7 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_SAVED_SHUFFLE_STATE = "saved_shuffle_state"
         private const val KEY_SAVED_REPEAT_MODE = "saved_repeat_mode"
         private const val KEY_PLAYBACK_SPEED = "playback_speed"
+        private const val KEY_USE_HOURS_IN_TIME_FORMAT = "use_hours_in_time_format"
         
         // Widget Settings
         private const val KEY_WIDGET_SHOW_ALBUM_ART = "widget_show_album_art"
@@ -484,6 +485,10 @@ class AppSettings private constructor(context: Context) {
     
     private val _playbackSpeed = MutableStateFlow(prefs.getFloat(KEY_PLAYBACK_SPEED, 1.0f))
     val playbackSpeed: StateFlow<Float> = _playbackSpeed.asStateFlow()
+    
+    // Time Format Settings - Show hours:minutes:seconds for longer tracks (>60 min)
+    private val _useHoursInTimeFormat = MutableStateFlow(prefs.getBoolean(KEY_USE_HOURS_IN_TIME_FORMAT, false))
+    val useHoursInTimeFormat: StateFlow<Boolean> = _useHoursInTimeFormat.asStateFlow()
     
     // Cache Settings
     private val _maxCacheSize = MutableStateFlow(safeLong(KEY_MAX_CACHE_SIZE, 1024L * 1024L * 512L)) // 512MB default
@@ -1150,6 +1155,12 @@ class AppSettings private constructor(context: Context) {
     fun setPlaybackSpeed(speed: Float) {
         prefs.edit().putFloat(KEY_PLAYBACK_SPEED, speed).apply()
         _playbackSpeed.value = speed
+    }
+    
+    // Time Format Settings Methods
+    fun setUseHoursInTimeFormat(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_USE_HOURS_IN_TIME_FORMAT, enabled).apply()
+        _useHoursInTimeFormat.value = enabled
     }
     
     // Cache Settings Methods

@@ -383,6 +383,7 @@ fun QueuePlaybackSettingsScreen(onBackClick: () -> Unit) {
     val repeatModePersistence by appSettings.repeatModePersistence.collectAsState()
     val shuffleModePersistence by appSettings.shuffleModePersistence.collectAsState()
     val playlistClickBehavior by appSettings.playlistClickBehavior.collectAsState(initial = "ask")
+    val useHoursInTimeFormat by appSettings.useHoursInTimeFormat.collectAsState()
     
     var showPlaylistBehaviorDialog by remember { mutableStateOf(false) }
     var showQueueDialogSettingDialog by remember { mutableStateOf(false) }
@@ -451,6 +452,18 @@ fun QueuePlaybackSettingsScreen(onBackClick: () -> Unit) {
                         context.getString(R.string.settings_remember_shuffle_mode_desc),
                         toggleState = shuffleModePersistence,
                         onToggleChange = { appSettings.setShuffleModePersistence(it) }
+                    )
+                )
+            ),
+            SettingGroup(
+                title = "Time Display",
+                items = listOf(
+                    SettingItem(
+                        androidx.compose.material.icons.Icons.Default.AccessTime,
+                        "Use Hours in Time Format",
+                        if (useHoursInTimeFormat) "Shows 1:32:26 for long tracks" else "Shows 92:26 for long tracks",
+                        toggleState = useHoursInTimeFormat,
+                        onToggleChange = { appSettings.setUseHoursInTimeFormat(it) }
                     )
                 )
             )

@@ -277,6 +277,7 @@ fun PlayerScreen(
         appSettings ?: chromahub.rhythm.app.data.AppSettings.getInstance(context)
     val useSystemVolume by appSettingsInstance.useSystemVolume.collectAsState()
     val groupByAlbumArtist by appSettingsInstance.groupByAlbumArtist.collectAsState()
+    val useHoursFormat by appSettingsInstance.useHoursInTimeFormat.collectAsState()
 
     // Helper function to split artist names
     val splitArtistNames: (String) -> List<String> = remember {
@@ -581,8 +582,8 @@ fun PlayerScreen(
     val totalTimeMs = song?.duration ?: 0
 
     // Format current and total time
-    val currentTimeFormatted = formatDuration(currentTimeMs)
-    val totalTimeFormatted = formatDuration(totalTimeMs)
+    val currentTimeFormatted = formatDuration(currentTimeMs, useHoursFormat)
+    val totalTimeFormatted = formatDuration(totalTimeMs, useHoursFormat)
 
     LaunchedEffect(song?.id) {
         // Reset animation when song changes
