@@ -56,6 +56,7 @@ import com.google.gson.reflect.TypeToken
 import java.util.Calendar
 import java.io.File
 import chromahub.rhythm.app.data.LyricsData // Import LyricsData
+import chromahub.rhythm.app.util.PendingWriteRequest // Import for metadata write requests
 
 class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val TAG = "MusicViewModel"
@@ -405,6 +406,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     // Target playlist for adding songs
     private val _targetPlaylistId = MutableStateFlow<String?>(null)
     val targetPlaylistId: StateFlow<String?> = _targetPlaylistId.asStateFlow()
+    
+    // Pending write request for metadata editing (Android 11+ permission flow)
+    private val _pendingWriteRequest = MutableStateFlow<PendingWriteRequest?>(null)
+    val pendingWriteRequest: StateFlow<PendingWriteRequest?> = _pendingWriteRequest.asStateFlow()
 
     // Sort library functionality - Load saved sort order from AppSettings
     private val _sortOrder = MutableStateFlow(
@@ -1070,6 +1075,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     
     /**
      * Saves metadata changes to the audio file and updates the UI
+     * On Android 11+, if permission is needed, it will trigger a permission request flow
      */
     fun saveMetadataChanges(
         song: Song,
@@ -1081,7 +1087,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         trackNumber: Int,
         artworkUri: Uri? = null,
         onSuccess: (fileWriteSucceeded: Boolean) -> Unit,
-        onError: (String) -> Unit
+        onError: (String) -> Unit,
+        onPermissionRequired: ((PendingWriteRequest) -> Unit)? = null
     ) {
         viewModelScope.launch {
             try {
@@ -1129,17 +1136,45 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                         Log.d(TAG, "Successfully updated file metadata for: $title by $artist")
                         onSuccess(true)
                     } else {
-                        // File update failed but MediaStore may have succeeded
-                        Log.w(TAG, "File metadata write failed")
-                        onSuccess(false)
+                        // File update failed - on Android 11+, try the permission request approach
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            Log.d(TAG, "File write failed on Android 11+, attempting createWriteRequest approach")
+                            val pendingRequest = withContext(Dispatchers.IO) {
+                                chromahub.rhythm.app.util.MediaUtils.createWriteRequestForSong(
+                                    context = context,
+                                    song = song,
+                                    newTitle = title,
+                                    newArtist = artist,
+                                    newAlbum = album,
+                                    newGenre = genre,
+                                    newYear = year,
+                                    newTrackNumber = trackNumber
+                                )
+                            }
+                            
+                            if (pendingRequest != null) {
+                                Log.d(TAG, "Created pending write request, triggering permission dialog")
+                                _pendingWriteRequest.value = pendingRequest
+                                onPermissionRequired?.invoke(pendingRequest)
+                                    ?: onError("Permission required to modify this file. Please grant access when prompted.")
+                            } else {
+                                Log.w(TAG, "Failed to create write request")
+                                onSuccess(false)
+                            }
+                        } else {
+                            Log.w(TAG, "File metadata write failed")
+                            onSuccess(false)
+                        }
                     }
                 }
                 
             } catch (e: chromahub.rhythm.app.util.RecoverableSecurityExceptionWrapper) {
                 // Android 11+ scoped storage restriction - file not owned by app
-                Log.w(TAG, "RecoverableSecurityException - file modification requires user permission")
+                Log.w(TAG, "RecoverableSecurityException - attempting createWriteRequest approach")
                 
-                // Update in-memory data anyway
+                val context = getApplication<Application>().applicationContext
+                
+                // Update in-memory data first
                 val updatedSong = song.copy(
                     title = title,
                     artist = artist,
@@ -1150,8 +1185,35 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 )
                 updateCurrentSongMetadata(updatedSong)
                 
-                withContext(Dispatchers.Main) {
-                    onError("Cannot modify this file: Android security restrictions prevent editing files not created by this app. Metadata updated in library only.")
+                // Try to create a write request for Android 11+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    val pendingRequest = withContext(Dispatchers.IO) {
+                        chromahub.rhythm.app.util.MediaUtils.createWriteRequestForSong(
+                            context = context,
+                            song = song,
+                            newTitle = title,
+                            newArtist = artist,
+                            newAlbum = album,
+                            newGenre = genre,
+                            newYear = year,
+                            newTrackNumber = trackNumber
+                        )
+                    }
+                    
+                    withContext(Dispatchers.Main) {
+                        if (pendingRequest != null) {
+                            Log.d(TAG, "Created pending write request after RecoverableSecurityException")
+                            _pendingWriteRequest.value = pendingRequest
+                            onPermissionRequired?.invoke(pendingRequest)
+                                ?: onError("Permission required to modify this file. Please grant access when prompted.")
+                        } else {
+                            onError("Cannot modify this file. Changes saved to library only.")
+                        }
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        onError("Cannot modify this file: permission denied. Changes saved to library only.")
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error saving metadata", e)
@@ -1159,6 +1221,80 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     onError("Failed to save metadata: ${e.message ?: "Unknown error"}")
                 }
             }
+        }
+    }
+    
+    /**
+     * Called after user grants permission via the system dialog triggered by createWriteRequest
+     * Completes the pending metadata write operation
+     */
+    fun completeMetadataWriteAfterPermission(
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val pendingRequest = _pendingWriteRequest.value
+        if (pendingRequest == null) {
+            Log.w(TAG, "No pending write request to complete")
+            onError("No pending write request")
+            return
+        }
+        
+        viewModelScope.launch {
+            try {
+                val context = getApplication<Application>().applicationContext
+                val success = withContext(Dispatchers.IO) {
+                    chromahub.rhythm.app.util.MediaUtils.completeWriteAfterPermissionGranted(
+                        context = context,
+                        pendingRequest = pendingRequest
+                    )
+                }
+                
+                // Clear the pending request
+                _pendingWriteRequest.value = null
+                
+                if (success) {
+                    // Update in-memory data
+                    val updatedSong = pendingRequest.song.copy(
+                        title = pendingRequest.newTitle,
+                        artist = pendingRequest.newArtist,
+                        album = pendingRequest.newAlbum,
+                        genre = pendingRequest.newGenre,
+                        year = pendingRequest.newYear,
+                        trackNumber = pendingRequest.newTrackNumber
+                    )
+                    updateCurrentSongMetadata(updatedSong)
+                    
+                    withContext(Dispatchers.Main) {
+                        Log.d(TAG, "Successfully completed metadata write after permission granted")
+                        onSuccess()
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        onError("Failed to write metadata even after permission was granted")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error completing metadata write after permission", e)
+                _pendingWriteRequest.value = null
+                withContext(Dispatchers.Main) {
+                    onError("Error: ${e.message}")
+                }
+            }
+        }
+    }
+    
+    /**
+     * Called when user denies the permission request
+     * Cleans up the pending request
+     */
+    fun cancelPendingMetadataWrite() {
+        val pendingRequest = _pendingWriteRequest.value
+        if (pendingRequest != null) {
+            viewModelScope.launch(Dispatchers.IO) {
+                chromahub.rhythm.app.util.MediaUtils.cleanupPendingWriteRequest(pendingRequest)
+            }
+            _pendingWriteRequest.value = null
+            Log.d(TAG, "Cancelled pending metadata write request")
         }
     }
     

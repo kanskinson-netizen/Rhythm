@@ -16,6 +16,8 @@ import androidx.core.content.ContextCompat
 import android.Manifest
 import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import kotlin.collections.sortedBy
 import kotlin.collections.mutableListOf
@@ -302,6 +304,30 @@ fun LibraryScreen(
     var operationInProgress by remember { mutableStateOf("") }
     var operationResult by remember { mutableStateOf<Pair<String, Boolean>?>(null) }
     
+    // Pending write request for metadata editing (Android 11+)
+    val pendingWriteRequest by musicViewModel.pendingWriteRequest.collectAsState()
+    
+    // Write permission launcher for Android 11+ metadata editing
+    val writePermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            // User granted permission, complete the write
+            musicViewModel.completeMetadataWriteAfterPermission(
+                onSuccess = {
+                    Toast.makeText(context, "Metadata saved successfully!", Toast.LENGTH_SHORT).show()
+                },
+                onError = { errorMessage ->
+                    Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+                }
+            )
+        } else {
+            // User denied permission
+            musicViewModel.cancelPendingMetadataWrite()
+            Toast.makeText(context, "Permission denied. Changes saved to library only.", Toast.LENGTH_LONG).show()
+        }
+    }
+    
     // Import/Export related state
     var operationProgressText by remember { mutableStateOf("") }
     var operationError by remember { mutableStateOf<String?>(null) }
@@ -428,12 +454,28 @@ fun LibraryScreen(
                         if (fileWriteSucceeded) {
                             Toast.makeText(context, "Metadata saved successfully to file!", Toast.LENGTH_SHORT).show()
                         } else {
-                            Toast.makeText(context, "Metadata updated in library only. File write failed - check permissions.", Toast.LENGTH_LONG).show()
+                            // Don't show error here - permission request may be triggered
                         }
                         // Don't close the sheet - let the user see the updated info
                     },
                     onError = { errorMessage ->
                         Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+                    },
+                    onPermissionRequired = { pendingRequest ->
+                        // Launch the system permission dialog for Android 11+
+                        try {
+                            val intentSenderRequest = androidx.activity.result.IntentSenderRequest.Builder(
+                                pendingRequest.intentSender
+                            ).build()
+                            writePermissionLauncher.launch(intentSenderRequest)
+                        } catch (e: Exception) {
+                            Toast.makeText(
+                                context,
+                                "Failed to request permission: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            musicViewModel.cancelPendingMetadataWrite()
+                        }
                     }
                 )
             }

@@ -913,9 +913,7 @@ private fun EditSongSheet(
     var trackNumber by remember { mutableStateOf(if (song.trackNumber > 0) song.trackNumber.toString() else "") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     val haptics = LocalHapticFeedback.current
-    var showPermissionDialog by remember { mutableStateOf(false) }
     var showWarningDialog by remember { mutableStateOf(false) }
-    var showImagePicker by remember { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
     var showContent by remember { mutableStateOf(false) }
     
@@ -942,8 +940,11 @@ private fun EditSongSheet(
         val yearInt = year.toIntOrNull() ?: 0
         val trackInt = trackNumber.toIntOrNull() ?: 0
         
-        // For now, we'll pass the basic metadata. The artwork handling will be added later
+        // Pass the basic metadata to the save callback
         onSave(title.trim(), artist.trim(), album.trim(), genre.trim(), yearInt, trackInt)
+        
+        // Reset saving state after initiating save
+        isSaving = false
         
         // TODO: Handle artwork saving separately if selectedImageUri is not null
         if (selectedImageUri != null) {
@@ -958,6 +959,7 @@ private fun EditSongSheet(
         if (isGranted) {
             proceedWithSave()
         } else {
+            isSaving = false
             Toast.makeText(
                 context, 
                 "Storage permission is required to edit audio file metadata", 
@@ -974,6 +976,7 @@ private fun EditSongSheet(
         if (allGranted) {
             proceedWithSave()
         } else {
+            isSaving = false
             Toast.makeText(
                 context,
                 "Media permissions are required to edit audio file metadata",
@@ -1000,15 +1003,25 @@ private fun EditSongSheet(
         isSaving = true
         when {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
-                // Android 13+ - Request only audio permission (images are optional)
-                multiplePermissionsLauncher.launch(
-                    arrayOf(
-                        Manifest.permission.READ_MEDIA_AUDIO
+                // Android 13+ - Check if audio permission is already granted
+                val hasAudioPermission = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.READ_MEDIA_AUDIO
+                ) == PackageManager.PERMISSION_GRANTED
+                
+                if (hasAudioPermission) {
+                    proceedWithSave()
+                } else {
+                    // Request only audio permission (images are optional)
+                    multiplePermissionsLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.READ_MEDIA_AUDIO
+                        )
                     )
-                )
+                }
             }
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
-                // Android 11-12 - Use scoped storage
+                // Android 11-12 - Use scoped storage (no special permissions needed for MediaStore)
                 proceedWithSave()
             }
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> {
@@ -1406,7 +1419,10 @@ private fun EditSongSheet(
             },
             dismissButton = {
                 OutlinedButton(
-                    onClick = { showWarningDialog = false }
+                    onClick = { 
+                        showWarningDialog = false
+                        isSaving = false  // Reset saving state when user cancels
+                    }
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
@@ -1418,62 +1434,6 @@ private fun EditSongSheet(
                 }
             },
             shape = RoundedCornerShape(24.dp)
-        )
-    }
-    
-    // Permission confirmation dialog for Android 10+
-    if (showPermissionDialog) {
-        AlertDialog(
-            onDismissRequest = { showPermissionDialog = false },
-            icon = {
-                Icon(
-                    imageVector = Icons.Rounded.Security,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            },
-            title = {
-                Text("Media Access Required")
-            },
-            text = {
-                Text(
-                    text = context.getString(R.string.song_info_permission),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showPermissionDialog = false
-                        val yearInt = year.toIntOrNull() ?: 0
-                        val trackInt = trackNumber.toIntOrNull() ?: 0
-                        onSave(title.trim(), artist.trim(), album.trim(), genre.trim(), yearInt, trackInt)
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Security,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Continue")
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    onClick = { showPermissionDialog = false }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Cancel")
-                }
-            },
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-            shape = RoundedCornerShape(16.dp)
         )
     }
 }

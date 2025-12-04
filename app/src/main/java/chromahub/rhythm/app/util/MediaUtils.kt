@@ -1,8 +1,10 @@
 package chromahub.rhythm.app.util
 
+import android.app.PendingIntent
 import android.app.RemoteAction
 import android.content.ContentResolver
 import android.content.Context
+import android.content.IntentSender
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
@@ -29,6 +31,22 @@ class RecoverableSecurityExceptionWrapper(
     val fileUri: Uri,
     val tempFilePath: String
 ) : Exception(message)
+
+/**
+ * Data class representing a pending write request for Android 11+
+ * This is used when the system needs user permission to modify a file
+ */
+data class PendingWriteRequest(
+    val intentSender: IntentSender,
+    val song: Song,
+    val newTitle: String,
+    val newArtist: String,
+    val newAlbum: String,
+    val newGenre: String,
+    val newYear: Int,
+    val newTrackNumber: Int,
+    val tempFilePath: String
+)
 
 /**
  * Utility class for handling media-related operations
@@ -870,6 +888,259 @@ object MediaUtils {
         } catch (e: Exception) {
             Log.e(TAG, "Failed to update song metadata: ${song.title}", e)
             false
+        }
+    }
+    
+    /**
+     * Creates a write request for Android 11+ using MediaStore.createWriteRequest()
+     * This shows a system permission dialog to the user to allow modifying the file
+     * 
+     * @param context The application context
+     * @param song The song to request write access for
+     * @param newTitle The new title to be set after permission is granted
+     * @param newArtist The new artist to be set after permission is granted
+     * @param newAlbum The new album to be set after permission is granted
+     * @param newGenre The new genre to be set after permission is granted
+     * @param newYear The new year to be set after permission is granted
+     * @param newTrackNumber The new track number to be set after permission is granted
+     * @return PendingWriteRequest with the IntentSender if successful, null otherwise
+     */
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.R)
+    fun createWriteRequestForSong(
+        context: Context,
+        song: Song,
+        newTitle: String,
+        newArtist: String,
+        newAlbum: String,
+        newGenre: String,
+        newYear: Int,
+        newTrackNumber: Int
+    ): PendingWriteRequest? {
+        return try {
+            val contentResolver = context.contentResolver
+            
+            Log.d(TAG, "Creating write request for song: ${song.title}")
+            
+            // Create a PendingIntent for write permission using createWriteRequest
+            val urisToModify = listOf(song.uri)
+            val pendingIntent = MediaStore.createWriteRequest(contentResolver, urisToModify)
+            
+            // Create a temp file with the modified metadata for later use
+            val tempFilePath = prepareTempFileWithMetadata(
+                context = context,
+                song = song,
+                newTitle = newTitle,
+                newArtist = newArtist,
+                newAlbum = newAlbum,
+                newGenre = newGenre,
+                newYear = newYear,
+                newTrackNumber = newTrackNumber
+            )
+            
+            if (tempFilePath == null) {
+                Log.e(TAG, "Failed to create temp file with metadata")
+                return null
+            }
+            
+            PendingWriteRequest(
+                intentSender = pendingIntent.intentSender,
+                song = song,
+                newTitle = newTitle,
+                newArtist = newArtist,
+                newAlbum = newAlbum,
+                newGenre = newGenre,
+                newYear = newYear,
+                newTrackNumber = newTrackNumber,
+                tempFilePath = tempFilePath
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to create write request for song: ${song.title}", e)
+            null
+        }
+    }
+    
+    /**
+     * Prepares a temp file with modified metadata for use after permission is granted
+     */
+    private fun prepareTempFileWithMetadata(
+        context: Context,
+        song: Song,
+        newTitle: String,
+        newArtist: String,
+        newAlbum: String,
+        newGenre: String,
+        newYear: Int,
+        newTrackNumber: Int
+    ): String? {
+        return try {
+            val contentResolver = context.contentResolver
+            
+            // Get file extension
+            val filePath = when (song.uri.scheme) {
+                "content" -> {
+                    val projection = arrayOf(MediaStore.Audio.Media.DATA)
+                    contentResolver.query(song.uri, projection, null, null, null)
+                        ?.use { cursor ->
+                            if (cursor.moveToFirst()) {
+                                val dataIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
+                                cursor.getString(dataIndex)
+                            } else null
+                        }
+                }
+                "file" -> song.uri.path
+                else -> null
+            }
+            
+            val extension = filePath?.substringAfterLast('.', "mp3") ?: "mp3"
+            val tempFile = File(context.cacheDir, "pending_metadata_${song.id}_${System.currentTimeMillis()}.$extension")
+            
+            // Copy original file to temp location
+            contentResolver.openInputStream(song.uri)?.use { inputStream ->
+                tempFile.outputStream().use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+            
+            if (!tempFile.exists() || tempFile.length() == 0L) {
+                Log.e(TAG, "Failed to copy file to temp location")
+                return null
+            }
+            
+            // Modify metadata in temp file
+            val audioFileObj = AudioFileIO.read(tempFile)
+            val tag: Tag = audioFileObj.tag ?: audioFileObj.createDefaultTag()
+            
+            tag.setField(FieldKey.TITLE, newTitle)
+            tag.setField(FieldKey.ARTIST, newArtist)
+            tag.setField(FieldKey.ALBUM, newAlbum)
+            if (newGenre.isNotBlank()) {
+                tag.setField(FieldKey.GENRE, newGenre)
+            }
+            if (newYear > 0) {
+                tag.setField(FieldKey.YEAR, newYear.toString())
+            }
+            if (newTrackNumber > 0) {
+                tag.setField(FieldKey.TRACK, newTrackNumber.toString())
+            }
+            
+            audioFileObj.tag = tag
+            AudioFileIO.write(audioFileObj)
+            
+            Log.d(TAG, "Temp file with modified metadata created: ${tempFile.absolutePath}")
+            tempFile.absolutePath
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to prepare temp file with metadata", e)
+            null
+        }
+    }
+    
+    /**
+     * Completes the metadata write operation after user grants permission via createWriteRequest
+     * 
+     * @param context The application context
+     * @param pendingRequest The pending write request containing all necessary info
+     * @return true if the write was successful, false otherwise
+     */
+    fun completeWriteAfterPermissionGranted(
+        context: Context,
+        pendingRequest: PendingWriteRequest
+    ): Boolean {
+        return try {
+            val contentResolver = context.contentResolver
+            val tempFile = File(pendingRequest.tempFilePath)
+            
+            if (!tempFile.exists()) {
+                Log.e(TAG, "Temp file not found: ${pendingRequest.tempFilePath}")
+                return false
+            }
+            
+            Log.d(TAG, "Completing write operation after permission granted for: ${pendingRequest.song.title}")
+            
+            // Now we have permission, copy the temp file back to original location
+            val outputStream = contentResolver.openOutputStream(pendingRequest.song.uri, "w")
+            if (outputStream == null) {
+                Log.e(TAG, "Failed to open output stream even after permission granted")
+                return false
+            }
+            
+            outputStream.use { outStream ->
+                tempFile.inputStream().use { inputStream ->
+                    val bytesCopied = inputStream.copyTo(outStream)
+                    Log.d(TAG, "Copied $bytesCopied bytes back to original location")
+                }
+            }
+            
+            // Update MediaStore as well
+            val values = android.content.ContentValues().apply {
+                put(MediaStore.Audio.Media.TITLE, pendingRequest.newTitle)
+                put(MediaStore.Audio.Media.ARTIST, pendingRequest.newArtist)
+                put(MediaStore.Audio.Media.ALBUM, pendingRequest.newAlbum)
+                if (pendingRequest.newGenre.isNotBlank()) {
+                    put(MediaStore.Audio.Media.GENRE, pendingRequest.newGenre)
+                }
+                if (pendingRequest.newYear > 0) {
+                    put(MediaStore.Audio.Media.YEAR, pendingRequest.newYear)
+                }
+                if (pendingRequest.newTrackNumber > 0) {
+                    put(MediaStore.Audio.Media.TRACK, pendingRequest.newTrackNumber)
+                }
+            }
+            
+            contentResolver.update(pendingRequest.song.uri, values, null, null)
+            
+            // Clean up temp file
+            if (tempFile.exists()) {
+                tempFile.delete()
+                Log.d(TAG, "Temp file cleaned up")
+            }
+            
+            // Trigger media scanner
+            val filePath = when (pendingRequest.song.uri.scheme) {
+                "content" -> {
+                    val projection = arrayOf(MediaStore.Audio.Media.DATA)
+                    contentResolver.query(pendingRequest.song.uri, projection, null, null, null)
+                        ?.use { cursor ->
+                            if (cursor.moveToFirst()) {
+                                val dataIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
+                                cursor.getString(dataIndex)
+                            } else null
+                        }
+                }
+                "file" -> pendingRequest.song.uri.path
+                else -> null
+            }
+            
+            if (filePath != null) {
+                android.media.MediaScannerConnection.scanFile(context, arrayOf(filePath), null, null)
+                Log.d(TAG, "Media scanner triggered for: $filePath")
+            }
+            
+            Log.d(TAG, "Successfully completed metadata write for: ${pendingRequest.song.title}")
+            true
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to complete write after permission granted", e)
+            // Clean up temp file on error
+            try {
+                File(pendingRequest.tempFilePath).delete()
+            } catch (ignored: Exception) {}
+            false
+        }
+    }
+    
+    /**
+     * Cleans up a pending write request (delete temp file)
+     */
+    fun cleanupPendingWriteRequest(pendingRequest: PendingWriteRequest) {
+        try {
+            val tempFile = File(pendingRequest.tempFilePath)
+            if (tempFile.exists()) {
+                tempFile.delete()
+                Log.d(TAG, "Cleaned up pending write request temp file: ${pendingRequest.tempFilePath}")
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to cleanup pending write request", e)
         }
     }
     
