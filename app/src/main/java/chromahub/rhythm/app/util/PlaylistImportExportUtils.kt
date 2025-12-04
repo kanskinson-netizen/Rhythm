@@ -19,6 +19,86 @@ import java.util.*
 object PlaylistImportExportUtils {
     private const val TAG = "PlaylistImportExport"
     
+    /**
+     * Builds a map of file paths to songs by querying MediaStore.
+     * This is essential for M3U/PLS import since content URIs don't contain file paths.
+     */
+    private fun buildFilePathToSongMap(context: Context, availableSongs: List<Song>): Map<String, Song> {
+        val pathToSong = mutableMapOf<String, Song>()
+        val songIdToSong = availableSongs.associateBy { it.id }
+        
+        try {
+            val projection = arrayOf(
+                android.provider.MediaStore.Audio.Media._ID,
+                android.provider.MediaStore.Audio.Media.DATA
+            )
+            
+            context.contentResolver.query(
+                android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                projection,
+                null,
+                null,
+                null
+            )?.use { cursor ->
+                val idIndex = cursor.getColumnIndexOrThrow(android.provider.MediaStore.Audio.Media._ID)
+                val dataIndex = cursor.getColumnIndexOrThrow(android.provider.MediaStore.Audio.Media.DATA)
+                
+                while (cursor.moveToNext()) {
+                    val id = cursor.getLong(idIndex).toString()
+                    val filePath = cursor.getString(dataIndex) ?: continue
+                    
+                    songIdToSong[id]?.let { song ->
+                        // Store both original path and lowercase version for case-insensitive matching
+                        pathToSong[filePath] = song
+                        pathToSong[filePath.lowercase()] = song
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error building file path map", e)
+        }
+        
+        Log.d(TAG, "Built file path map with ${pathToSong.size / 2} unique entries")
+        return pathToSong
+    }
+    
+    /**
+     * Gets the directory path from the M3U file URI for resolving relative paths.
+     */
+    private fun getM3uDirectoryPath(context: Context, m3uUri: Uri): String? {
+        return try {
+            when (m3uUri.scheme) {
+                "content" -> {
+                    // For content URIs, try to get the path from DocumentFile
+                    val documentFile = DocumentFile.fromSingleUri(context, m3uUri)
+                    val fileName = documentFile?.name ?: return null
+                    
+                    // Try to get the actual file path via MediaStore
+                    context.contentResolver.query(m3uUri, null, null, null, null)?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            // Try DATA column if available
+                            val dataIndex = cursor.getColumnIndex("_data")
+                            if (dataIndex >= 0) {
+                                val path = cursor.getString(dataIndex)
+                                if (!path.isNullOrEmpty()) {
+                                    return@use java.io.File(path).parent
+                                }
+                            }
+                        }
+                        null
+                    }
+                }
+                "file" -> {
+                    m3uUri.path?.let { java.io.File(it).parent }
+                }
+                else -> null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting M3U directory path", e)
+            null
+        }
+    }
+    
     enum class PlaylistExportFormat(val extension: String, val mimeType: String, val displayName: String) {
         JSON(".json", "application/json", "JSON Format"),
         M3U(".m3u", "audio/x-mpegurl", "M3U Playlist"),
@@ -140,11 +220,17 @@ object PlaylistImportExportUtils {
             val content = inputStream.bufferedReader().use { it.readText() }
             val fileName = getFileName(context, uri)
             
+            // Build file path map for M3U/PLS imports (needed to match file paths to songs)
+            val filePathMap = buildFilePathToSongMap(context, availableSongs)
+            val m3uDirectory = getM3uDirectoryPath(context, uri)
+            
+            Log.d(TAG, "Importing playlist: $fileName, M3U directory: $m3uDirectory")
+            
             val playlist = when {
                 fileName.endsWith(".json", true) -> importFromJson(content, availableSongs)
                 fileName.endsWith(".m3u", true) || fileName.endsWith(".m3u8", true) -> 
-                    importFromM3u(content, fileName, availableSongs)
-                fileName.endsWith(".pls", true) -> importFromPls(content, fileName, availableSongs)
+                    importFromM3u(content, fileName, availableSongs, filePathMap, m3uDirectory)
+                fileName.endsWith(".pls", true) -> importFromPls(content, fileName, availableSongs, filePathMap, m3uDirectory)
                 else -> return Result.failure(IllegalArgumentException("Unsupported file format"))
             }
             
@@ -251,7 +337,13 @@ object PlaylistImportExportUtils {
         )
     }
     
-    private fun importFromM3u(content: String, fileName: String, availableSongs: List<Song>): Playlist {
+    private fun importFromM3u(
+        content: String, 
+        fileName: String, 
+        availableSongs: List<Song>,
+        filePathMap: Map<String, Song>,
+        m3uDirectory: String?
+    ): Playlist {
         val lines = content.lines().filter { it.isNotBlank() }
         val matchedSongs = mutableListOf<Song>()
         val addedSongUris = mutableSetOf<String>()
@@ -274,7 +366,7 @@ object PlaylistImportExportUtils {
                     // This is a file path/URI - process ALL non-comment lines
                     val trimmedLine = line.trim()
                     if (trimmedLine.isNotEmpty()) {
-                        val song = findSongByPathOrTitle(trimmedLine, currentTitle, availableSongs)
+                        val song = findSongByPathOrTitle(trimmedLine, currentTitle, availableSongs, filePathMap, m3uDirectory)
                         if (song != null) {
                             val songKey = "${song.title.trim().lowercase()}_${song.artist.trim().lowercase()}"
                             val songUri = song.uri.toString()
@@ -309,7 +401,13 @@ object PlaylistImportExportUtils {
         )
     }
     
-    private fun importFromPls(content: String, fileName: String, availableSongs: List<Song>): Playlist {
+    private fun importFromPls(
+        content: String, 
+        fileName: String, 
+        availableSongs: List<Song>,
+        filePathMap: Map<String, Song>,
+        m3uDirectory: String?
+    ): Playlist {
         val lines = content.lines()
         val matchedSongs = mutableListOf<Song>()
         val addedSongUris = mutableSetOf<String>()
@@ -345,7 +443,7 @@ object PlaylistImportExportUtils {
         entries.toSortedMap().forEach { (_, entry) ->
             val (filePath, title, _) = entry
             if (filePath != null) {
-                val song = findSongByPathOrTitle(filePath, title ?: "", availableSongs)
+                val song = findSongByPathOrTitle(filePath, title ?: "", availableSongs, filePathMap, m3uDirectory)
                 song?.let { 
                     val songKey = "${it.title.trim().lowercase()}_${it.artist.trim().lowercase()}"
                     val songUri = it.uri.toString()
@@ -371,64 +469,114 @@ object PlaylistImportExportUtils {
         )
     }
     
-    private fun findSongByPathOrTitle(path: String, title: String, availableSongs: List<Song>): Song? {
-        // Try exact URI match first
+    private fun findSongByPathOrTitle(
+        path: String, 
+        title: String, 
+        availableSongs: List<Song>,
+        filePathMap: Map<String, Song>,
+        m3uDirectory: String?
+    ): Song? {
+        // Try exact URI match first (for content:// URIs exported by Rhythm)
         availableSongs.find { it.uri.toString() == path }?.let { 
             Log.d(TAG, "Found song by exact URI match: $path")
             return it 
         }
         
-        // Try matching by file path (from MediaStore DATA column)
-        // The path in M3U might be like: /storage/emulated/0/Music/song.mp3
-        // And song.uri might be: content://media/external/audio/media/12345
-        // So we need to match using the actual file path if available
-        availableSongs.find { song ->
-            // Try to get the actual file path from the song's URI
-            val songPath = song.uri.path
-            songPath != null && (songPath == path || songPath.equals(path, ignoreCase = true))
-        }?.let { 
-            Log.d(TAG, "Found song by exact path match: $path")
-            return it 
+        // Try exact file path match from the pre-built map
+        filePathMap[path]?.let {
+            Log.d(TAG, "Found song by exact file path match: $path")
+            return it
         }
         
-        // Try file name match (basename without extension - handles both / and \ separators)
-        val fileName = path.substringAfterLast("/").substringAfterLast("\\").substringBeforeLast(".")
+        // Try case-insensitive file path match
+        filePathMap[path.lowercase()]?.let {
+            Log.d(TAG, "Found song by case-insensitive file path match: $path")
+            return it
+        }
+        
+        // Handle relative paths - resolve relative to M3U file directory
+        if (!path.startsWith("/") && m3uDirectory != null) {
+            val absolutePath = java.io.File(m3uDirectory, path).canonicalPath
+            filePathMap[absolutePath]?.let {
+                Log.d(TAG, "Found song by resolved relative path: $path -> $absolutePath")
+                return it
+            }
+            filePathMap[absolutePath.lowercase()]?.let {
+                Log.d(TAG, "Found song by resolved relative path (case-insensitive): $path -> $absolutePath")
+                return it
+            }
+        }
+        
+        // Handle partial paths like "/Music/filename" - try common storage prefixes
+        if (path.startsWith("/") && !path.startsWith("/storage")) {
+            val commonPrefixes = listOf(
+                "/storage/emulated/0",
+                "/storage/sdcard0",
+                "/sdcard",
+                android.os.Environment.getExternalStorageDirectory().absolutePath
+            )
+            
+            for (prefix in commonPrefixes) {
+                val absolutePath = prefix + path
+                filePathMap[absolutePath]?.let {
+                    Log.d(TAG, "Found song by prefix resolution: $path -> $absolutePath")
+                    return it
+                }
+                filePathMap[absolutePath.lowercase()]?.let {
+                    Log.d(TAG, "Found song by prefix resolution (case-insensitive): $path -> $absolutePath")
+                    return it
+                }
+            }
+        }
+        
+        // Build a map of filenames to songs for fallback matching
+        val fileNameToSongs = filePathMap.entries
+            .filter { it.key.contains("/") }
+            .groupBy { java.io.File(it.key).name.lowercase() }
+        
+        // Try file name match (basename with extension)
+        val fileName = path.substringAfterLast("/").substringAfterLast("\\")
         if (fileName.isNotBlank()) {
-            availableSongs.find { song ->
-                val songFileName = song.uri.lastPathSegment?.substringBeforeLast(".")
-                    ?: song.uri.path?.substringAfterLast("/")?.substringBeforeLast(".")
-                songFileName?.equals(fileName, ignoreCase = true) == true
-            }?.let { 
+            fileNameToSongs[fileName.lowercase()]?.firstOrNull()?.let { entry ->
                 Log.d(TAG, "Found song by filename match: $fileName")
-                return it 
+                return entry.value
+            }
+        }
+        
+        // Try file name without extension
+        val fileNameNoExt = fileName.substringBeforeLast(".")
+        if (fileNameNoExt.isNotBlank()) {
+            fileNameToSongs.entries.find { (key, _) ->
+                key.substringBeforeLast(".") == fileNameNoExt.lowercase()
+            }?.value?.firstOrNull()?.let { entry ->
+                Log.d(TAG, "Found song by filename (no extension) match: $fileNameNoExt")
+                return entry.value
             }
         }
         
         // Try fuzzy filename match (handles URL encoding, underscores vs spaces, etc.)
-        val normalizedFileName = fileName.replace("_", " ").replace("%20", " ").lowercase()
+        val normalizedFileName = fileNameNoExt.replace("_", " ").replace("%20", " ").replace("-", " ").lowercase()
         if (normalizedFileName.isNotBlank()) {
-            availableSongs.find { song ->
-                val songFileName = (song.uri.lastPathSegment?.substringBeforeLast(".")
-                    ?: song.uri.path?.substringAfterLast("/")?.substringBeforeLast(".")
-                    ?: "").replace("_", " ").replace("%20", " ").lowercase()
-                songFileName == normalizedFileName
-            }?.let { 
+            fileNameToSongs.entries.find { (key, _) ->
+                val normalizedKey = key.substringBeforeLast(".")
+                    .replace("_", " ").replace("%20", " ").replace("-", " ")
+                normalizedKey == normalizedFileName
+            }?.value?.firstOrNull()?.let { entry ->
                 Log.d(TAG, "Found song by normalized filename match: $normalizedFileName")
-                return it 
+                return entry.value
             }
         }
         
         // Try matching by path segments (handles different root paths but same folder structure)
         val pathSegments = path.split("/", "\\").filter { it.isNotBlank() }
         if (pathSegments.size >= 2) {
-            availableSongs.find { song ->
-                val songPath = song.uri.path ?: ""
-                val songSegments = songPath.split("/").filter { it.isNotBlank() }
-                // Match last 2 segments (folder/filename) to handle different storage roots
-                songSegments.takeLast(2) == pathSegments.takeLast(2)
-            }?.let {
+            val lastTwoSegments = pathSegments.takeLast(2).map { it.lowercase() }
+            filePathMap.entries.find { (filePath, _) ->
+                val songSegments = filePath.split("/").filter { it.isNotBlank() }.map { it.lowercase() }
+                songSegments.takeLast(2) == lastTwoSegments
+            }?.let { entry ->
                 Log.d(TAG, "Found song by path segments match: ${pathSegments.takeLast(2)}")
-                return it
+                return entry.value
             }
         }
         
@@ -449,6 +597,15 @@ object PlaylistImportExportUtils {
                 artistTitle.equals(cleanTitle, ignoreCase = true)
             }?.let { 
                 Log.d(TAG, "Found song by artist-title match: $cleanTitle")
+                return it 
+            }
+            
+            // Try reversed "Title - Artist" format match (some M3Us use this)
+            availableSongs.find { song ->
+                val titleArtist = "${song.title} - ${song.artist}"
+                titleArtist.equals(cleanTitle, ignoreCase = true)
+            }?.let { 
+                Log.d(TAG, "Found song by title-artist match: $cleanTitle")
                 return it 
             }
             
