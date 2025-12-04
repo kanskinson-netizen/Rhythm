@@ -16,8 +16,8 @@ android {
         applicationId = "chromahub.rhythm.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 32269774
-        versionName = "3.2.269.774"
+        versionCode = 32274781
+        versionName = "3.2.274.781 Beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -119,10 +119,10 @@ dependencies {
     implementation("androidx.glance:glance-material3:1.1.1")
     
     // Physics-based animations
-    implementation("androidx.compose.animation:animation:1.9.5")
+    implementation("androidx.compose.animation:animation:1.10.0")
     //noinspection GradleDependency
     implementation("androidx.compose.animation:animation-graphics:1.8.3")
-    implementation("androidx.compose.animation:animation-core:1.9.5")
+    implementation("androidx.compose.animation:animation-core:1.10.0")
     
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.9.6")

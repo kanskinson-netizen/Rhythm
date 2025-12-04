@@ -31,30 +31,40 @@ import kotlin.random.Random
 
 /**
  * Complete Christmas decorations including lights, garland, and snow collection
+ * Supports enabling/disabling individual decoration elements by position
  */
 @Composable
 fun ChristmasDecorations(
     intensity: Float = 0.5f,
+    showTopLights: Boolean = true,
+    showSideGarland: Boolean = true,
+    showBottomSnow: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         // Top Christmas lights - below status bar
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 40.dp)
-        ) {
-            ChristmasLights(intensity = intensity)
+        if (showTopLights) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 40.dp)
+            ) {
+                ChristmasLights(intensity = intensity)
+            }
         }
         
         // Side decorations (garland with ornaments)
-        SideDecorations(intensity = intensity)
+        if (showSideGarland) {
+            SideDecorations(intensity = intensity)
+        }
         
         // Bottom snow collection - anchored to bottom
-        Box(
-            modifier = Modifier.align(Alignment.BottomCenter)
-        ) {
-            SnowCollection(intensity = intensity)
+        if (showBottomSnow) {
+            Box(
+                modifier = Modifier.align(Alignment.BottomCenter)
+            ) {
+                SnowCollection(intensity = intensity)
+            }
         }
     }
 }

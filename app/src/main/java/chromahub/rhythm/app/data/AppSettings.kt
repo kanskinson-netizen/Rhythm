@@ -183,6 +183,12 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_FESTIVE_SNOWFLAKE_SIZE = "festive_snowflake_size"
         private const val KEY_FESTIVE_SNOWFLAKE_AREA = "festive_snowflake_area"
         
+        // Festive Decoration Position Settings
+        private const val KEY_FESTIVE_SHOW_TOP_LIGHTS = "festive_show_top_lights"
+        private const val KEY_FESTIVE_SHOW_SIDE_GARLAND = "festive_show_side_garland"
+        private const val KEY_FESTIVE_SHOW_BOTTOM_SNOW = "festive_show_bottom_snow"
+        private const val KEY_FESTIVE_SHOW_SNOWFALL = "festive_show_snowfall"
+        
         // Blacklisted Songs
         private const val KEY_BLACKLISTED_SONGS = "blacklisted_songs"
         
@@ -742,6 +748,19 @@ class AppSettings private constructor(context: Context) {
     
     private val _festiveSnowflakeArea = MutableStateFlow(prefs.getString(KEY_FESTIVE_SNOWFLAKE_AREA, "FULL_SCREEN") ?: "FULL_SCREEN")
     val festiveSnowflakeArea: StateFlow<String> = _festiveSnowflakeArea.asStateFlow()
+    
+    // Festive Decoration Position Settings
+    private val _festiveShowTopLights = MutableStateFlow(prefs.getBoolean(KEY_FESTIVE_SHOW_TOP_LIGHTS, true))
+    val festiveShowTopLights: StateFlow<Boolean> = _festiveShowTopLights.asStateFlow()
+    
+    private val _festiveShowSideGarland = MutableStateFlow(prefs.getBoolean(KEY_FESTIVE_SHOW_SIDE_GARLAND, true))
+    val festiveShowSideGarland: StateFlow<Boolean> = _festiveShowSideGarland.asStateFlow()
+    
+    private val _festiveShowBottomSnow = MutableStateFlow(prefs.getBoolean(KEY_FESTIVE_SHOW_BOTTOM_SNOW, true))
+    val festiveShowBottomSnow: StateFlow<Boolean> = _festiveShowBottomSnow.asStateFlow()
+    
+    private val _festiveShowSnowfall = MutableStateFlow(prefs.getBoolean(KEY_FESTIVE_SHOW_SNOWFALL, true))
+    val festiveShowSnowfall: StateFlow<Boolean> = _festiveShowSnowfall.asStateFlow()
     
     // Blacklisted Songs
     private val _blacklistedSongs = MutableStateFlow<List<String>>(
@@ -1468,6 +1487,27 @@ class AppSettings private constructor(context: Context) {
     fun setFestiveSnowflakeArea(area: String) {
         prefs.edit().putString(KEY_FESTIVE_SNOWFLAKE_AREA, area).apply()
         _festiveSnowflakeArea.value = area
+    }
+    
+    // Festive Decoration Position Methods
+    fun setFestiveShowTopLights(show: Boolean) {
+        prefs.edit().putBoolean(KEY_FESTIVE_SHOW_TOP_LIGHTS, show).apply()
+        _festiveShowTopLights.value = show
+    }
+    
+    fun setFestiveShowSideGarland(show: Boolean) {
+        prefs.edit().putBoolean(KEY_FESTIVE_SHOW_SIDE_GARLAND, show).apply()
+        _festiveShowSideGarland.value = show
+    }
+    
+    fun setFestiveShowBottomSnow(show: Boolean) {
+        prefs.edit().putBoolean(KEY_FESTIVE_SHOW_BOTTOM_SNOW, show).apply()
+        _festiveShowBottomSnow.value = show
+    }
+    
+    fun setFestiveShowSnowfall(show: Boolean) {
+        prefs.edit().putBoolean(KEY_FESTIVE_SHOW_SNOWFALL, show).apply()
+        _festiveShowSnowfall.value = show
     }
     
     // Blacklisted Songs Methods

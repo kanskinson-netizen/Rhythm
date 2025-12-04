@@ -94,6 +94,12 @@ fun FestiveOverlayFromSettings(
     val snowflakeSize by appSettings.festiveSnowflakeSize.collectAsState()
     val snowflakeArea by appSettings.festiveSnowflakeArea.collectAsState()
     
+    // Decoration position settings
+    val showTopLights by appSettings.festiveShowTopLights.collectAsState()
+    val showSideGarland by appSettings.festiveShowSideGarland.collectAsState()
+    val showBottomSnow by appSettings.festiveShowBottomSnow.collectAsState()
+    val showSnowfall by appSettings.festiveShowSnowfall.collectAsState()
+    
     val config = FestiveConfig(
         type = FestiveThemeType.valueOf(festiveType),
         intensity = festiveIntensity,
@@ -111,6 +117,10 @@ fun FestiveOverlayFromSettings(
         config = config,
         snowflakeSize = snowflakeSize,
         snowflakeArea = areaEnum,
+        showTopLights = showTopLights,
+        showSideGarland = showSideGarland,
+        showBottomSnow = showBottomSnow,
+        showSnowfall = showSnowfall,
         modifier = modifier,
         content = content
     )
@@ -124,6 +134,10 @@ fun FestiveOverlayWithParams(
     config: FestiveConfig,
     snowflakeSize: Float = 1.0f,
     snowflakeArea: SnowflakeArea = SnowflakeArea.FULL_SCREEN,
+    showTopLights: Boolean = true,
+    showSideGarland: Boolean = true,
+    showBottomSnow: Boolean = true,
+    showSnowfall: Boolean = true,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
@@ -135,32 +149,43 @@ fun FestiveOverlayWithParams(
         
         // Render festive effect overlay based on active theme
         // Use key to force recomposition when intensity or theme changes
-        androidx.compose.runtime.key(config.type, config.intensity, snowflakeSize, snowflakeArea) {
+        androidx.compose.runtime.key(config.type, config.intensity, snowflakeSize, snowflakeArea, showTopLights, showSideGarland, showBottomSnow, showSnowfall) {
             when (activeFestiveTheme) {
                 FestiveThemeType.CHRISTMAS -> {
-                    // Snowfall effect in background
-                    SnowfallWithSparkle(
+                    // Snowfall effect in background (only if enabled)
+                    if (showSnowfall) {
+                        SnowfallWithSparkle(
+                            intensity = config.intensity,
+                            enabled = true,
+                            detailedRendering = false,
+                            sizeMultiplier = snowflakeSize,
+                            area = snowflakeArea
+                        )
+                    }
+                    // Christmas decorations overlay with position settings
+                    ChristmasDecorations(
                         intensity = config.intensity,
-                        enabled = true,
-                        detailedRendering = false,
-                        sizeMultiplier = snowflakeSize,
-                        area = snowflakeArea
+                        showTopLights = showTopLights,
+                        showSideGarland = showSideGarland,
+                        showBottomSnow = showBottomSnow
                     )
-                    // Christmas decorations overlay
-                    ChristmasDecorations(intensity = config.intensity)
                 }
                 FestiveThemeType.NEW_YEAR -> {
-                    // New Year can also use snowfall or confetti
-                    SnowfallWithSparkle(
-                        intensity = config.intensity * 1.2f, // More intense
-                        enabled = true,
-                        detailedRendering = false,
-                        sizeMultiplier = snowflakeSize,
-                        area = snowflakeArea
-                    )
-                    // Snow collection at bottom
-                    Box(modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter)) {
-                        SnowCollection(intensity = config.intensity)
+                    // New Year can also use snowfall or confetti (only if enabled)
+                    if (showSnowfall) {
+                        SnowfallWithSparkle(
+                            intensity = config.intensity * 1.2f, // More intense
+                            enabled = true,
+                            detailedRendering = false,
+                            sizeMultiplier = snowflakeSize,
+                            area = snowflakeArea
+                        )
+                    }
+                    // Snow collection at bottom (only if enabled)
+                    if (showBottomSnow) {
+                        Box(modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter)) {
+                            SnowCollection(intensity = config.intensity)
+                        }
                     }
                 }
                 FestiveThemeType.HALLOWEEN -> {
@@ -173,13 +198,15 @@ fun FestiveOverlayWithParams(
                 }
                 FestiveThemeType.CUSTOM -> {
                     // Custom festive effects based on user preference
-                    SnowfallWithSparkle(
-                        intensity = config.intensity,
-                        enabled = true,
-                        detailedRendering = false,
-                        sizeMultiplier = snowflakeSize,
-                        area = snowflakeArea
-                    )
+                    if (showSnowfall) {
+                        SnowfallWithSparkle(
+                            intensity = config.intensity,
+                            enabled = true,
+                            detailedRendering = false,
+                            sizeMultiplier = snowflakeSize,
+                            area = snowflakeArea
+                        )
+                    }
                 }
                 FestiveThemeType.NONE -> {
                     // No festive decorations

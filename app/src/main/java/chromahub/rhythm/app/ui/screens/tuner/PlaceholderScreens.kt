@@ -4555,6 +4555,12 @@ fun ExperimentalFeaturesScreen(onBackClick: () -> Unit) {
     val festiveSnowflakeSize by appSettings.festiveSnowflakeSize.collectAsState()
     val festiveSnowflakeArea by appSettings.festiveSnowflakeArea.collectAsState()
     val festiveThemeType by appSettings.festiveThemeType.collectAsState()
+    
+    // Decoration position settings
+    val festiveShowTopLights by appSettings.festiveShowTopLights.collectAsState()
+    val festiveShowSideGarland by appSettings.festiveShowSideGarland.collectAsState()
+    val festiveShowBottomSnow by appSettings.festiveShowBottomSnow.collectAsState()
+    val festiveShowSnowfall by appSettings.festiveShowSnowfall.collectAsState()
     val haptic = LocalHapticFeedback.current
     
     var showFestivalSelectionSheet by remember { mutableStateOf(false) }
@@ -4816,6 +4822,66 @@ fun ExperimentalFeaturesScreen(onBackClick: () -> Unit) {
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+                                
+                                // Decoration Elements Section
+                                Spacer(modifier = Modifier.height(24.dp))
+                                
+                                Text(
+                                    text = "Decoration Elements",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
+                                Text(
+                                    text = "Toggle individual decoration elements by position",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                
+                                Spacer(modifier = Modifier.height(16.dp))
+                                
+                                // Decoration Toggle Cards
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    // Snowfall Toggle
+                                    DecorationToggleCard(
+                                        title = "Snowfall",
+                                        description = "Animated falling snowflakes",
+                                        icon = Icons.Rounded.AcUnit,
+                                        isEnabled = festiveShowSnowfall,
+                                        onToggle = { appSettings.setFestiveShowSnowfall(it) }
+                                    )
+                                    
+                                    // Top Lights Toggle
+                                    DecorationToggleCard(
+                                        title = "Top Lights",
+                                        description = "Christmas lights at the top",
+                                        icon = Icons.Rounded.Lightbulb,
+                                        isEnabled = festiveShowTopLights,
+                                        onToggle = { appSettings.setFestiveShowTopLights(it) }
+                                    )
+                                    
+                                    // Side Garland Toggle
+                                    DecorationToggleCard(
+                                        title = "Side Garland",
+                                        description = "Ornaments on left and right sides",
+                                        icon = Icons.Rounded.Park,
+                                        isEnabled = festiveShowSideGarland,
+                                        onToggle = { appSettings.setFestiveShowSideGarland(it) }
+                                    )
+                                    
+                                    // Bottom Snow Toggle
+                                    DecorationToggleCard(
+                                        title = "Snow Pile",
+                                        description = "Snow collection at the bottom",
+                                        icon = Icons.Rounded.Terrain,
+                                        isEnabled = festiveShowBottomSnow,
+                                        onToggle = { appSettings.setFestiveShowBottomSnow(it) }
+                                    )
+                                }
                             }
                         }
                     }
@@ -4865,6 +4931,99 @@ fun ExperimentalFeaturesScreen(onBackClick: () -> Unit) {
                 showFestivalSelectionSheet = false
             }
         )
+    }
+}
+
+/**
+ * Toggle card for individual decoration elements
+ */
+@Composable
+private fun DecorationToggleCard(
+    title: String,
+    description: String,
+    icon: ImageVector,
+    isEnabled: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+    
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = if (isEnabled)
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+            else
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+        ),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Icon with background
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = if (isEnabled)
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                else
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = if (isEnabled)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            
+            // Text content
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = if (isEnabled)
+                        MaterialTheme.colorScheme.onSurface
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                )
+            }
+            
+            // Toggle switch
+            Switch(
+                checked = isEnabled,
+                onCheckedChange = { 
+                    HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.LongPress)
+                    onToggle(it) 
+                },
+                modifier = Modifier.size(width = 48.dp, height = 24.dp),
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = MaterialTheme.colorScheme.primary,
+                    checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            )
+        }
     }
 }
 
@@ -9816,47 +9975,82 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                             // Frequency Response Chart
                             Card(
                                 colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surface
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLowest
                                 ),
                                 shape = RoundedCornerShape(16.dp),
                                 modifier = Modifier.fillMaxWidth(),
                                 border = androidx.compose.foundation.BorderStroke(
                                     1.dp,
-                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                                 )
                             ) {
                                 Column(
                                     modifier = Modifier.padding(16.dp)
                                 ) {
-                                    Text(
-                                        text = context.getString(R.string.frequency_response),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = context.getString(R.string.frequency_response),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        // Visual indicator
+                                        Surface(
+                                            color = MaterialTheme.colorScheme.primaryContainer,
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Text(
+                                                text = selectedPreset,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Medium,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                            )
+                                        }
+                                    }
 
-                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    
+                                    // Define colors at the Column scope for reuse
+                                    val primaryColor = MaterialTheme.colorScheme.primary
+                                    val secondaryColor = MaterialTheme.colorScheme.secondary
+                                    val tertiaryColor = MaterialTheme.colorScheme.tertiary
+                                    val surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                    val outlineColor = MaterialTheme.colorScheme.outline
 
                                     Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(60.dp)
+                                            .height(80.dp)
                                     ) {
-                                        val primaryColor = MaterialTheme.colorScheme.primary
-                                        val outlineColor = MaterialTheme.colorScheme.outline
 
                                         Canvas(modifier = Modifier.fillMaxSize()) {
                                             val width = size.width
                                             val height = size.height
                                             val bandWidth = width / bandLevels.size
 
-                                            // Draw center line (0dB)
+                                            // Draw subtle grid lines
+                                            for (i in 1..4) {
+                                                val y = height * i / 5f
+                                                drawLine(
+                                                    color = outlineColor.copy(alpha = 0.1f),
+                                                    start = Offset(0f, y),
+                                                    end = Offset(width, y),
+                                                    strokeWidth = 1.dp.toPx()
+                                                )
+                                            }
+
+                                            // Draw center line (0dB) with emphasis
                                             drawLine(
-                                                color = outlineColor.copy(alpha = 0.5f),
+                                                color = outlineColor.copy(alpha = 0.4f),
                                                 start = Offset(0f, height / 2),
                                                 end = Offset(width, height / 2),
-                                                strokeWidth = 1.dp.toPx(),
-                                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 5f))
+                                                strokeWidth = 1.5.dp.toPx(),
+                                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 4f))
                                             )
 
                                             // Draw frequency response curve
@@ -9867,9 +10061,33 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                                                 Offset(x, y)
                                             }
 
-                                            // Draw smooth curve
+                                            // Draw filled area under curve with gradient
                                             if (points.size > 1) {
-                                                val path = Path().apply {
+                                                val filledPath = Path().apply {
+                                                    moveTo(0f, height / 2)
+                                                    lineTo(points[0].x, points[0].y)
+                                                    for (i in 1 until points.size) {
+                                                        val p0 = points[i - 1]
+                                                        val p1 = points[i]
+                                                        val controlX = (p0.x + p1.x) / 2
+                                                        quadraticTo(controlX, p0.y, p1.x, p1.y)
+                                                    }
+                                                    lineTo(width, height / 2)
+                                                    close()
+                                                }
+
+                                                drawPath(
+                                                    path = filledPath,
+                                                    brush = Brush.verticalGradient(
+                                                        colors = listOf(
+                                                            primaryColor.copy(alpha = 0.25f),
+                                                            primaryColor.copy(alpha = 0.05f)
+                                                        )
+                                                    )
+                                                )
+
+                                                // Draw smooth curve with gradient stroke
+                                                val curvePath = Path().apply {
                                                     moveTo(points[0].x, points[0].y)
                                                     for (i in 1 until points.size) {
                                                         val p0 = points[i - 1]
@@ -9880,25 +10098,66 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                                                 }
 
                                                 drawPath(
-                                                    path = path,
-                                                    color = primaryColor,
-                                                    style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+                                                    path = curvePath,
+                                                    brush = Brush.horizontalGradient(
+                                                        colors = listOf(
+                                                            secondaryColor,
+                                                            primaryColor,
+                                                            tertiaryColor
+                                                        )
+                                                    ),
+                                                    style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
                                                 )
                                             }
 
-                                            // Draw points
-                                            points.forEach { point ->
+                                            // Draw points with glow effect
+                                            points.forEachIndexed { index, point ->
+                                                val pointColor = when (index) {
+                                                    0, 1 -> secondaryColor // Bass
+                                                    2 -> primaryColor // Mid
+                                                    else -> tertiaryColor // Treble
+                                                }
+                                                
+                                                // Outer glow
                                                 drawCircle(
-                                                    color = primaryColor,
-                                                    radius = 4.dp.toPx(),
+                                                    color = pointColor.copy(alpha = 0.3f),
+                                                    radius = 8.dp.toPx(),
                                                     center = point
                                                 )
+                                                // Main point
                                                 drawCircle(
-                                                    color = Color.White,
-                                                    radius = 2.dp.toPx(),
+                                                    color = pointColor,
+                                                    radius = 5.dp.toPx(),
                                                     center = point
+                                                )
+                                                // Inner highlight
+                                                drawCircle(
+                                                    color = Color.White.copy(alpha = 0.8f),
+                                                    radius = 2.dp.toPx(),
+                                                    center = Offset(point.x - 1.dp.toPx(), point.y - 1.dp.toPx())
                                                 )
                                             }
+                                        }
+                                    }
+                                    
+                                    // Frequency labels row
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceEvenly
+                                    ) {
+                                        frequencyLabels.forEachIndexed { index, label ->
+                                            val labelColor = when (index) {
+                                                0, 1 -> secondaryColor
+                                                2 -> primaryColor
+                                                else -> tertiaryColor
+                                            }
+                                            Text(
+                                                text = label,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = labelColor.copy(alpha = 0.8f),
+                                                fontWeight = FontWeight.Medium
+                                            )
                                         }
                                     }
                                 }
@@ -9906,48 +10165,96 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
 
                             Spacer(modifier = Modifier.height(20.dp))
 
-                            // Frequency Bands Grid
+                            // Frequency Bands Grid with gradient colors
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
+                                val secondaryColor = MaterialTheme.colorScheme.secondary
+                                val primaryColor = MaterialTheme.colorScheme.primary
+                                val tertiaryColor = MaterialTheme.colorScheme.tertiary
+                                
                                 bandLevels.forEachIndexed { index, level ->
+                                    // Color based on frequency range (bass = secondary, mid = primary, treble = tertiary)
+                                    val bandColor = when (index) {
+                                        0, 1 -> secondaryColor // Bass frequencies
+                                        2 -> primaryColor // Mid frequencies
+                                        else -> tertiaryColor // Treble frequencies
+                                    }
+                                    val bandLabel = when (index) {
+                                        0 -> "Sub Bass"
+                                        1 -> "Bass"
+                                        2 -> "Mids"
+                                        3 -> "Upper Mids"
+                                        4 -> "Treble"
+                                        else -> ""
+                                    }
+                                    
                                     Card(
                                         colors = CardDefaults.cardColors(
-                                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                                            containerColor = bandColor.copy(alpha = if (level != 0f) 0.12f else 0.06f)
                                         ),
-                                        shape = RoundedCornerShape(12.dp),
-                                        modifier = Modifier.fillMaxWidth()
+                                        shape = RoundedCornerShape(14.dp),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        border = if (level != 0f) 
+                                            BorderStroke(1.dp, bandColor.copy(alpha = 0.3f)) 
+                                        else null
                                     ) {
                                         Row(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                                                .padding(horizontal = 14.dp, vertical = 10.dp),
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                                         ) {
-                                            // Frequency Label
+                                            // Frequency Icon/Indicator
+                                            Surface(
+                                                shape = RoundedCornerShape(8.dp),
+                                                color = bandColor.copy(alpha = 0.2f),
+                                                modifier = Modifier.size(40.dp)
+                                            ) {
+                                                Box(
+                                                    contentAlignment = Alignment.Center,
+                                                    modifier = Modifier.fillMaxSize()
+                                                ) {
+                                                    Column(
+                                                        horizontalAlignment = Alignment.CenterHorizontally
+                                                    ) {
+                                                        Text(
+                                                            text = frequencyLabels[index],
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = bandColor,
+                                                            fontSize = 9.sp
+                                                        )
+                                                        Text(
+                                                            text = if (level >= 0) "+${level.toInt()}" else "${level.toInt()}",
+                                                            style = MaterialTheme.typography.labelMedium,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = bandColor
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                            
+                                            // Band info
                                             Column(
-                                                horizontalAlignment = Alignment.Start,
-                                                modifier = Modifier.width(60.dp)
+                                                modifier = Modifier.width(56.dp)
                                             ) {
                                                 Text(
-                                                    text = frequencyLabels[index],
+                                                    text = bandLabel,
                                                     style = MaterialTheme.typography.labelMedium,
                                                     fontWeight = FontWeight.SemiBold,
-                                                    color = MaterialTheme.colorScheme.primary
+                                                    color = MaterialTheme.colorScheme.onSurface
                                                 )
                                                 Text(
-                                                    text = "${level.toInt()}dB",
+                                                    text = "dB",
                                                     style = MaterialTheme.typography.bodySmall,
-                                                    color = if (level != 0f)
-                                                        MaterialTheme.colorScheme.primary
-                                                    else
-                                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
                                             }
 
-                                            // Slider Control
+                                            // Slider Control with custom colors
                                             Slider(
                                                 value = level,
                                                 onValueChange = { newLevel ->
@@ -9957,9 +10264,9 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                                                 valueRange = -15f..15f,
                                                 modifier = Modifier.weight(1f),
                                                 colors = SliderDefaults.colors(
-                                                    thumbColor = MaterialTheme.colorScheme.primary,
-                                                    activeTrackColor = MaterialTheme.colorScheme.primary,
-                                                    inactiveTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                                                    thumbColor = bandColor,
+                                                    activeTrackColor = bandColor,
+                                                    inactiveTrackColor = bandColor.copy(alpha = 0.2f)
                                                 )
                                             )
                                         }
@@ -9984,11 +10291,20 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.AudioFile,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Tune,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
                                     text = context.getString(R.string.audio_effects),
@@ -9999,31 +10315,46 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // Bass Boost
+                            // Bass Boost with secondary color
+                            val secondaryColor = MaterialTheme.colorScheme.secondary
                             Card(
                                 colors = CardDefaults.cardColors(
                                     containerColor = if (isBassBoostEnabled)
-                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                        secondaryColor.copy(alpha = 0.15f)
                                     else
-                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
                                 ),
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.fillMaxWidth()
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                                border = if (isBassBoostEnabled) 
+                                    BorderStroke(1.dp, secondaryColor.copy(alpha = 0.3f)) 
+                                else null
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Speaker,
-                                            contentDescription = null,
-                                            tint = if (isBassBoostEnabled)
-                                                MaterialTheme.colorScheme.primary
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = if (isBassBoostEnabled)
+                                                secondaryColor.copy(alpha = 0.2f)
                                             else
-                                                MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(24.dp)
-                                        )
+                                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f),
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Speaker,
+                                                    contentDescription = null,
+                                                    tint = if (isBassBoostEnabled)
+                                                        secondaryColor
+                                                    else
+                                                        MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+                                        }
 
                                         Spacer(modifier = Modifier.width(12.dp))
 
@@ -10031,12 +10362,12 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                                             Text(
                                                 text = "Bass Boost",
                                                 style = MaterialTheme.typography.titleSmall,
-                                                fontWeight = FontWeight.Medium
+                                                fontWeight = FontWeight.SemiBold
                                             )
                                             Text(
-                                                text = if (isBassBoostEnabled) "${(bassBoostStrength/10).toInt()}% intensity" else "Disabled",
+                                                text = if (isBassBoostEnabled) "${(bassBoostStrength/10).toInt()}% intensity" else "Enhance low frequencies",
                                                 style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                color = if (isBassBoostEnabled) secondaryColor else MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
 
@@ -10048,8 +10379,8 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                                                 musicViewModel.setBassBoost(enabled, bassBoostStrength.toInt().toShort())
                                             },
                                             colors = SwitchDefaults.colors(
-                                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
+                                                checkedThumbColor = secondaryColor,
+                                                checkedTrackColor = secondaryColor.copy(alpha = 0.5f)
                                             )
                                         )
                                     }
@@ -10072,8 +10403,9 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                                                 valueRange = 0f..1000f,
                                                 modifier = Modifier.fillMaxWidth(),
                                                 colors = SliderDefaults.colors(
-                                                    thumbColor = MaterialTheme.colorScheme.primary,
-                                                    activeTrackColor = MaterialTheme.colorScheme.primary
+                                                    thumbColor = secondaryColor,
+                                                    activeTrackColor = secondaryColor,
+                                                    inactiveTrackColor = secondaryColor.copy(alpha = 0.2f)
                                                 )
                                             )
                                         }
@@ -10083,31 +10415,46 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // Virtualizer
+                            // Virtualizer with tertiary color
+                            val tertiaryColor = MaterialTheme.colorScheme.tertiary
                             Card(
                                 colors = CardDefaults.cardColors(
                                     containerColor = if (isVirtualizerEnabled)
-                                        MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
+                                        tertiaryColor.copy(alpha = 0.15f)
                                     else
-                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
                                 ),
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.fillMaxWidth()
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                                border = if (isVirtualizerEnabled) 
+                                    BorderStroke(1.dp, tertiaryColor.copy(alpha = 0.3f)) 
+                                else null
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Headphones,
-                                            contentDescription = null,
-                                            tint = if (isVirtualizerEnabled)
-                                                MaterialTheme.colorScheme.primary
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = if (isVirtualizerEnabled)
+                                                tertiaryColor.copy(alpha = 0.2f)
                                             else
-                                                MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(24.dp)
-                                        )
+                                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f),
+                                            modifier = Modifier.size(36.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Headphones,
+                                                    contentDescription = null,
+                                                    tint = if (isVirtualizerEnabled)
+                                                        tertiaryColor
+                                                    else
+                                                        MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+                                        }
 
                                         Spacer(modifier = Modifier.width(12.dp))
 
@@ -10115,12 +10462,12 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                                             Text(
                                                 text = context.getString(R.string.virtualizer),
                                                 style = MaterialTheme.typography.titleSmall,
-                                                fontWeight = FontWeight.Medium
+                                                fontWeight = FontWeight.SemiBold
                                             )
                                             Text(
-                                                text = if (isVirtualizerEnabled) "${(virtualizerStrength/10).toInt()}% intensity" else "Disabled",
+                                                text = if (isVirtualizerEnabled) "${(virtualizerStrength/10).toInt()}% intensity" else "Spatial audio enhancement",
                                                 style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                color = if (isVirtualizerEnabled) tertiaryColor else MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
 
@@ -10132,8 +10479,8 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                                                 musicViewModel.setVirtualizer(enabled, virtualizerStrength.toInt().toShort())
                                             },
                                             colors = SwitchDefaults.colors(
-                                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
+                                                checkedThumbColor = tertiaryColor,
+                                                checkedTrackColor = tertiaryColor.copy(alpha = 0.5f)
                                             )
                                         )
                                     }
@@ -10156,8 +10503,9 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                                                 valueRange = 0f..1000f,
                                                 modifier = Modifier.fillMaxWidth(),
                                                 colors = SliderDefaults.colors(
-                                                    thumbColor = MaterialTheme.colorScheme.primary,
-                                                    activeTrackColor = MaterialTheme.colorScheme.primary
+                                                    thumbColor = tertiaryColor,
+                                                    activeTrackColor = tertiaryColor,
+                                                    inactiveTrackColor = tertiaryColor.copy(alpha = 0.2f)
                                                 )
                                             )
                                         }
