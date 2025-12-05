@@ -418,7 +418,11 @@ fun ArtistBottomSheet(
                                 contentPadding = PaddingValues(horizontal = 16.dp),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                items(artistAlbums, key = { "artistalbum_${it.id}_${artistAlbums.indexOf(it)}" }) { album ->
+                                items(
+                                    items = artistAlbums,
+                                    key = { "artistalbum_${it.id}" },
+                                    contentType = { "album" }
+                                ) { album ->
                                     ArtistAlbumCard(
                                         album = album,
                                         onClick = {

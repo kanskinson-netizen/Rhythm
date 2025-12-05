@@ -803,7 +803,11 @@ private fun ModernScrollableContent(
                             contentPadding = PaddingValues(horizontal = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            items(newReleases, key = { "newrelease_${it.id}_${newReleases.indexOf(it)}" }) { album ->
+                            items(
+                                items = newReleases,
+                                key = { "newrelease_${it.id}" },
+                                contentType = { "album" }
+                            ) { album ->
                                 ModernAlbumCard(
                                     album = album,
                                     onClick = { onAlbumClick(album) }
@@ -863,7 +867,11 @@ private fun ModernScrollableContent(
                             contentPadding = PaddingValues(horizontal = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            items(recentlyAddedAlbums, key = { "recentalbum_${it.id}_${recentlyAddedAlbums.indexOf(it)}" }) { album ->
+                            items(
+                                items = recentlyAddedAlbums,
+                                key = { "recentalbum_${it.id}" },
+                                contentType = { "album" }
+                            ) { album ->
                                 ModernAlbumCard(
                                     album = album,
                                     onClick = { onAlbumClick(album) }
@@ -1205,7 +1213,11 @@ private fun ModernRecentlyPlayedSection(
                 contentPadding = PaddingValues(horizontal = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp) // More spacing between items
             ) {
-                items(recentlyPlayed, key = { "recentplay_${it.id}_${recentlyPlayed.indexOf(it)}" }) { song ->
+                items(
+                    items = recentlyPlayed,
+                    key = { "recentplay_${it.id}" },
+                    contentType = { "song" }
+                ) { song ->
                     ModernRecentSongCard(
                         song = song,
                         onClick = { onSongClick(song) }
@@ -1789,7 +1801,11 @@ private fun ModernArtistsSection(
             contentPadding = PaddingValues(horizontal = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(artists, key = { "artist_${it.id}_${artists.indexOf(it)}" }) { artist ->
+            items(
+                items = artists,
+                key = { "artist_${it.id}" },
+                contentType = { "artist" }
+            ) { artist ->
                 ModernArtistCard(
                     artist = artist,
                     songs = songs,

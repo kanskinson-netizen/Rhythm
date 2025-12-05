@@ -1959,9 +1959,10 @@ fun SingleCardSongsContent(
             // Songs Items
             items(
                 items = filteredSongs,
-                key = { it.id }
+                key = { it.id },
+                contentType = { "song" }
             ) { song ->
-                    AnimateIn {
+                    AnimateIn(modifier = Modifier.animateItem()) {
                         LibrarySongItemWrapper(
                             song = song,
                             onClick = { onSongClick(song) },
@@ -2135,9 +2136,10 @@ fun SingleCardPlaylistsContent(
                 // Playlist Grid Items
                 items(
                     items = preparedPlaylists,
-                    key = { it.id }
+                    key = { it.id },
+                    contentType = { "playlist" }
                 ) { playlist ->
-                    AnimateIn {
+                    AnimateIn(modifier = Modifier.animateItem()) {
                         PlaylistGridItem(
                             playlist = playlist,
                             onClick = { onPlaylistClick(playlist) },
@@ -2208,9 +2210,10 @@ fun SingleCardPlaylistsContent(
             // Playlist Items
             items(
                 items = preparedPlaylists,
-                key = { it.id }
+                key = { it.id },
+                contentType = { "playlist" }
             ) { playlist ->
-                AnimateIn {
+                AnimateIn(modifier = Modifier.animateItem()) {
                     PlaylistItem(
                         playlist = playlist,
                         onClick = { onPlaylistClick(playlist) },
@@ -2392,9 +2395,10 @@ fun SingleCardAlbumsContent(
                 }                // Album Grid Items
                 items(
                     items = preparedAlbums,
-                    key = { it.id }
+                    key = { it.id },
+                    contentType = { "album" }
                 ) { album ->
-                    AnimateIn {
+                    AnimateIn(modifier = Modifier.animateItem()) {
                         AlbumGridItem(
                             album = album,
                             onClick = { onAlbumBottomSheetClick(album) },
@@ -2514,9 +2518,10 @@ fun SingleCardAlbumsContent(
                 // Album List Items
                 items(
                     items = preparedAlbums,
-                    key = { it.id }
+                    key = { it.id },
+                    contentType = { "album" }
                 ) { album ->
-                    AnimateIn {
+                    AnimateIn(modifier = Modifier.animateItem()) {
                         LibraryAlbumItem(
                             album = album,
                             onClick = { onAlbumBottomSheetClick(album) },
@@ -4839,8 +4844,12 @@ fun SingleCardArtistsContent(
             }
             
             if (sortedArtists.isNotEmpty()) {
-                items(sortedArtists, key = { "gridartist_${it.id}_${sortedArtists.indexOf(it)}" }) { artist ->
-                    AnimateIn {
+                items(
+                    items = sortedArtists,
+                    key = { "gridartist_${it.id}" },
+                    contentType = { "artist" }
+                ) { artist ->
+                    AnimateIn(modifier = Modifier.animateItem()) {
                         Surface(
                             color = MaterialTheme.colorScheme.surfaceContainer,
                             shape = RoundedCornerShape(16.dp),
@@ -4900,8 +4909,12 @@ fun SingleCardArtistsContent(
             }
             
             if (sortedArtists.isNotEmpty()) {
-                items(sortedArtists, key = { "listartist_${it.id}_${sortedArtists.indexOf(it)}" }) { artist ->
-                    AnimateIn {
+                items(
+                    items = sortedArtists,
+                    key = { "listartist_${it.id}" },
+                    contentType = { "artist" }
+                ) { artist ->
+                    AnimateIn(modifier = Modifier.animateItem()) {
                         Surface(
                             color = MaterialTheme.colorScheme.surfaceContainer,
                             shape = RoundedCornerShape(16.dp),

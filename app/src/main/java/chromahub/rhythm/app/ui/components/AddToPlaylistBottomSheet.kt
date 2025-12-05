@@ -176,7 +176,11 @@ fun AddToPlaylistBottomSheet(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            items(playlists, key = { "playlist_${it.id}_${playlists.indexOf(it)}" }) { playlist ->
+                            items(
+                                items = playlists,
+                                key = { "playlist_${it.id}" },
+                                contentType = { "playlist" }
+                            ) { playlist ->
                                 PlaylistCard(
                                     playlist = playlist,
                                     onClick = {

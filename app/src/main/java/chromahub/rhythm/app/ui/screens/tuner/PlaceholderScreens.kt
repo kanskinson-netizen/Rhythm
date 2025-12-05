@@ -334,7 +334,11 @@ fun NotificationsSettingsScreen(onBackClick: () -> Unit) {
                 .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 24.dp)
         ) {
-            items(settingGroups, key = { "setting_${it.title}_${settingGroups.indexOf(it)}" }) { group ->
+            items(
+                items = settingGroups,
+                key = { "setting_${it.title}" },
+                contentType = { "settingGroup" }
+            ) { group ->
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
                     text = group.title,
@@ -475,7 +479,11 @@ fun QueuePlaybackSettingsScreen(onBackClick: () -> Unit) {
                 .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 24.dp)
         ) {
-            items(settingGroups, key = { "setting_${it.title}_${settingGroups.indexOf(it)}" }) { group ->
+            items(
+                items = settingGroups,
+                key = { "queueplayback_${it.title}" },
+                contentType = { "settingGroup" }
+            ) { group ->
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
                     text = group.title,
@@ -2059,7 +2067,11 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
                         .heightIn(max = 400.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(filteredSongDetails, key = { "filtered_${it.id}_${filteredSongDetails.indexOf(it)}" }) { song ->
+                    items(
+                        items = filteredSongDetails,
+                        key = { "filtered_${it.id}" },
+                        contentType = { "song" }
+                    ) { song ->
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(

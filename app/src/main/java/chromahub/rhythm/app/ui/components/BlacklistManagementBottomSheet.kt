@@ -387,7 +387,11 @@ private fun SongsBlacklistTab(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.heightIn(max = 300.dp)
                 ) {
-                    items(blacklistedSongDetails, key = { "blacklisted_${it.id}_${blacklistedSongDetails.indexOf(it)}" }) { song ->
+                    items(
+                        items = blacklistedSongDetails,
+                        key = { "blacklisted_${it.id}" },
+                        contentType = { "song" }
+                    ) { song ->
                         BlacklistedSongItem(
                             song = song,
                             onUnblacklist = {
