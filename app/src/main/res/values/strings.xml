@@ -323,6 +323,10 @@
     <string name="library_your_playlists">Your Playlists</string>
     <string name="library_your_albums">Your Albums</string>
     <string name="library_your_artists">Your Artists</string>
+    <string name="library_loading_songs">Loading songs…</string>
+    <string name="library_loading_playlists">Loading playlists…</string>
+    <string name="library_loading_albums">Loading albums…</string>
+    <string name="library_loading_artists">Loading artists…</string>
     <string name="library_tracks_count">%1$d of %2$d tracks</string>
     <string name="library_no_songs">No songs yet</string>
     <string name="library_no_artists">No artists found</string>
@@ -670,6 +674,10 @@
     <string name="external_services_desc">Control which external API services are active to enhance your music experience. Toggle services on/off to manage data usage and functionality.</string>
     <string name="lyrics_source_priority_title">Lyrics Source Priority</string>
     <string name="lyrics_source_priority_desc_placeholder">Choose where Rhythm should look for lyrics first</string>
+    <string name="playlist_action_title">Playlist Action</string>
+    <string name="playlist_action_desc">Choose what happens when you tap a song in a playlist</string>
+    <string name="queue_action_title">Queue Action</string>
+    <string name="queue_action_desc">Choose what happens when you play a song while the queue is not empty</string>
     
     <!-- Additional UI Elements -->
     <string name="now_playing">NOW PLAYING</string>

@@ -9836,11 +9836,15 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                 }
             }
 
-            if (isEqualizerEnabled) {
-                // Presets Section
-                item {
+            // Presets Section with animation
+            item {
+                AnimatedVisibility(
+                    visible = isEqualizerEnabled,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
                         shape = RoundedCornerShape(20.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -9901,11 +9905,11 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                                         modifier = Modifier.size(width = 85.dp, height = 100.dp),
                                         colors = CardDefaults.cardColors(
                                             containerColor = if (isSelected)
-                                                MaterialTheme.colorScheme.primaryContainer
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                                             else
-                                                MaterialTheme.colorScheme.surfaceVariant
+                                                MaterialTheme.colorScheme.surfaceContainerHighest
                                         ),
-                                        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 0.dp)
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                                     ) {
                                         Column(
                                             modifier = Modifier
@@ -9942,11 +9946,17 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                         }
                     }
                 }
+            }
 
-                // Frequency Bands Section
-                item {
+            // Frequency Bands Section with animation
+            item {
+                AnimatedVisibility(
+                    visible = isEqualizerEnabled,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
                         shape = RoundedCornerShape(20.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -9979,10 +9989,7 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                                 ),
                                 shape = RoundedCornerShape(16.dp),
                                 modifier = Modifier.fillMaxWidth(),
-                                border = androidx.compose.foundation.BorderStroke(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                                )
+                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                             ) {
                                 Column(
                                     modifier = Modifier.padding(16.dp)
@@ -10196,9 +10203,7 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                                         ),
                                         shape = RoundedCornerShape(14.dp),
                                         modifier = Modifier.fillMaxWidth(),
-                                        border = if (level != 0f) 
-                                            BorderStroke(1.dp, bandColor.copy(alpha = 0.3f)) 
-                                        else null
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                                     ) {
                                         Row(
                                             modifier = Modifier
@@ -10276,11 +10281,17 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                         }
                     }
                 }
+            }
 
-                // Audio Effects Section
-                item {
+            // Audio Effects Section with animation
+            item {
+                AnimatedVisibility(
+                    visible = isEqualizerEnabled,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
                         shape = RoundedCornerShape(20.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -10326,9 +10337,7 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                                 ),
                                 shape = RoundedCornerShape(14.dp),
                                 modifier = Modifier.fillMaxWidth(),
-                                border = if (isBassBoostEnabled) 
-                                    BorderStroke(1.dp, secondaryColor.copy(alpha = 0.3f)) 
-                                else null
+                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
                                     Row(
@@ -10426,9 +10435,7 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                                 ),
                                 shape = RoundedCornerShape(14.dp),
                                 modifier = Modifier.fillMaxWidth(),
-                                border = if (isVirtualizerEnabled) 
-                                    BorderStroke(1.dp, tertiaryColor.copy(alpha = 0.3f)) 
-                                else null
+                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
                                     Row(
@@ -10515,11 +10522,17 @@ fun EqualizerSettingsScreen(onBackClick: () -> Unit) {
                         }
                     }
                 }
+            }
 
-                // System Equalizer Section
-                item {
+            // System Equalizer Section with animation
+            item {
+                AnimatedVisibility(
+                    visible = isEqualizerEnabled,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
                         shape = RoundedCornerShape(20.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
