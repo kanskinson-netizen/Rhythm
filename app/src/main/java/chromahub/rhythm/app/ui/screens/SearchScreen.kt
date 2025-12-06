@@ -1,5 +1,6 @@
 package chromahub.rhythm.app.ui.screens
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -111,6 +112,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import chromahub.rhythm.app.ui.screens.AddToPlaylistBottomSheet
 import chromahub.rhythm.app.ui.components.CreatePlaylistDialog
 import chromahub.rhythm.app.ui.screens.ArtistBottomSheet
+import chromahub.rhythm.app.ui.screens.SongInfoBottomSheet
 import chromahub.rhythm.app.util.ImageUtils
 import chromahub.rhythm.app.util.HapticUtils
 import chromahub.rhythm.app.ui.components.M3PlaceholderType
@@ -293,6 +295,10 @@ fun SearchScreen(
     var showArtistBottomSheet by remember { mutableStateOf(false) }
     var selectedArtist by remember { mutableStateOf<Artist?>(null) }
     val artistBottomSheetState = rememberModalBottomSheetState()
+    
+    // Song info bottom sheet state
+    var showSongInfoSheet by remember { mutableStateOf(false) }
+    
     val haptics = LocalHapticFeedback.current
     
     Scaffold(
@@ -765,7 +771,7 @@ fun SearchScreen(
                     onAlbumClick(selectedAlbum!!)
                 }
             },  
-            onAddToQueue = { song -> onSongClick(song) }, // For now, just play the song
+            onAddToQueue = { song -> viewModel.addSongToQueue(song) },
             onAddSongToPlaylist = { song ->
                 selectedSong = song
                 showAddToPlaylistSheet = true
@@ -773,6 +779,18 @@ fun SearchScreen(
             onPlayerClick = onPlayerClick,
             haptics = LocalHapticFeedback.current,
             sheetState = albumBottomSheetState,
+            onPlayNext = { song -> viewModel.playNext(song) },
+            onToggleFavorite = { song -> viewModel.toggleFavorite(song) },
+            favoriteSongs = viewModel.favoriteSongs.collectAsState().value,
+            onShowSongInfo = { song ->
+                selectedSong = song
+                showSongInfoSheet = true
+            },
+            onAddToBlacklist = { song ->
+                val appSettings = AppSettings.getInstance(context)
+                appSettings.addToBlacklist(song.id)
+                Toast.makeText(context, "${song.title} added to blacklist", Toast.LENGTH_SHORT).show()
+            },
             currentSong = currentSong,
             isPlaying = isPlaying
         )
@@ -803,7 +821,7 @@ fun SearchScreen(
                     viewModel.playShuffled(artistSongs)
                 }
             },
-            onAddToQueue = { song -> onSongClick(song) }, // For now, just play the song
+            onAddToQueue = { song -> viewModel.addSongToQueue(song) },
             onAddSongToPlaylist = { song ->
                 selectedSong = song
                 scope.launch {
@@ -818,8 +836,58 @@ fun SearchScreen(
             onPlayerClick = onPlayerClick,
             sheetState = artistBottomSheetState,
             haptics = haptics,
+            onPlayNext = { song -> viewModel.playNext(song) },
+            onToggleFavorite = { song -> viewModel.toggleFavorite(song) },
+            favoriteSongs = viewModel.favoriteSongs.collectAsState().value,
+            onShowSongInfo = { song ->
+                selectedSong = song
+                scope.launch {
+                    artistBottomSheetState.hide()
+                }.invokeOnCompletion {
+                    if (!artistBottomSheetState.isVisible) {
+                        showArtistBottomSheet = false
+                        showSongInfoSheet = true
+                    }
+                }
+            },
+            onAddToBlacklist = { song ->
+                val appSettings = AppSettings.getInstance(context)
+                appSettings.addToBlacklist(song.id)
+                Toast.makeText(context, "${song.title} added to blacklist", Toast.LENGTH_SHORT).show()
+            },
             currentSong = currentSong,
             isPlaying = isPlaying
+        )
+    }
+    
+    // Song info bottom sheet
+    if (showSongInfoSheet && selectedSong != null) {
+        SongInfoBottomSheet(
+            song = selectedSong,
+            onDismiss = { showSongInfoSheet = false },
+            appSettings = AppSettings.getInstance(context),
+            onEditSong = { title, artist, album, genre, year, trackNumber ->
+                viewModel.saveMetadataChanges(
+                    song = selectedSong!!,
+                    title = title,
+                    artist = artist,
+                    album = album,
+                    genre = genre,
+                    year = year,
+                    trackNumber = trackNumber,
+                    onSuccess = { fileWriteSucceeded ->
+                        if (fileWriteSucceeded) {
+                            Toast.makeText(context, "Metadata saved successfully to file!", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    onError = { errorMessage ->
+                        Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+                    },
+                    onPermissionRequired = { pendingRequest ->
+                        Toast.makeText(context, "Permission required to modify file metadata", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
         )
     }
     

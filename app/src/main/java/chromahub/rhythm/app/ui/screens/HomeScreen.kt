@@ -2,6 +2,7 @@
 
 package chromahub.rhythm.app.ui.screens
 
+import android.widget.Toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -151,6 +152,7 @@ import chromahub.rhythm.app.ui.components.M3PlaceholderType
 import chromahub.rhythm.app.ui.screens.ArtistBottomSheet
 import chromahub.rhythm.app.ui.screens.AlbumBottomSheet
 import chromahub.rhythm.app.ui.screens.AddToPlaylistBottomSheet
+import chromahub.rhythm.app.ui.screens.SongInfoBottomSheet
 import chromahub.rhythm.app.util.ImageUtils
 import chromahub.rhythm.app.viewmodel.AppUpdaterViewModel
 import chromahub.rhythm.app.viewmodel.AppVersion
@@ -214,6 +216,9 @@ fun HomeScreen(
     var selectedSongForPlaylist by remember { mutableStateOf<Song?>(null) }
     val addToPlaylistSheetState = rememberModalBottomSheetState()
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
+    
+    // Song info bottom sheet state
+    var showSongInfoSheet by remember { mutableStateOf(false) }
     
     // Select featured content from all albums (enhanced selection)
     val featuredContent = remember(albums) {
@@ -302,6 +307,25 @@ fun HomeScreen(
             onPlayerClick = onPlayerClick,
             sheetState = artistSheetState,
             haptics = haptics,
+            onPlayNext = { song -> musicViewModel.playNext(song) },
+            onToggleFavorite = { song -> musicViewModel.toggleFavorite(song) },
+            favoriteSongs = musicViewModel.favoriteSongs.collectAsState().value,
+            onShowSongInfo = { song ->
+                selectedSongForPlaylist = song
+                coroutineScope.launch {
+                    artistSheetState.hide()
+                }.invokeOnCompletion {
+                    if (!artistSheetState.isVisible) {
+                        showArtistSheet = false
+                        showSongInfoSheet = true
+                    }
+                }
+            },
+            onAddToBlacklist = { song ->
+                val appSettings = AppSettings.getInstance(context)
+                appSettings.addToBlacklist(song.id)
+                Toast.makeText(context, "${song.title} added to blacklist", Toast.LENGTH_SHORT).show()
+            },
             currentSong = currentSong,
             isPlaying = isPlaying
         )
@@ -351,8 +375,58 @@ fun HomeScreen(
             onPlayerClick = onPlayerClick,
             haptics = LocalHapticFeedback.current,
             sheetState = albumSheetState,
+            onPlayNext = { song -> musicViewModel.playNext(song) },
+            onToggleFavorite = { song -> musicViewModel.toggleFavorite(song) },
+            favoriteSongs = musicViewModel.favoriteSongs.collectAsState().value,
+            onShowSongInfo = { song ->
+                selectedSongForPlaylist = song
+                coroutineScope.launch {
+                    albumSheetState.hide()
+                }.invokeOnCompletion {
+                    if (!albumSheetState.isVisible) {
+                        showAlbumBottomSheet = false
+                        showSongInfoSheet = true
+                    }
+                }
+            },
+            onAddToBlacklist = { song ->
+                val appSettings = AppSettings.getInstance(context)
+                appSettings.addToBlacklist(song.id)
+                Toast.makeText(context, "${song.title} added to blacklist", Toast.LENGTH_SHORT).show()
+            },
             currentSong = currentSong,
             isPlaying = isPlaying
+        )
+    }
+
+    // Song info bottom sheet
+    if (showSongInfoSheet && selectedSongForPlaylist != null) {
+        SongInfoBottomSheet(
+            song = selectedSongForPlaylist,
+            onDismiss = { showSongInfoSheet = false },
+            appSettings = AppSettings.getInstance(context),
+            onEditSong = { title, artist, album, genre, year, trackNumber ->
+                musicViewModel.saveMetadataChanges(
+                    song = selectedSongForPlaylist!!,
+                    title = title,
+                    artist = artist,
+                    album = album,
+                    genre = genre,
+                    year = year,
+                    trackNumber = trackNumber,
+                    onSuccess = { fileWriteSucceeded ->
+                        if (fileWriteSucceeded) {
+                            Toast.makeText(context, "Metadata saved successfully to file!", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    onError = { errorMessage ->
+                        Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+                    },
+                    onPermissionRequired = { pendingRequest ->
+                        Toast.makeText(context, "Permission required to modify file metadata", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
         )
     }
 
