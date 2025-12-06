@@ -8,16 +8,21 @@ import android.util.Log
  * ANRWatchdog monitors the UI thread for Application Not Responding (ANR) situations.
  * It posts a task to the main thread and checks if it executes within the timeout period.
  * If the task doesn't execute in time, it logs an ANR with the main thread's stack trace.
+ * 
+ * Note: This watchdog is designed for DEBUG builds only and logs to logcat.
+ * It does NOT show any user-facing dialogs or popups.
  */
 class ANRWatchdog(private val timeoutMs: Long = 5000) : Thread("ANRWatchdog") {
     
     companion object {
         private const val TAG = "ANRWatchdog"
+        private const val STARTUP_GRACE_PERIOD_MS = 15000L // 15 seconds grace period after start
     }
     
     @Volatile
     private var shouldContinue = true
     private val uiHandler = Handler(Looper.getMainLooper())
+    private val startTime = System.currentTimeMillis()
     
     init {
         isDaemon = true // Make this a daemon thread so it doesn't prevent app shutdown
@@ -28,6 +33,13 @@ class ANRWatchdog(private val timeoutMs: Long = 5000) : Thread("ANRWatchdog") {
         
         while (shouldContinue) {
             try {
+                // Skip monitoring during startup grace period to avoid false positives
+                val timeSinceStart = System.currentTimeMillis() - startTime
+                if (timeSinceStart < STARTUP_GRACE_PERIOD_MS) {
+                    sleep(1000)
+                    continue
+                }
+                
                 val start = System.currentTimeMillis()
                 var responded = false
                 

@@ -296,20 +296,6 @@ class AppSettings private constructor(context: Context) {
     private val context: Context = context.applicationContext
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     
-    init {
-        // Schedule auto-backup if enabled
-        if (prefs.getBoolean(KEY_AUTO_BACKUP_ENABLED, false)) {
-            scheduleAutoBackup()
-        }
-        
-        // Schedule update notification worker if enabled
-        if (prefs.getBoolean(KEY_UPDATES_ENABLED, true) &&
-            prefs.getBoolean(KEY_UPDATE_NOTIFICATIONS_ENABLED, true) &&
-            prefs.getBoolean(KEY_USE_SMART_UPDATE_POLLING, true)) {
-            scheduleUpdateNotificationWorker()
-        }
-    }
-    
     // Playback Settings
     private val _highQualityAudio = MutableStateFlow(prefs.getBoolean(KEY_HIGH_QUALITY_AUDIO, true))
     val highQualityAudio: StateFlow<Boolean> = _highQualityAudio.asStateFlow()
@@ -911,6 +897,24 @@ class AppSettings private constructor(context: Context) {
     // Library Sort Order
     private val _songsSortOrder = MutableStateFlow(prefs.getString(KEY_SONGS_SORT_ORDER, "TITLE_ASC") ?: "TITLE_ASC")
     val songsSortOrder: StateFlow<String> = _songsSortOrder.asStateFlow()
+    
+    /**
+     * Initialize scheduled workers after all StateFlow properties are initialized
+     * This must be done after all MutableStateFlow declarations to avoid NullPointerException
+     */
+    init {
+        // Schedule auto-backup if enabled
+        if (prefs.getBoolean(KEY_AUTO_BACKUP_ENABLED, false)) {
+            scheduleAutoBackup()
+        }
+        
+        // Schedule update notification worker if enabled
+        if (prefs.getBoolean(KEY_UPDATES_ENABLED, true) &&
+            prefs.getBoolean(KEY_UPDATE_NOTIFICATIONS_ENABLED, true) &&
+            prefs.getBoolean(KEY_USE_SMART_UPDATE_POLLING, true)) {
+            scheduleUpdateNotificationWorker()
+        }
+    }
     
     // Playback Settings Methods
     fun setHighQualityAudio(enable: Boolean) {
