@@ -88,6 +88,7 @@ import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.ui.draw.scale
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.material.icons.filled.Reorder
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -148,6 +149,7 @@ import chromahub.rhythm.app.data.Artist
 import chromahub.rhythm.app.data.Song
 import chromahub.rhythm.app.ui.components.MiniPlayer
 import chromahub.rhythm.app.ui.components.RhythmIcons
+import chromahub.rhythm.app.ui.components.HomeSectionOrderBottomSheet
 import chromahub.rhythm.app.ui.components.M3PlaceholderType
 import chromahub.rhythm.app.ui.screens.ArtistBottomSheet
 import chromahub.rhythm.app.ui.screens.AlbumBottomSheet
@@ -219,6 +221,9 @@ fun HomeScreen(
     
     // Song info bottom sheet state
     var showSongInfoSheet by remember { mutableStateOf(false) }
+    
+    // Home section order bottom sheet state
+    var showHomeSectionOrderSheet by remember { mutableStateOf(false) }
     
     // Select featured content from all albums (enhanced selection)
     val featuredContent = remember(albums) {
@@ -471,10 +476,33 @@ fun HomeScreen(
             }
         )
     }
+    
+    if (showHomeSectionOrderSheet) {
+        HomeSectionOrderBottomSheet(
+            onDismiss = { showHomeSectionOrderSheet = false },
+            appSettings = AppSettings.getInstance(context)
+        )
+    }
 
     CollapsibleHeaderScreen(
         title = context.getString(R.string.home_title),
         actions = {
+            FilledIconButton(
+                onClick = {
+                    HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
+                    showHomeSectionOrderSheet = true
+                },
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                ),
+                modifier = Modifier.padding(end = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Reorder,
+                    contentDescription = "Reorder home sections"
+                )
+            }
             FilledIconButton(
                 onClick = {
                     HapticUtils.performHapticFeedback(context, haptics, HapticFeedbackType.LongPress)
@@ -568,6 +596,7 @@ private fun ModernScrollableContent(
     
     // Home Screen Customization Settings
     val appSettings = AppSettings.getInstance(context)
+    val sectionOrder by appSettings.homeSectionOrder.collectAsState()
     val showGreeting by appSettings.homeShowGreeting.collectAsState()
     val showRecentlyPlayed by appSettings.homeShowRecentlyPlayed.collectAsState()
     val showDiscoverCarousel by appSettings.homeShowDiscoverCarousel.collectAsState()
@@ -645,10 +674,10 @@ private fun ModernScrollableContent(
     }
     
     // Featured albums with auto-refresh
-    var currentFeaturedAlbums by remember(featuredContent) { 
-        mutableStateOf(featuredContent) 
+    var currentFeaturedAlbums by remember(featuredContent, discoverItemCount) { 
+        mutableStateOf(featuredContent.take(discoverItemCount)) 
     }
-    val featuredCarouselState = rememberCarouselState { currentFeaturedAlbums.take(discoverItemCount).size }
+    val featuredCarouselState = rememberCarouselState(discoverItemCount) { currentFeaturedAlbums.size }
     
     LaunchedEffect(albums, discoverItemCount) {
         while (true) {
@@ -778,256 +807,262 @@ private fun ModernScrollableContent(
                 }
             }
 
-            // Welcome/Greeting section (respects settings)
-            if (showGreeting) {
-                item {
-                    if (!updateAvailable || latestVersion == null || error != null || !updatesEnabled) {
-                        ModernWelcomeSection(
-                            greeting = greeting, 
-                            festiveTheme = activeFestiveTheme,
-                            onSearchClick = onSearchClick
-                        )
-                    }
-                }
-            }
-
-            // Recently Played with modern design (respects settings)
-            if (showRecentlyPlayed) {
-                item {
-                    ModernRecentlyPlayedSection(
-                        recentlyPlayed = recentlyPlayed.take(recentlyPlayedCount),
-                        onSongClick = onSongClick,
-                        musicViewModel = musicViewModel,
-                        coroutineScope = coroutineScope
-                    )
-                }
-            }
-
-            // Featured Albums / Discover section (respects settings)
-            if (showDiscoverCarousel) {
-                item {
-                    Column {
-                        ModernSectionTitle(
-                            title = context.getString(R.string.home_discover_albums),
-                            subtitle = context.getString(R.string.home_explore_music),
-                            viewAllAction = onViewAllAlbums
-                        )
-                        Spacer(modifier = Modifier.height(20.dp))
-                        if (currentFeaturedAlbums.isNotEmpty()) {
-                            ModernFeaturedSection(
-                                albums = currentFeaturedAlbums.take(discoverItemCount),
-                                carouselState = featuredCarouselState,
-                                onAlbumClick = onAlbumClick,
-                                showAlbumName = discoverShowAlbumName,
-                                showArtistName = discoverShowArtistName,
-                                showYear = discoverShowYear,
-                                showPlayButton = discoverShowPlayButton,
-                                showGradient = discoverShowGradient,
-                                carouselHeight = carouselHeight,
-                                carouselStyle = discoverCarouselStyle
-                            )
-                        } else {
-                            ModernEmptyState(
-                                icon = Icons.Rounded.Album,
-                                title = context.getString(R.string.home_no_featured_albums),
-                                subtitle = context.getString(R.string.home_no_featured_albums_desc),
-                                iconSize = 48.dp
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Artists carousel with modern layout (respects settings)
-            if (showArtists) {
-                item {
-                    if (availableArtists.isNotEmpty()) {
-                        ModernArtistsSection(
-                            artists = availableArtists.take(artistsCount),
-                            songs = allSongs,
-                            onArtistClick = onArtistClick,
-                            onViewAllArtists = onViewAllArtists
-                        )
-                    } else {
-                        Column {
-                            ModernSectionTitle(
-                                title = context.getString(R.string.home_artists),
-                                subtitle = context.getString(R.string.home_explore_musicians),
-                                viewAllAction = onViewAllArtists
-                            )
-                            Spacer(modifier = Modifier.height(20.dp))
-                            ModernEmptyState(
-                                icon = Icons.Rounded.Person,
-                                title = context.getString(R.string.home_no_artists),
-                                subtitle = context.getString(R.string.home_no_artists_desc),
-                                iconSize = 48.dp
-                            )
-                        }
-                    }
-                }
-            }
-
-            // New Releases with enhanced cards (respects settings)
-            if (showNewReleases) {
-                item {
-                    Column {
-                        ModernSectionTitle(
-                            title = context.getString(R.string.home_new_releases),
-                            subtitle = context.getString(R.string.home_fresh_music),
-                            onPlayAll = {
-                                coroutineScope.launch {
-                                    val allNewReleaseSongs = newReleases.flatMap { album ->
-                                        musicViewModel.getMusicRepository().getSongsForAlbum(album.id)
-                                    }
-                                    if (allNewReleaseSongs.isNotEmpty()) {
-                                        musicViewModel.playQueue(allNewReleaseSongs)
-                                    }
-                                }
-                            },
-                            onShufflePlay = {
-                                coroutineScope.launch {
-                                    val allNewReleaseSongs = newReleases.flatMap { album ->
-                                        musicViewModel.getMusicRepository().getSongsForAlbum(album.id)
-                                    }
-                                    if (allNewReleaseSongs.isNotEmpty()) {
-                                        musicViewModel.playShuffled(allNewReleaseSongs)
-                                    }
-                                }
-                            }
-                        )
-                        Spacer(modifier = Modifier.height(20.dp))
-                        if (newReleases.isNotEmpty()) {
-                            LazyRow(
-                                contentPadding = PaddingValues(horizontal = 8.dp),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                items(
-                                    items = newReleases.take(newReleasesCount),
-                                    key = { "newrelease_${it.id}" },
-                                    contentType = { "album" }
-                                ) { album ->
-                                    ModernAlbumCard(
-                                        album = album,
-                                        onClick = { onAlbumClick(album) }
+            // Render sections dynamically based on sectionOrder
+            sectionOrder.forEach { sectionId ->
+                when (sectionId) {
+                    "GREETING" -> {
+                        if (showGreeting) {
+                            item(key = "section_greeting") {
+                                if (!updateAvailable || latestVersion == null || error != null || !updatesEnabled) {
+                                    ModernWelcomeSection(
+                                        greeting = greeting,
+                                        festiveTheme = activeFestiveTheme,
+                                        onSearchClick = onSearchClick
                                     )
                                 }
                             }
-                        } else {
-                            ModernEmptyState(
-                                icon = Icons.Rounded.NewReleases,
-                                title = context.getString(R.string.home_no_new_releases),
-                                subtitle = context.getString(R.string.home_no_new_releases_desc),
-                                iconSize = 48.dp
-                            )
                         }
                     }
-                }
-            }
-
-            // Recently Added Albums (respects settings)
-            if (showRecentlyAdded) {
-                item {
-                    Column {
-                        ModernSectionTitle(
-                            title = context.getString(R.string.home_recently_added),
-                            subtitle = context.getString(R.string.home_latest_additions),
-                            onPlayAll = {
-                                if (recentlyAddedAlbums.isNotEmpty()) {
-                                    coroutineScope.launch(Dispatchers.Default) {
-                                        val allSongs = recentlyAddedAlbums.flatMap { album ->
-                                        album.songs
-                                    }
-                                    withContext(Dispatchers.Main) {
-                                        musicViewModel.playQueue(allSongs)
-                                    }
-                                }
-                            }
-                        },
-                        onShufflePlay = {
-                            if (recentlyAddedAlbums.isNotEmpty()) {
-                                coroutineScope.launch(Dispatchers.Default) {
-                                    val allSongs = recentlyAddedAlbums.flatMap { album ->
-                                        album.songs
-                                    }
-                                    withContext(Dispatchers.Main) {
-                                        musicViewModel.playShuffled(allSongs)
-                                    }
-                                }
-                            }
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
-                    if (recentlyAddedAlbums.isNotEmpty()) {
-                        LazyRow(
-                            contentPadding = PaddingValues(horizontal = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            items(
-                                items = recentlyAddedAlbums.take(recentlyAddedCount),
-                                key = { "recentalbum_${it.id}" },
-                                contentType = { "album" }
-                            ) { album ->
-                                ModernAlbumCard(
-                                    album = album,
-                                    onClick = { onAlbumClick(album) }
+                    "RECENTLY_PLAYED" -> {
+                        if (showRecentlyPlayed) {
+                            item(key = "section_recently_played") {
+                                ModernRecentlyPlayedSection(
+                                    recentlyPlayed = recentlyPlayed.take(recentlyPlayedCount),
+                                    onSongClick = onSongClick,
+                                    musicViewModel = musicViewModel,
+                                    coroutineScope = coroutineScope
                                 )
                             }
                         }
-                    } else {
-                        ModernEmptyState(
-                            icon = Icons.Rounded.LibraryAdd,
-                            title = context.getString(R.string.home_no_recently_added),
-                            subtitle = context.getString(R.string.home_no_recently_added_desc),
-                            iconSize = 48.dp
-                        )
                     }
-                }
-            }
-            }
-
-            // Recommended for you section (respects settings)
-            if (showRecommended) {
-                item {
-                    val recommendedSongs = remember(recentlyPlayed, songs, recommendedCount) {
-                        // Generate recommendations based on recently played songs
-                        if (recentlyPlayed.isNotEmpty()) {
-                            val playedArtists = recentlyPlayed.map { it.artist }.distinct()
-                            val playedAlbums = recentlyPlayed.map { it.album }.distinct()
-                            
-                            // Find songs from similar artists or albums
-                            songs.filter { song ->
-                                (song.artist in playedArtists || song.album in playedAlbums) &&
-                                !recentlyPlayed.contains(song)
-                            }.shuffled().take(recommendedCount)
-                        } else {
-                            // Fallback to random popular songs if no history
-                            songs.shuffled().take(recommendedCount)
+                    "DISCOVER" -> {
+                        if (showDiscoverCarousel) {
+                            item(key = "section_discover") {
+                                Column {
+                                    ModernSectionTitle(
+                                        title = context.getString(R.string.home_discover_albums),
+                                        subtitle = context.getString(R.string.home_explore_music),
+                                        viewAllAction = onViewAllAlbums
+                                    )
+                                    Spacer(modifier = Modifier.height(20.dp))
+                                    if (currentFeaturedAlbums.isNotEmpty()) {
+                                        ModernFeaturedSection(
+                                            albums = currentFeaturedAlbums.take(discoverItemCount),
+                                            carouselState = featuredCarouselState,
+                                            onAlbumClick = onAlbumClick,
+                                            showAlbumName = discoverShowAlbumName,
+                                            showArtistName = discoverShowArtistName,
+                                            showYear = discoverShowYear,
+                                            showPlayButton = discoverShowPlayButton,
+                                            showGradient = discoverShowGradient,
+                                            carouselHeight = carouselHeight,
+                                            carouselStyle = discoverCarouselStyle
+                                        )
+                                    } else {
+                                        ModernEmptyState(
+                                            icon = Icons.Rounded.Album,
+                                            title = context.getString(R.string.home_no_featured_albums),
+                                            subtitle = context.getString(R.string.home_no_featured_albums_desc),
+                                            iconSize = 48.dp
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
-                    
-                    ModernRecommendedSection(
-                        recommendedSongs = recommendedSongs,
-                        onSongClick = onSongClick
-                    )
-                }
-            }
-
-            // Listening Stats with modern design (respects settings)
-            if (showListeningStats) {
-                item {
-                    ModernListeningStatsSection()
-                }
-            }
-
-            // Mood & Moments - Enhanced final section (respects settings)
-            if (showMoodSections) {
-                item {
-                    ModernMoodSection(
-                        moodBasedSongs = enhancedMoodContent.first,
-                        energeticSongs = enhancedMoodContent.second,
-                        relaxingSongs = enhancedMoodContent.third,
-                        onSongClick = onSongClick
-                    )
+                    "ARTISTS" -> {
+                        if (showArtists) {
+                            item(key = "section_artists") {
+                                if (availableArtists.isNotEmpty()) {
+                                    ModernArtistsSection(
+                                        artists = availableArtists.take(artistsCount),
+                                        songs = allSongs,
+                                        onArtistClick = onArtistClick,
+                                        onViewAllArtists = onViewAllArtists
+                                    )
+                                } else {
+                                    Column {
+                                        ModernSectionTitle(
+                                            title = context.getString(R.string.home_artists),
+                                            subtitle = context.getString(R.string.home_explore_musicians),
+                                            viewAllAction = onViewAllArtists
+                                        )
+                                        Spacer(modifier = Modifier.height(20.dp))
+                                        ModernEmptyState(
+                                            icon = Icons.Rounded.Person,
+                                            title = context.getString(R.string.home_no_artists),
+                                            subtitle = context.getString(R.string.home_no_artists_desc),
+                                            iconSize = 48.dp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    "NEW_RELEASES" -> {
+                        if (showNewReleases) {
+                            item(key = "section_new_releases") {
+                                Column {
+                                    ModernSectionTitle(
+                                        title = context.getString(R.string.home_new_releases),
+                                        subtitle = context.getString(R.string.home_fresh_music),
+                                        onPlayAll = {
+                                            coroutineScope.launch {
+                                                val allNewReleaseSongs = newReleases.flatMap { album ->
+                                                    musicViewModel.getMusicRepository().getSongsForAlbum(album.id)
+                                                }
+                                                if (allNewReleaseSongs.isNotEmpty()) {
+                                                    musicViewModel.playQueue(allNewReleaseSongs)
+                                                }
+                                            }
+                                        },
+                                        onShufflePlay = {
+                                            coroutineScope.launch {
+                                                val allNewReleaseSongs = newReleases.flatMap { album ->
+                                                    musicViewModel.getMusicRepository().getSongsForAlbum(album.id)
+                                                }
+                                                if (allNewReleaseSongs.isNotEmpty()) {
+                                                    musicViewModel.playShuffled(allNewReleaseSongs)
+                                                }
+                                            }
+                                        }
+                                    )
+                                    Spacer(modifier = Modifier.height(20.dp))
+                                    if (newReleases.isNotEmpty()) {
+                                        LazyRow(
+                                            contentPadding = PaddingValues(horizontal = 8.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                        ) {
+                                            items(
+                                                items = newReleases.take(newReleasesCount),
+                                                key = { "newrelease_${it.id}" },
+                                                contentType = { "album" }
+                                            ) { album ->
+                                                ModernAlbumCard(
+                                                    album = album,
+                                                    onClick = { onAlbumClick(album) }
+                                                )
+                                            }
+                                        }
+                                    } else {
+                                        ModernEmptyState(
+                                            icon = Icons.Rounded.NewReleases,
+                                            title = context.getString(R.string.home_no_new_releases),
+                                            subtitle = context.getString(R.string.home_no_new_releases_desc),
+                                            iconSize = 48.dp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    "RECENTLY_ADDED" -> {
+                        if (showRecentlyAdded) {
+                            item(key = "section_recently_added") {
+                                Column {
+                                    ModernSectionTitle(
+                                        title = context.getString(R.string.home_recently_added),
+                                        subtitle = context.getString(R.string.home_latest_additions),
+                                        onPlayAll = {
+                                            if (recentlyAddedAlbums.isNotEmpty()) {
+                                                coroutineScope.launch(Dispatchers.Default) {
+                                                    val allSongs = recentlyAddedAlbums.flatMap { album ->
+                                                        album.songs
+                                                    }
+                                                    withContext(Dispatchers.Main) {
+                                                        musicViewModel.playQueue(allSongs)
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        onShufflePlay = {
+                                            if (recentlyAddedAlbums.isNotEmpty()) {
+                                                coroutineScope.launch(Dispatchers.Default) {
+                                                    val allSongs = recentlyAddedAlbums.flatMap { album ->
+                                                        album.songs
+                                                    }
+                                                    withContext(Dispatchers.Main) {
+                                                        musicViewModel.playShuffled(allSongs)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    )
+                                    Spacer(modifier = Modifier.height(20.dp))
+                                    if (recentlyAddedAlbums.isNotEmpty()) {
+                                        LazyRow(
+                                            contentPadding = PaddingValues(horizontal = 8.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                        ) {
+                                            items(
+                                                items = recentlyAddedAlbums.take(recentlyAddedCount),
+                                                key = { "recentalbum_${it.id}" },
+                                                contentType = { "album" }
+                                            ) { album ->
+                                                ModernAlbumCard(
+                                                    album = album,
+                                                    onClick = { onAlbumClick(album) }
+                                                )
+                                            }
+                                        }
+                                    } else {
+                                        ModernEmptyState(
+                                            icon = Icons.Rounded.LibraryAdd,
+                                            title = context.getString(R.string.home_no_recently_added),
+                                            subtitle = context.getString(R.string.home_no_recently_added_desc),
+                                            iconSize = 48.dp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    "RECOMMENDED" -> {
+                        if (showRecommended) {
+                            item(key = "section_recommended") {
+                                val recommendedSongs = remember(recentlyPlayed, songs, recommendedCount) {
+                                    // Generate recommendations based on recently played songs
+                                    if (recentlyPlayed.isNotEmpty()) {
+                                        val playedArtists = recentlyPlayed.map { it.artist }.distinct()
+                                        val playedAlbums = recentlyPlayed.map { it.album }.distinct()
+                                        
+                                        // Find songs from similar artists or albums
+                                        songs.filter { song ->
+                                            (song.artist in playedArtists || song.album in playedAlbums) &&
+                                            !recentlyPlayed.contains(song)
+                                        }.shuffled().take(recommendedCount)
+                                    } else {
+                                        // Fallback to random popular songs if no history
+                                        songs.shuffled().take(recommendedCount)
+                                    }
+                                }
+                                
+                                ModernRecommendedSection(
+                                    recommendedSongs = recommendedSongs,
+                                    onSongClick = onSongClick
+                                )
+                            }
+                        }
+                    }
+                    "STATS" -> {
+                        if (showListeningStats) {
+                            item(key = "section_stats") {
+                                ModernListeningStatsSection()
+                            }
+                        }
+                    }
+                    "MOOD" -> {
+                        if (showMoodSections) {
+                            item(key = "section_mood") {
+                                ModernMoodSection(
+                                    moodBasedSongs = enhancedMoodContent.first,
+                                    energeticSongs = enhancedMoodContent.second,
+                                    relaxingSongs = enhancedMoodContent.third,
+                                    onSongClick = onSongClick
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -1658,7 +1693,9 @@ private fun ModernFeaturedSection(
                         showArtistName = showArtistName,
                         showYear = showYear,
                         showPlayButton = showPlayButton,
-                        showGradient = showGradient
+                        showGradient = showGradient,
+                        itemIndex = itemIndex,
+                        currentItem = carouselState.currentItem
                     )
                 }
             }
@@ -1684,7 +1721,9 @@ private fun ModernFeaturedSection(
                         showArtistName = showArtistName,
                         showYear = showYear,
                         showPlayButton = showPlayButton,
-                        showGradient = showGradient
+                        showGradient = showGradient,
+                        itemIndex = itemIndex,
+                        currentItem = carouselState.currentItem
                     )
                 }
             }
@@ -1743,11 +1782,16 @@ private fun androidx.compose.material3.carousel.CarouselItemScope.HeroCarouselCa
     showArtistName: Boolean = true,
     showYear: Boolean = true,
     showPlayButton: Boolean = true,
-    showGradient: Boolean = true
+    showGradient: Boolean = true,
+    itemIndex: Int = 0,
+    currentItem: Int = 0
 ) {
     val context = LocalContext.current
     val viewModel = viewModel<chromahub.rhythm.app.viewmodel.MusicViewModel>()
     val haptic = LocalHapticFeedback.current
+    
+    // Hide text content on peeked items (not the current centered item)
+    val isPeeked = itemIndex != currentItem
     
     Card(
         onClick = {
@@ -1778,7 +1822,7 @@ private fun androidx.compose.material3.carousel.CarouselItemScope.HeroCarouselCa
             )
             
             // Enhanced gradient overlays for better text readability
-            if (showGradient && (showAlbumName || showArtistName || showYear || showPlayButton)) {
+            if (showGradient) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -1798,8 +1842,8 @@ private fun androidx.compose.material3.carousel.CarouselItemScope.HeroCarouselCa
                 )
             }
             
-            // Content - only show if at least one element is visible
-            if (showAlbumName || showArtistName || showYear || showPlayButton) {
+            // Content - only show if at least one element is visible and not in peek mode
+            if (!isPeeked && (showAlbumName || showArtistName || showYear || showPlayButton)) {
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomStart)

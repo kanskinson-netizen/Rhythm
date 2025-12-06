@@ -11177,6 +11177,9 @@ fun HomeScreenCustomizationSettingsScreen(onBackClick: () -> Unit) {
     val appSettings = AppSettings.getInstance(context)
     val haptic = LocalHapticFeedback.current
     
+    // State for home section order bottom sheet
+    var showHomeSectionOrderSheet by remember { mutableStateOf(false) }
+    
     // Collect all home screen settings
     val showGreeting by appSettings.homeShowGreeting.collectAsState()
     val showRecentlyPlayed by appSettings.homeShowRecentlyPlayed.collectAsState()
@@ -11205,6 +11208,14 @@ fun HomeScreenCustomizationSettingsScreen(onBackClick: () -> Unit) {
     val discoverShowPlayButton by appSettings.homeDiscoverShowPlayButton.collectAsState()
     val discoverShowGradient by appSettings.homeDiscoverShowGradient.collectAsState()
     
+    // Show bottom sheet if requested
+    if (showHomeSectionOrderSheet) {
+        chromahub.rhythm.app.ui.components.HomeSectionOrderBottomSheet(
+            onDismiss = { showHomeSectionOrderSheet = false },
+            appSettings = appSettings
+        )
+    }
+    
     CollapsibleHeaderScreen(
         title = "Home",
         showBackButton = true,
@@ -11227,137 +11238,66 @@ fun HomeScreenCustomizationSettingsScreen(onBackClick: () -> Unit) {
                 .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 24.dp)
         ) {
-            // ==================== WIDGET VISIBILITY ====================
-            item(key = "widget_visibility_header", contentType = "section_header") {
+            // ==================== SECTION ORDER & VISIBILITY ====================
+            item(key = "section_order_header", contentType = "section_header") {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "Widget Visibility",
+                    text = "Section Order & Visibility",
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
                 )
             }
             
-            item(key = "widget_visibility_settings", contentType = "settings_card") {
+            item(key = "section_order_button", contentType = "action_button") {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticFeedbackType.TextHandleMove)
+                            showHomeSectionOrderSheet = true
+                        },
                     shape = RoundedCornerShape(18.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
-                    Column {
-                        TunerSettingRow(
-                            item = SettingItem(
-                                Icons.Rounded.WavingHand,
-                                "Greeting",
-                                "Personalized greeting with time of day",
-                                toggleState = showGreeting,
-                                onToggleChange = { appSettings.setHomeShowGreeting(it) }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Reorder,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
                             )
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 20.dp),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-                        )
-                        TunerSettingRow(
-                            item = SettingItem(
-                                Icons.Rounded.Album,
-                                "Discover Albums",
-                                "Featured albums carousel",
-                                toggleState = showDiscoverCarousel,
-                                onToggleChange = { appSettings.setHomeShowDiscoverCarousel(it) }
-                            )
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 20.dp),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-                        )
-                        TunerSettingRow(
-                            item = SettingItem(
-                                Icons.Rounded.History,
-                                "Recently Played",
-                                "Songs you recently listened to",
-                                toggleState = showRecentlyPlayed,
-                                onToggleChange = { appSettings.setHomeShowRecentlyPlayed(it) }
-                            )
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 20.dp),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-                        )
-                        TunerSettingRow(
-                            item = SettingItem(
-                                Icons.Rounded.People,
-                                "Top Artists",
-                                "Your most played artists",
-                                toggleState = showArtists,
-                                onToggleChange = { appSettings.setHomeShowArtists(it) }
-                            )
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 20.dp),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-                        )
-                        TunerSettingRow(
-                            item = SettingItem(
-                                Icons.Rounded.NewReleases,
-                                "New Releases",
-                                "Recently added albums",
-                                toggleState = showNewReleases,
-                                onToggleChange = { appSettings.setHomeShowNewReleases(it) }
-                            )
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 20.dp),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-                        )
-                        TunerSettingRow(
-                            item = SettingItem(
-                                Icons.Rounded.LibraryAdd,
-                                "Recently Added",
-                                "Recently added songs",
-                                toggleState = showRecentlyAdded,
-                                onToggleChange = { appSettings.setHomeShowRecentlyAdded(it) }
-                            )
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 20.dp),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-                        )
-                        TunerSettingRow(
-                            item = SettingItem(
-                                Icons.Rounded.Recommend,
-                                "Recommended",
-                                "Personalized recommendations",
-                                toggleState = showRecommended,
-                                onToggleChange = { appSettings.setHomeShowRecommended(it) }
-                            )
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 20.dp),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-                        )
-                        TunerSettingRow(
-                            item = SettingItem(
-                                Icons.Rounded.BarChart,
-                                "Listening Stats",
-                                "Your listening statistics",
-                                toggleState = showListeningStats,
-                                onToggleChange = { appSettings.setHomeShowListeningStats(it) }
-                            )
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 20.dp),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-                        )
-                        TunerSettingRow(
-                            item = SettingItem(
-                                Icons.Rounded.Mood,
-                                "Mood & Moments",
-                                "Focus, energetic, and relaxing sections",
-                                toggleState = showMoodSections,
-                                onToggleChange = { appSettings.setHomeShowMoodSections(it) }
-                            )
+                            Column {
+                                Text(
+                                    text = "Reorder & Toggle Sections",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Customize home screen layout",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Icon(
+                            imageVector = Icons.Rounded.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }

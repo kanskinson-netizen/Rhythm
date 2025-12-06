@@ -325,7 +325,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 // When grouping by track artist, match if artist appears in song's artist field (split collaborations)
                 filteredSongs.any { song -> 
                     // Split artist names on common separators
-                    val separators = listOf(" & ", " and ", ", ", " feat. ", " feat ", " ft. ", " ft ", " featuring ", " x ", " X ", " vs ", " vs. ", " with ")
+                    val separators = listOf(" & ", " and ", ", ", " feat. ", " feat ", " ft. ", " ft ", " featuring ", " x ", " X ", " vs ", " vs. ", " with ", ";", " / ", " + ", " · ", " - ")
                     var names = listOf(song.artist)
                     for (separator in separators) {
                         names = names.flatMap { it.split(separator, ignoreCase = true) }
