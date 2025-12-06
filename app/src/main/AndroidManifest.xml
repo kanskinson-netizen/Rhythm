@@ -148,6 +148,31 @@
                 <category android:name="android.intent.category.APP_MUSIC" />
             </intent-filter>
             
+            <!-- Handle playlists -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="audio/x-mpegurl" />
+                <data android:mimeType="audio/mpegurl" />
+                <data android:mimeType="application/x-mpegurl" />
+                <data android:mimeType="application/vnd.apple.mpegurl" />
+                <data android:mimeType="application/vnd.apple.mpegurl.audio" />
+            </intent-filter>
+        </activity>
+        
+        <!-- External playback activity for quick audio file playback -->
+        <activity
+            android:name=".ExternalPlaybackActivity"
+            android:exported="true"
+            android:label="Play Audio"
+            android:theme="@android:style/Theme.DeviceDefault.Dialog.NoActionBar"
+            android:launchMode="singleTask"
+            android:excludeFromRecents="false"
+            android:configChanges="orientation|screenSize|keyboardHidden">
+            
             <!-- Handle VIEW intents for audio files -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -175,20 +200,6 @@
                 <data android:mimeType="audio/ogg" />
                 <data android:mimeType="audio/flac" />
                 <data android:mimeType="audio/wav" />
-            </intent-filter>
-            
-            <!-- Handle playlists -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="content" />
-                <data android:scheme="file" />
-                <data android:mimeType="audio/x-mpegurl" />
-                <data android:mimeType="audio/mpegurl" />
-                <data android:mimeType="application/x-mpegurl" />
-                <data android:mimeType="application/vnd.apple.mpegurl" />
-                <data android:mimeType="application/vnd.apple.mpegurl.audio" />
             </intent-filter>
         </activity>
     </application>

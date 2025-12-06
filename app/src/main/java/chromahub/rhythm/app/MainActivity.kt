@@ -299,6 +299,7 @@ class MainActivity : ComponentActivity() {
     
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         // Handle the new intent
         handleIntent(intent)
     }
@@ -309,6 +310,14 @@ class MainActivity : ComponentActivity() {
         Log.d(TAG, "Handling intent: ${intent.action}, data: ${intent.data}")
         
         try {
+            // Check if we should open player (coming from ExternalPlaybackActivity)
+            if (intent.getBooleanExtra("OPEN_PLAYER", false)) {
+                Log.d(TAG, "Opening player from external playback activity")
+                // The player should automatically show since the song is already playing
+                // No additional action needed as the navigation will handle it
+                return
+            }
+            
             when (intent.action) {
                 Intent.ACTION_VIEW -> {
                     // Handle external audio file with validation

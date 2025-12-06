@@ -3,6 +3,7 @@ package chromahub.rhythm.app.util
 import android.app.PendingIntent
 import android.app.RemoteAction
 import android.content.ContentResolver
+import android.content.ContentUris
 import android.content.Context
 import android.content.IntentSender
 import android.graphics.Bitmap
@@ -53,6 +54,100 @@ data class PendingWriteRequest(
  */
 object MediaUtils {
     private const val TAG = "MediaUtils"
+    
+    /**
+     * Finds a song in MediaStore that matches the given external file URI.
+     * This helps identify if an external file is actually in the user's library,
+     * preventing duplicate song entries and ensuring consistent playback.
+     * 
+     * @param context The application context
+     * @param uri The URI of the external file
+     * @return A Song object from MediaStore if found, null otherwise
+     */
+    fun findSongInMediaStore(context: Context, uri: Uri): Song? {
+        return try {
+            // Get the file path from the URI
+            val filePath = when (uri.scheme) {
+                "content" -> {
+                    val projection = arrayOf(MediaStore.Audio.Media.DATA)
+                    context.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            val dataIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
+                            cursor.getString(dataIndex)
+                        } else null
+                    }
+                }
+                "file" -> uri.path
+                else -> null
+            } ?: return null
+            
+            Log.d(TAG, "Searching MediaStore for file: $filePath")
+            
+            // Search MediaStore for this file path
+            val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+            } else {
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+            }
+            
+            val projection = arrayOf(
+                MediaStore.Audio.Media._ID,
+                MediaStore.Audio.Media.TITLE,
+                MediaStore.Audio.Media.ARTIST,
+                MediaStore.Audio.Media.ALBUM,
+                MediaStore.Audio.Media.ALBUM_ID,
+                MediaStore.Audio.Media.DURATION,
+                MediaStore.Audio.Media.TRACK,
+                MediaStore.Audio.Media.YEAR
+            )
+            
+            val selection = "${MediaStore.Audio.Media.DATA} = ?"
+            val selectionArgs = arrayOf(filePath)
+            
+            context.contentResolver.query(collection, projection, selection, selectionArgs, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val idIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
+                    val titleIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
+                    val artistIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
+                    val albumIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
+                    val albumIdIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
+                    val durationIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
+                    val trackIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK)
+                    val yearIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR)
+                    
+                    val id = cursor.getLong(idIndex)
+                    val contentUri = ContentUris.withAppendedId(
+                        MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                        id
+                    )
+                    val albumArtUri = ContentUris.withAppendedId(
+                        android.net.Uri.parse("content://media/external/audio/albumart"),
+                        cursor.getLong(albumIdIndex)
+                    )
+                    
+                    Log.d(TAG, "Found matching song in MediaStore with ID: $id")
+                    
+                    return Song(
+                        id = id.toString(),
+                        title = cursor.getString(titleIndex),
+                        artist = cursor.getString(artistIndex),
+                        album = cursor.getString(albumIndex),
+                        albumId = cursor.getLong(albumIdIndex).toString(),
+                        duration = cursor.getLong(durationIndex),
+                        uri = contentUri,
+                        artworkUri = albumArtUri,
+                        trackNumber = cursor.getInt(trackIndex),
+                        year = cursor.getInt(yearIndex)
+                    )
+                }
+            }
+            
+            null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error searching MediaStore", e)
+            null
+        }
+    }
     
     /**
      * Extracts metadata from an external audio file
@@ -846,6 +941,9 @@ object MediaUtils {
             // Only trigger media scanner if BOTH operations succeeded
             if (mediaStoreSuccess && fileWriteSucceeded) {
                 // Trigger media scanner to refresh the metadata
+                // IMPORTANT: This ensures external files that are edited/processed
+                // will be properly indexed in MediaStore, allowing the app to
+                // recognize them as library songs on subsequent scans.
                 try {
                     // Get file path from URI
                     val scanFilePath = when (song.uri.scheme) {
